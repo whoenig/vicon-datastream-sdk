@@ -8,21 +8,21 @@ You can find the latest official version at https://vicon.com/downloads/utilitie
 
 ## Building
 
-``
+````
 mkdir build
 cd build
 cmake ..
 make
-``
+````
 
 ## Testing
 
 Run
 
-``
+````
 cd build
 ./ViconDataStreamSDK_CPPTest vicon
-``
+````
 
 where vicon is the IP/hostname of the vicon machine.
 
