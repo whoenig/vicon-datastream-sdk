@@ -29,6 +29,7 @@
 #include <ViconCGStream/CameraCalibrationHealth.h>
 #include <ViconCGStream/CameraCalibrationInfo.h>
 #include <ViconCGStream/CameraInfo.h>
+#include <ViconCGStream/CameraSensorInfo.h>
 #include <ViconCGStream/CameraWand2d.h>
 #include <ViconCGStream/CameraWand3d.h>
 #include <ViconCGStream/Centroids.h>
@@ -57,6 +58,7 @@
 #include <ViconCGStream/LabeledReconRayAssignments.h>
 #include <ViconCGStream/VideoFrame.h>
 #include <ViconCGStream/GreyscaleBlobs.h>
+#include <ViconCGStream/GreyscaleSubsampledBlobs.h>
 #include <ViconCGStream/GreyscaleBlobsDetail.h>
 #include <ViconCGStream/EdgePairs.h>
 #include <ViconCGStream/Timecode.h>
@@ -95,8 +97,10 @@ public:
   ViconCGStream::VCameraCalibrationHealth              m_CameraCalibrationHealth;
   std::vector< ViconCGStream::VCameraCalibrationInfo > m_CameraCalibrations;
   std::vector< ViconCGStream::VCameraInfo >            m_Cameras;
+  std::vector< ViconCGStream::VCameraSensorInfo >      m_CamerasSensorInfo;
   std::vector< ViconCGStream::VEdgePairs >             m_EdgePairs;
   std::vector< ViconCGStream::VGreyscaleBlobs >        m_GreyscaleBlobs;
+  std::vector< ViconCGStream::VGreyscaleSubsampledBlobs > m_GreyscaleSubsampledBlobs;
   std::vector< ViconCGStream::VCentroids >             m_Centroids;
   std::vector< ViconCGStream::VCentroidTracks >        m_CentroidTracks;
   std::vector< ViconCGStream::VCentroidWeights >       m_CentroidWeights;

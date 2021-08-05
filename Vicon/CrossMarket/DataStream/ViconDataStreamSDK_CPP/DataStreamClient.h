@@ -711,13 +711,13 @@ namespace CPP
     ///      
     ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      Output = MyClient.EnableCentroidData ();
+    ///      Output = MyClient.EnableCentroidData();
     ///      
     /// .NET example
     ///      
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      Output_EnableCentroidData Output = MyClient.EnableCentroidData ();
+    ///      Output_EnableCentroidData Output = MyClient.EnableCentroidData();
     /// -----
     /// \return An Output_EnableCentroidData class containing the result of the operation.
     ///         - The Result will be:
@@ -1508,9 +1508,9 @@ namespace CPP
     ///      
     ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      Output = MyClient.IsCentroidDataEnabled (); % Output.Enabled == false
+    ///      Output = MyClient.IsCentroidDataEnabled(); % Output.Enabled == false
     ///      MyClient.EnableCentroidData();
-    ///      Output = MyClient.IsCentroidDataEnabled (); % Output.Enabled == true
+    ///      Output = MyClient.IsCentroidDataEnabled(); % Output.Enabled == true
     ///      
     /// .NET example
     ///      
@@ -5037,7 +5037,11 @@ namespace CPP
     ///      Client_GetFrame( pClient );
     ///      char DeviceOutputName[128];
     ///      CEnum DeviceOutputUnit;
-    ///      CEnum Result = Client_GetDeviceOutputComponentName(pClient, "AMTI", 0, 128, DeviceOutputName, &DeviceOutputUnit);
+    ///      CEnum Result = Client_GetDeviceOutputComponentName(pClient,
+    ///                                                         "AMTI",
+    ///                                                          0, 128,
+    ///                                                          DeviceOutputName,
+    ///                                                          &DeviceOutputUnit);
     ///      // Result == Success
     ///      // DeviceOutputName == "Force"
     ///      // DeviceOutputComponentName == "Fx"
@@ -6258,7 +6262,7 @@ namespace CPP
     ///      
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount Output = MyClient.GetCameraCount();
     ///      // Output.Result == Success
@@ -6277,7 +6281,7 @@ namespace CPP
     ///      
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount Output = MyClient.GetCameraCount();
     ///      // Output.Result == Success
@@ -6299,7 +6303,7 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      COutput_GetCameraCount CameraCount;
     ///      Client_GetCameraCount(pClient, &CameraCount);
@@ -6314,7 +6318,7 @@ namespace CPP
     ///      A valid CameraIndex is between 0 and GetCameraCount()-1
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      // OutputGCC.Result == Success
@@ -6328,7 +6332,7 @@ namespace CPP
     ///      % [Output] = GetCameraName ( CameraIndex )
     ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      OutputGCC = MyClient.GetCameraCount ( 0 );
     ///      % OutputGCC.Result == Success
@@ -6340,7 +6344,7 @@ namespace CPP
     ///      A valid CameraIndex is between 0 and GetCameraCount() - 1
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      // OutputGCC.Result == Success
@@ -6366,7 +6370,7 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      COutput_GetCameraCount CameraCount;
     ///      Client_GetCameraCount(pClient, &CameraCount);
     ///      if( CameraCount.Result == Success &&  CameraCount.CameraCount > 0 )
@@ -6387,7 +6391,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6410,7 +6414,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6441,7 +6445,7 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      COutput_GetCameraCount CameraCount;
     ///      Client_GetCameraCount(pClient, &CameraCount);
@@ -6464,7 +6468,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6491,7 +6495,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6522,7 +6526,7 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      COutput_GetCameraCount CameraCount;
     ///      Client_GetCameraCount(pClient, &CameraCount);
@@ -6543,7 +6547,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6566,7 +6570,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6596,11 +6600,11 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      COutput_GetCameraCount CameraCount;
     ///      Client_GetCameraCount(pClient, &CameraCount);
@@ -6621,7 +6625,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( Output_GCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6644,7 +6648,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( Output_GCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6674,7 +6678,7 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      COutput_GetCameraCount CameraCount;
     ///      Client_GetCameraCount(pClient, &CameraCount);
@@ -6695,7 +6699,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6718,7 +6722,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6748,7 +6752,7 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      COutput_GetCameraCount CameraCount;
     ///      Client_GetCameraCount(pClient, &CameraCount);
@@ -6769,7 +6773,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6792,7 +6796,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6813,6 +6817,125 @@ namespace CPP
     ///           + InvalidCameraName
     Output_GetIsVideoCamera GetIsVideoCamera( const std::string & CameraName ) const;
 
+
+    /// Gets the sensor mode of the specified camera, whether it is binning, subsampling or normal.
+    /// This information is only available from Vicon applications released after DSSDK 1.11
+    ///
+    /// See Also: GetCameraName()
+    ///
+    ///
+    /// C example
+    ///      
+    /// Not implemented
+    ///      
+    /// C++ example
+    ///      
+    ///      A valid CameraName may be obtained from GetCameraName()
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableCentroidData();
+    ///      MyClient.GetFrame();
+    ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
+    ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
+    ///      {
+    ///        Output_GetCameraName OutputGCN;
+    ///        OutputGCN = MyClient.GetCameraName( 0 );
+    ///        if( OutputGCN.Result == Success )
+    ///        {
+    ///          Output_GetCameraSensorMode Output = MyClient.GetCameraSensorMode( OutputGCN.CameraName );
+    ///        }
+    ///      }
+    ///      
+    /// MATLAB example
+    ///      
+    /// Not implemented
+    ///      
+    ///      
+    /// .NET example
+    ///      
+    ///      A valid CameraName may be obtained from GetCameraName()
+    ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableCentroidData();
+    ///      MyClient.GetFrame();
+    ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
+    ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
+    ///      {
+    ///        Output_GetCameraName OutputGCN;
+    ///        OutputGCN = MyClient.GetCameraName( 0 );
+    ///        if( OutputGCN.Result == Success )
+    ///        {
+    ///          Output_GetCameraSensorMode Output = MyClient.GetCameraSensorMode( OutputGCN.CameraName );
+    ///        }
+    ///      }
+    /// -----
+    ///
+    /// \return An Output_ class containing the result of the operation and the sensor mode of the camera as a string
+    ///         - The Result will be:
+    ///           + Success
+    ///           + NotConnected
+    ///           + InvalidCameraName
+    Output_GetCameraSensorMode GetCameraSensorMode(const std::string & CameraName) const;
+
+    /// Returns the sensor windowing size for the camera.
+    /// This information is only available from Vicon applications released after DSSDK 1.11
+    ///
+    /// See Also: GetCameraName()
+    ///
+    ///
+    /// C example
+    ///      
+    ///     Not Implmented
+    ///      
+    /// C++ example
+    ///      
+    ///      A valid CameraName may be obtained from GetCameraName()
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableCentroidData();
+    ///      MyClient.GetFrame();
+    ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
+    ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
+    ///      {
+    ///        Output_GetCameraName OutputGCN;
+    ///        OutputGCN = MyClient.GetCameraName( 0 );
+    ///        if( OutputGCN.Result == Success )
+    ///        {
+    ///          Output_GetCameraWindowSize Output = MyClient.GetCameraWindowSize( OutputGCN.CameraName );
+    ///        }
+    ///      }
+    ///      
+    /// MATLAB example
+    ///      
+    /// Not implemented
+    ///      
+    ///      
+    /// .NET example
+    ///      
+    ///      A valid CameraName may be obtained from GetCameraName()
+    ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableCentroidData();
+    ///      MyClient.GetFrame();
+    ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
+    ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
+    ///      {
+    ///        Output_GetCameraName OutputGCN;
+    ///        OutputGCN = MyClient.GetCameraName( 0 );
+    ///        if( OutputGCN.Result == Success )
+    ///        {
+    ///          Output_GetCameraWindowSize Output = MyClient.GetCameraWindowSize( OutputGCN.CameraName );
+    ///        }
+    ///      }
+    /// -----
+    ///
+    /// \return An Output_ class containing the result of the operation, and members defining the top, left, width and height of the sensor window
+    ///         - The Result will be:
+    ///           + Success
+    ///           + NotConnected
+    ///           + InvalidCameraName
+    Output_GetCameraWindowSize GetCameraWindowSize(const std::string & CameraName) const;
+
     /// Return the number of centroids reported by a named camera. The centroid data needs to be enabled to get the number of centroids.
     ///
     /// See Also: GetCameraCount(), GetCameraName(), GetCentroidPosition()
@@ -6822,7 +6945,7 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      COutput_GetCameraCount CameraCount;
     ///      Client_GetCameraCount(pClient, &CameraCount);
@@ -6842,7 +6965,7 @@ namespace CPP
     ///      
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      for( unsigned int CameraIndex = 0; CameraIndex < OutputGCC.CameraCount; ++CameraIndex )
@@ -6871,7 +6994,7 @@ namespace CPP
     ///      
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      for( unsigned int CameraIndex = 0; CameraIndex < OutputGCC.CameraCount; ++CameraIndex )
@@ -6903,7 +7026,7 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      char CameraName[128];
     ///      CEnum Output = Client_GetCameraName(pClient, 0, 128, CameraName);
@@ -6917,7 +7040,7 @@ namespace CPP
     ///      A valid CentroidIndex is between 0 and GetCentroidCount( CameraName )-1
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraName OutputGCN = MyClient.GetCameraName( 0 );
     ///      Output_GetCentroidPosition Output = MyClient.GetCentroidPosition( OutputGCN.CameraName, 0 );
@@ -6929,7 +7052,7 @@ namespace CPP
     ///      % [Output] = GetCentroidPosition( CameraName, CentroidIndex )
     ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      OutputGCN = MyClient.GetCameraName( 0 );
     ///      Output = MyClient.GetCentroidPosition( OutputGCN.CameraName, 0 );
@@ -6940,7 +7063,7 @@ namespace CPP
     ///      A valid CentroidIndex is between 0 and GetCentroidCount( CameraName )-1
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraName OutputGCN = MyClient.GetCameraName( 0 );
     ///      Output_GetCentroidPosition Output = MyClient.GetCentroidPosition( OutputGCN.CameraName, 0 );
@@ -6968,7 +7091,7 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      char CameraName[128];
     ///      CEnum Output = Client_GetCameraName(pClient, 0, 128, CameraName);
@@ -6982,7 +7105,7 @@ namespace CPP
     ///      A valid CentroidIndex is between 0 and GetCentroidCount( CameraName )-1
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraName OutputGCN = MyClient.GetCameraName( 0 );
     ///      Output_GetCentroidWeight Output = MyClient.GetCentroidWeight( OutputGCN.CameraName, 0 );
@@ -6994,7 +7117,7 @@ namespace CPP
     ///      % [Output] = GetCentroidWeight( CameraName, CentroidIndex )
     ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      OutputGCN = MyClient.GetCameraName( 1 );
     ///      Output = MyClient.GetCentroidWeight( OutputGCN.CameraName, 0 );
@@ -7005,7 +7128,7 @@ namespace CPP
     ///      A valid CentroidIndex is between 0 and GetCentroidCount( CameraName )-1
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraName OutputGCN = MyClient.GetCameraName( 0 );
     ///      Output_GetCentroidWeight Output = MyClient.GetCentroidWeight( OutputGCN.CameraName, 0 );
@@ -7068,6 +7191,54 @@ namespace CPP
     ///           + NotConnected
     ///           + InvalidCameraName
     Output_GetGreyscaleBlobCount GetGreyscaleBlobCount( const std::string & CameraName ) const;
+
+    /// Obtain information about the subsampling performed by the specified camera.
+    /// This will only be supported when connected to application released after
+    /// DSSDK 1.11 release.
+    ///
+    /// See Also: GetGreyscaleBlob(), EnableGreyscaleData()
+    ///
+    ///
+    /// C example
+    ///      
+    /// Not implemented
+    ///      
+    ///      
+    /// C++ example
+    ///      
+    ///      A valid camera name may be obtained from GetCameraName( CameraIndex )
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableGreyscaleData ();
+    ///      MyClient.GetFrame();
+    ///      Output_GetCameraName CameraName = MyClient.GetCameraName( 0 );
+    ///      Output_GetGreyscaleBlobSubsampleInfo Output =
+    ///      MyClient.GetGreyscaleBlobSubsampleInfo( CameraName.CameraName );
+    ///      
+    /// MATLAB example
+    ///      
+    /// Not implemented
+    ///      
+    ///      
+    /// .NET example
+    ///      
+    ///      A valid camera name may be obtained from GetCameraName( CameraIndex )
+    ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableGreyscaleData ();
+    ///      MyClient.GetFrame();
+    ///      Output_GetCameraName CameraName = MyClient.GetCameraName( 0 );
+    ///      Output_GetGreyscaleBlobSubsampleInfo Output
+    ///          = MyClient.GetGreyscaleBlobSubsampleInfo( CameraName.CameraName );
+    /// -----
+    ///     
+    /// \return An Output_GetGreyscaleBlobSubsampleInfo class containing the result of the operation and details of the subsampled data
+    ///         - The Result will be:
+    ///           + Success
+    ///           + NotConnected
+    ///           + InvalidCameraName
+    ///           + NotSupported
+    Output_GetGreyscaleBlobSubsampleInfo GetGreyscaleBlobSubsampleInfo(const std::string & CameraName) const;
 
     /// Obtains greyscale blob data for the specified camera and blob index.
     ///

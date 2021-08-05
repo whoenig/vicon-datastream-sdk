@@ -44,12 +44,12 @@ inline void IViconCGStreamClientCallback::OnConnect()
 }
 
 
-inline void IViconCGStreamClientCallback::OnStaticObjects( std::shared_ptr< const VStaticObjects > i_pStaticObjects )
+inline void IViconCGStreamClientCallback::OnStaticObjects( std::shared_ptr< const VStaticObjects > /*i_pStaticObjects*/ )
 {
 }
 
 
-inline void IViconCGStreamClientCallback::OnDynamicObjects( std::shared_ptr< const VDynamicObjects > i_pDynamicObjects )
+inline void IViconCGStreamClientCallback::OnDynamicObjects( std::shared_ptr< const VDynamicObjects > /*i_pDynamicObjects*/ )
 {
 }
 

@@ -124,6 +124,9 @@ const ViconCGStreamType::Enum VoltageFrame = 13;
 /// See ViconCGStream::VCameraInfo.
 const ViconCGStreamType::Enum CameraInfo = 14; 
 
+/// See ViconCGStream::VCameraSensorInfo.
+const ViconCGStreamType::Enum CameraSensorInfo = 1401;
+
 /// See ViconCGStream::VCameraInfo2.
 const ViconCGStreamType::Enum CameraTimingInfo = 65001; 
 
@@ -135,6 +138,9 @@ const ViconCGStreamType::Enum Centroids = 16;
 
 /// See ViconCGStream::VGreyScaleBlobs.
 const ViconCGStreamType::Enum GreyscaleBlobs = 17;
+
+/// See ViconCGStream::VGreyScaleSubsampledBlobs.
+const ViconCGStreamType::Enum GreyscaleSubsampledBlobs = 1701;
 
 /// See ViconCGStream::VEdgePairs.
 const ViconCGStreamType::Enum EdgePairs = 18;

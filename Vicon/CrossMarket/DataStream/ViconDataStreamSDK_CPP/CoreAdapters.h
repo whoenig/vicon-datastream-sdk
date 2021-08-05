@@ -28,7 +28,7 @@
 #include <ViconDataStreamSDKCoreUtils/Constants.h>
 
 // This function is provided to insulate us from changes to ViconDataStreamSDK::Core::Axis::Enum 
-static ViconDataStreamSDK::Core::Direction::Enum Adapt(const ViconDataStreamSDK::CPP::Direction::Enum i_Direction)
+inline ViconDataStreamSDK::Core::Direction::Enum Adapt(const ViconDataStreamSDK::CPP::Direction::Enum i_Direction)
 {
   switch (i_Direction)
   {
@@ -43,7 +43,7 @@ static ViconDataStreamSDK::Core::Direction::Enum Adapt(const ViconDataStreamSDK:
 }
 
 // This function is provided to insulate us from changes to ViconDataStreamSDK::Core::Axis::Enum 
-static ViconDataStreamSDK::CPP::Direction::Enum Adapt(const ViconDataStreamSDK::Core::Direction::Enum i_Direction)
+inline ViconDataStreamSDK::CPP::Direction::Enum Adapt(const ViconDataStreamSDK::Core::Direction::Enum i_Direction)
 {
   switch (i_Direction)
   {
@@ -57,7 +57,8 @@ static ViconDataStreamSDK::CPP::Direction::Enum Adapt(const ViconDataStreamSDK::
   }
 }
 
-static ViconDataStreamSDK::CPP::ServerOrientation::Enum Adapt(const ViconDataStreamSDK::Core::ServerOrientation::Enum i_Orientation)
+// This function is provided to insulate us from changes to ViconDataStreamSDK::Core::ServerOrientation::Enum
+inline ViconDataStreamSDK::CPP::ServerOrientation::Enum Adapt(const ViconDataStreamSDK::Core::ServerOrientation::Enum i_Orientation)
 {
   switch (i_Orientation)
   {
@@ -68,7 +69,8 @@ static ViconDataStreamSDK::CPP::ServerOrientation::Enum Adapt(const ViconDataStr
   }
 }
 
-static ViconDataStreamSDK::Core::ServerOrientation::Enum Adapt(const ViconDataStreamSDK::CPP::ServerOrientation::Enum i_Orientation)
+// This function is provided to insulate us from changes to ViconDataStreamSDK::Core::ServerOrientation::Enum
+inline ViconDataStreamSDK::Core::ServerOrientation::Enum Adapt(const ViconDataStreamSDK::CPP::ServerOrientation::Enum i_Orientation)
 {
   switch (i_Orientation)
   {
@@ -80,7 +82,7 @@ static ViconDataStreamSDK::Core::ServerOrientation::Enum Adapt(const ViconDataSt
 }
 
 // This function is provided to insulate us from changes to ViconDataStreamSDK::CPP::StreamMode::Enum 
-static ViconDataStreamSDK::Core::StreamMode::Enum Adapt(ViconDataStreamSDK::CPP::StreamMode::Enum i_Mode)
+inline ViconDataStreamSDK::Core::StreamMode::Enum Adapt(ViconDataStreamSDK::CPP::StreamMode::Enum i_Mode)
 {
   switch (i_Mode)
   {
@@ -90,8 +92,9 @@ static ViconDataStreamSDK::Core::StreamMode::Enum Adapt(ViconDataStreamSDK::CPP:
   case ViconDataStreamSDK::CPP::StreamMode::ServerPush: return ViconDataStreamSDK::Core::StreamMode::ServerPush;
   }
 }
+
 // This function is provided to insulate us from changes to ViconDataStreamSDK::Core::Result::Enum 
-static ViconDataStreamSDK::CPP::Result::Enum Adapt(ViconDataStreamSDK::Core::Result::Enum i_Result)
+inline ViconDataStreamSDK::CPP::Result::Enum Adapt(ViconDataStreamSDK::Core::Result::Enum i_Result)
 {
   switch (i_Result)
   {
@@ -130,7 +133,7 @@ static ViconDataStreamSDK::CPP::Result::Enum Adapt(ViconDataStreamSDK::Core::Res
 }
 
 // This function is provided to insulate us from changes to ViconDataStreamSDK::Core::TimecodeStandard::Enum 
-static ViconDataStreamSDK::CPP::TimecodeStandard::Enum Adapt(ViconDataStreamSDK::Core::TimecodeStandard::Enum i_TimecodeStandard)
+inline ViconDataStreamSDK::CPP::TimecodeStandard::Enum Adapt(ViconDataStreamSDK::Core::TimecodeStandard::Enum i_TimecodeStandard)
 {
   switch (i_TimecodeStandard)
   {
@@ -146,7 +149,7 @@ static ViconDataStreamSDK::CPP::TimecodeStandard::Enum Adapt(ViconDataStreamSDK:
 }
 
 // This function is provided to insulate us from changes to ViconDataStreamSDK::Core::DeviceType::Enum 
-static ViconDataStreamSDK::CPP::DeviceType::Enum Adapt(ViconDataStreamSDK::Core::DeviceType::Enum i_DeviceType)
+inline ViconDataStreamSDK::CPP::DeviceType::Enum Adapt(ViconDataStreamSDK::Core::DeviceType::Enum i_DeviceType)
 {
   switch (i_DeviceType)
   {
@@ -158,7 +161,7 @@ static ViconDataStreamSDK::CPP::DeviceType::Enum Adapt(ViconDataStreamSDK::Core:
 }
 
 // This function is provided to insulate us from changes to ViconDataStreamSDK::Core::Unit::Enum 
-static ViconDataStreamSDK::CPP::Unit::Enum Adapt(ViconDataStreamSDK::Core::Unit::Enum i_Unit)
+inline ViconDataStreamSDK::CPP::Unit::Enum Adapt(ViconDataStreamSDK::Core::Unit::Enum i_Unit)
 {
   switch (i_Unit)
   {

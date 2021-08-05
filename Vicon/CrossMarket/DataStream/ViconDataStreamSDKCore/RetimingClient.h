@@ -56,7 +56,7 @@ namespace ViconDataStreamSDK
     {
     public:
 
-      VRetimingClient( VClient & i_rClient );
+      VRetimingClient( std::shared_ptr<VClient> i_rClient );
       ~VRetimingClient();
 
       // Connect client to the Vicon Data Stream
@@ -142,7 +142,7 @@ namespace ViconDataStreamSDK
     private:
 
 
-      VClient & m_rClient;
+      std::shared_ptr<VClient>  m_pClient;
       
       VRetimingCore m_Retimer;
 
@@ -166,8 +166,6 @@ namespace ViconDataStreamSDK
       // Required output latency (in milliseconds)
       double m_OutputLatency;
 
-      // Debugging parameter
-      double m_FrameArrivalJitter;
     };
 
     template < typename T >

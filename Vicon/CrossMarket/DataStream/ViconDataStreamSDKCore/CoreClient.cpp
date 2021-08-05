@@ -47,10 +47,6 @@ namespace
   // Timeout for wait-for-frame operations (in milliseconds) 
   static const unsigned int s_WaitFrameTimeout = 1000;
 
-  // Number of frames to wait for before starting to log, in the hope of getting all of the
-  // columns in.
-  static const size_t s_LogPreamble = 200;
-
   // [ Start tick, End tick ) pair.
   TPeriod GetFramePeriod( const ViconCGStreamClientSDK::ICGFrameState & i_rFrame )
   {
@@ -289,6 +285,7 @@ Result::Enum VClient::Connect(       std::shared_ptr< ViconCGStreamClientSDK::IC
   m_pClient->SetRequestTypes( ViconCGStreamEnum::CentreOfPressureFrame, false );
   m_pClient->SetRequestTypes( ViconCGStreamEnum::VoltageFrame, false );
   m_pClient->SetRequestTypes( ViconCGStreamEnum::GreyscaleBlobs, false );
+  m_pClient->SetRequestTypes( ViconCGStreamEnum::GreyscaleSubsampledBlobs, false );
   m_pClient->SetRequestTypes( ViconCGStreamEnum::EdgePairs, false );
   m_pClient->SetRequestTypes( ViconCGStreamEnum::DeviceInfo, false );
   m_pClient->SetRequestTypes( ViconCGStreamEnum::DeviceInfoExtra, false );
@@ -573,7 +570,7 @@ Result::Enum VClient::GetFrameNumber( unsigned int & o_rFrameNumber ) const
   Result::Enum GetResult = Result::Success;
   if ( InitGet( GetResult, o_rFrameNumber ) )
   {
-    o_rFrameNumber = m_LatestFrame.m_Frame.m_FrameID;
+    o_rFrameNumber = m_LatestFrame.m_Frame.m_FrameID + 1;
   }
 
   return GetResult; 
@@ -942,6 +939,7 @@ Result::Enum VClient::SetCentroidDataEnabled( const bool i_bEnabled )
   }
 
   m_pClient->SetRequestTypes( ViconCGStreamEnum::CameraInfo, i_bEnabled );
+  m_pClient->SetRequestTypes( ViconCGStreamEnum::CameraSensorInfo, i_bEnabled);
   m_pClient->SetRequestTypes( ViconCGStreamEnum::Centroids, i_bEnabled );
   m_pClient->SetRequestTypes( ViconCGStreamEnum::CentroidWeights, i_bEnabled );
 
@@ -960,7 +958,9 @@ Result::Enum VClient::SetGreyscaleDataEnabled( const bool i_bEnabled )
   }
 
   m_pClient->SetRequestTypes( ViconCGStreamEnum::CameraInfo, i_bEnabled );
+  m_pClient->SetRequestTypes( ViconCGStreamEnum::CameraSensorInfo, i_bEnabled );
   m_pClient->SetRequestTypes( ViconCGStreamEnum::GreyscaleBlobs, i_bEnabled );
+  m_pClient->SetRequestTypes( ViconCGStreamEnum::GreyscaleSubsampledBlobs, i_bEnabled );
 
   m_bGreyscaleDataEnabled = i_bEnabled;
   return Result::Success;
@@ -990,6 +990,7 @@ Result::Enum VClient::SetCameraWand2dDataEnabled( const bool i_bEnabled )
   }
 
   m_pClient->SetRequestTypes( ViconCGStreamEnum::CameraInfo, i_bEnabled );
+  m_pClient->SetRequestTypes( ViconCGStreamEnum::CameraSensorInfo, i_bEnabled);
   m_pClient->SetRequestTypes( ViconCGStreamEnum::CameraWand2d, i_bEnabled );
   m_bCameraWand2dDataEnabled = i_bEnabled;
   return Result::Success;
@@ -1005,6 +1006,7 @@ Result::Enum VClient::SetVideoDataEnabled( const bool i_bEnabled )
   }
 
   m_pClient->SetRequestTypes( ViconCGStreamEnum::CameraInfo, i_bEnabled );
+  m_pClient->SetRequestTypes( ViconCGStreamEnum::CameraSensorInfo, i_bEnabled);
   m_pClient->SetRequestTypes( ViconCGStreamEnum::VideoFrame, i_bEnabled );
 
   m_bVideoDataEnabled = i_bEnabled;
@@ -2732,16 +2734,33 @@ const ViconCGStream::VGreyscaleBlobs  * VClient::GetGreyscaleBlobs( const unsign
 {
   boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
 
-  const auto rGreyscaleBlobIt = std::find_if( m_LatestFrame.m_GreyscaleBlobs.begin(), m_LatestFrame.m_GreyscaleBlobs.end(),
-                                              [&i_CameraID]( const ViconCGStream::VGreyscaleBlobs & rSet )
+  // First look in the subsampled blobs.
+  // When the camera information contains the subsampling mode, we will be able to tell where the data should be and give an appropriate error
+  // if it isn't, but for now, look in both places
+  const auto rGreyscaleSubsampledBlobIt = std::find_if( m_LatestFrame.m_GreyscaleSubsampledBlobs.begin(), m_LatestFrame.m_GreyscaleSubsampledBlobs.end(),
+                                              [&i_CameraID](const ViconCGStream::VGreyscaleSubsampledBlobs & rSet )
                                               {
                                                 return rSet.m_CameraID == i_CameraID;
-                                              } );
-
-  if( rGreyscaleBlobIt != m_LatestFrame.m_GreyscaleBlobs.end() )
+                                              });
+  if (rGreyscaleSubsampledBlobIt != m_LatestFrame.m_GreyscaleSubsampledBlobs.end())
   {
     o_rResult = Result::Success;
-    return &(*rGreyscaleBlobIt);
+    return &(*rGreyscaleSubsampledBlobIt);
+  }
+  else
+  {
+    const auto rGreyscaleBlobIt = std::find_if(m_LatestFrame.m_GreyscaleBlobs.begin(), m_LatestFrame.m_GreyscaleBlobs.end(),
+      [&i_CameraID](const ViconCGStream::VGreyscaleBlobs & rSet)
+    {
+      return rSet.m_CameraID == i_CameraID;
+    });
+
+
+    if (rGreyscaleBlobIt != m_LatestFrame.m_GreyscaleBlobs.end())
+    {
+      o_rResult = Result::Success;
+      return &(*rGreyscaleBlobIt);
+    }
   }
 
   o_rResult = Result::InvalidIndex;
@@ -4432,6 +4451,26 @@ const ViconCGStream::VCameraInfo * VClient::GetCamera( const std::string & i_rCa
   return nullptr;
 }
 
+const ViconCGStream::VCameraSensorInfo * VClient::GetCameraSensorInfo(unsigned int i_CameraID, Result::Enum & o_rResult) const
+{
+  boost::recursive_mutex::scoped_lock Lock(m_FrameMutex);
+
+  const auto rCameraIt =
+    std::find_if(m_LatestFrame.m_CamerasSensorInfo.begin(), m_LatestFrame.m_CamerasSensorInfo.end(),
+      [&i_CameraID ](const ViconCGStream::VCameraSensorInfo & rCameraSensorInfo )
+  { return rCameraSensorInfo.m_CameraID == i_CameraID; }
+  );
+
+  if (rCameraIt != m_LatestFrame.m_CamerasSensorInfo.end())
+  {
+    o_rResult = Result::Success;
+    return &(*rCameraIt);
+  }
+
+  o_rResult = Result::NotPresent;
+  return nullptr;
+}
+
 
 Result::Enum VClient::GetCameraID( const std::string & i_rCameraName, unsigned int & o_rCameraID ) const
 {
@@ -4492,6 +4531,58 @@ Result::Enum VClient::GetCameraDisplayName( const std::string & i_rCameraName, s
   return GetResult;
 }
 
+Result::Enum VClient::GetCameraSensorMode(const std::string & i_rCameraName, std::string & o_rMode) const
+{
+  boost::recursive_mutex::scoped_lock Lock(m_FrameMutex);
+
+  Result::Enum GetResult = Result::Success;
+  if (InitGet (GetResult, o_rMode ))
+  {
+    const ViconCGStream::VCameraInfo* pCamera = GetCamera(i_rCameraName, GetResult);
+    if (!pCamera)
+    {
+      return GetResult;
+    }
+
+    const ViconCGStream::VCameraSensorInfo * pCameraSensorInfo = GetCameraSensorInfo(pCamera->m_CameraID, GetResult);
+    if (!pCameraSensorInfo)
+    {
+      return GetResult;
+    }
+
+    o_rMode = pCameraSensorInfo->m_SensorMode;
+  }
+
+  return GetResult;
+}
+
+Result::Enum VClient::GetCameraWindowSize(const std::string & i_rCameraName, unsigned int & o_rWindowOffsetX, unsigned int & o_rWindowOffsetY, unsigned int & o_rWindowWidth, unsigned int & o_rWindowHeight) const
+{
+  boost::recursive_mutex::scoped_lock Lock(m_FrameMutex);
+
+  Result::Enum GetResult = Result::Success;
+  if (InitGet(GetResult, o_rWindowOffsetX, o_rWindowOffsetY, o_rWindowWidth, o_rWindowHeight ))
+  {
+    const ViconCGStream::VCameraInfo* pCamera = GetCamera(i_rCameraName, GetResult);
+    if (!pCamera)
+    {
+      return GetResult;
+    }
+
+    const ViconCGStream::VCameraSensorInfo * pCameraSensorInfo = GetCameraSensorInfo(pCamera->m_CameraID, GetResult);
+    if (!pCameraSensorInfo)
+    {
+      return GetResult;
+    }
+
+    o_rWindowOffsetX = pCameraSensorInfo->m_WindowOffsetX;
+    o_rWindowOffsetY = pCameraSensorInfo->m_WindowOffsetY;
+    o_rWindowWidth = pCameraSensorInfo->m_WindowWidth;
+    o_rWindowHeight = pCameraSensorInfo->m_WindowHeight;
+  }
+
+  return GetResult;
+}
 
 Result::Enum VClient::GetCameraResolution( const std::string & i_rCameraName, unsigned int & o_rResolutionX, unsigned int & o_rResolutionY ) const
 {
@@ -4647,6 +4738,34 @@ Result::Enum VClient::GetGreyscaleBlobCount( const std::string & i_rCameraName, 
   return GetResult;
 }
 
+Result::Enum VClient::GetGreyscaleBlobSubsampleInfo(const std::string & i_rCameraName,
+  unsigned short & o_rTwiceOffsetX,
+  unsigned short & o_rTwiceOffsetY,
+  unsigned char & o_rSensorPixelsPerImagePixelX,
+  unsigned char & o_rSensorPixelsPerImagePixelY) const
+{
+  boost::recursive_mutex::scoped_lock Lock(m_FrameMutex);
+
+  Result::Enum GetResult = Result::Success;
+  if (InitGet(GetResult, o_rTwiceOffsetX, o_rTwiceOffsetX, o_rSensorPixelsPerImagePixelX, o_rSensorPixelsPerImagePixelY ) )
+  {
+    const ViconCGStream::VCameraInfo* pCamera = GetCamera(i_rCameraName, GetResult);
+    if (!pCamera)
+    {
+      return GetResult;
+    }
+
+    const ViconCGStream::VGreyscaleBlobs * pBlobSet = GetGreyscaleBlobs(pCamera->m_CameraID, GetResult);
+    if (pBlobSet)
+    {
+      o_rTwiceOffsetX = pBlobSet->m_TwiceOffsetX;
+      o_rTwiceOffsetY = pBlobSet->m_TwiceOffsetY;
+      o_rSensorPixelsPerImagePixelX = pBlobSet->m_SensorPixelsPerImagePixelX;
+      o_rSensorPixelsPerImagePixelY = pBlobSet->m_SensorPixelsPerImagePixelY;
+    }
+  }
+  return GetResult;
+}
 
 Result::Enum VClient::GetGreyscaleBlob( const std::string & i_rCameraName,
                                         const unsigned int i_BlobIndex,
@@ -4718,6 +4837,11 @@ Result::Enum VClient::SetCameraFilter( const std::vector< unsigned int > & i_rCa
                                        const std::vector< unsigned int > & i_rCameraIdsForVideo )
 {
   boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
+
+  if( !IsConnected() )
+  {
+    return Result::NotConnected;
+  }
 
   // Clear any current filters on supported camera data types
   m_Filter.Clear( ViconCGStreamEnum::Centroids );

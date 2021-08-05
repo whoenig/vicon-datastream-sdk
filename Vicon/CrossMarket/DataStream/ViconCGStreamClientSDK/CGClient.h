@@ -46,39 +46,39 @@ public:
   virtual ~VCGClient();
 
   // ICGClient
-  virtual void Destroy();
+  virtual void Destroy() override;
   virtual void Connect( std::string i_IPAddress, unsigned short i_Port ) override;
   virtual void Connect( const std::vector< std::pair< std::string, unsigned short > > & i_rHosts ) override;
-  virtual void ReceiveMulticastData( std::string i_MulticastIPAddress, std::string i_LocalIPAddress, unsigned short i_Port );
-  virtual void StopReceivingMulticastData( );
+  virtual void ReceiveMulticastData( std::string i_MulticastIPAddress, std::string i_LocalIPAddress, unsigned short i_Port ) override;
+  virtual void StopReceivingMulticastData( ) override;
 
-  virtual bool IsConnected() const;
-  virtual bool IsMulticastReceiving() const;
+  virtual bool IsConnected() const override;
+  virtual bool IsMulticastReceiving() const override;
 
-  virtual bool SetRequestTypes( ViconCGStreamType::Enum i_RequestedType, bool i_bEnable = true);
-  virtual void SetBufferSize( unsigned int i_MaxFrames );
-  virtual void SetDecodeVideo( bool i_bDecode );
-  virtual void SetStreamMode( bool i_bStream );
-  virtual void SetServerToTransmitMulticast( std::string i_MulticastIPAddress, std::string i_ServerIPAddress, unsigned short i_Port );
-  virtual void StopMulticastTransmission();
-  virtual bool IsMulticastController() const;
+  virtual bool SetRequestTypes( ViconCGStreamType::Enum i_RequestedType, bool i_bEnable = true) override;
+  virtual void SetBufferSize( unsigned int i_MaxFrames ) override;
+  virtual void SetDecodeVideo( bool i_bDecode ) override;
+  virtual void SetStreamMode( bool i_bStream ) override;
+  virtual void SetServerToTransmitMulticast( std::string i_MulticastIPAddress, std::string i_ServerIPAddress, unsigned short i_Port ) override;
+  virtual void StopMulticastTransmission() override;
+  virtual bool IsMulticastController() const override;
 
-  virtual bool PollFrames( std::vector< ICGFrameState > & o_rFrames );
-  virtual bool PollFrame( ICGFrameState& o_rFrame );
+  virtual bool PollFrames( std::vector< ICGFrameState > & o_rFrames ) override;
+  virtual bool PollFrame( ICGFrameState& o_rFrame ) override;
 
-  virtual bool WaitFrames( std::vector< ICGFrameState > & o_rFrames, unsigned int i_TimeoutMs );
-  virtual bool WaitFrame( ICGFrameState& o_rFrame, unsigned int i_TimeoutMs );
+  virtual bool WaitFrames( std::vector< ICGFrameState > & o_rFrames, unsigned int i_TimeoutMs ) override;
+  virtual bool WaitFrame( ICGFrameState& o_rFrame, unsigned int i_TimeoutMs ) override;
 
   // maintains a list of devices with haptic feedback on. 
   // if on add to the list,
   // if off delete from the list if existed in the list.
-  virtual bool SetApexDeviceFeedback( unsigned int i_DeviceID, bool i_bOn );
+  virtual bool SetApexDeviceFeedback( unsigned int i_DeviceID, bool i_bOn ) override;
 
   /// Allows filtering of items in a group, e.g. only get centroids for a given camera id, etc.
-  virtual void SetFilter( const ViconCGStream::VFilter & i_rFilter );
+  virtual void SetFilter( const ViconCGStream::VFilter & i_rFilter ) override;
 
-  virtual void SendPing();
-  virtual bool SetLogFile( const std::string& i_rLog );
+  virtual void SendPing() override;
+  virtual bool SetLogFile( const std::string& i_rLog ) override;
 
   virtual void RequestFrame() override;
   virtual void RequestNextFrame() override;

@@ -910,6 +910,23 @@ namespace Result
     bool IsVideoCamera;
   };
 
+  class Output_GetCameraSensorMode
+  {
+  public:
+    Result::Enum Result;
+    String SensorMode;
+  };
+
+  class Output_GetCameraWindowSize
+  {
+  public:
+    Result::Enum Result;
+    unsigned int WindowStartX;
+    unsigned int WindowStartY;
+    unsigned int WindowWidth;
+    unsigned int WindowHeight;
+  };
+
   class Output_GetCentroidCount
   {
   public:
@@ -939,6 +956,17 @@ namespace Result
     Result::Enum Result;
     unsigned int BlobCount;
   };
+
+  class Output_GetGreyscaleBlobSubsampleInfo
+  {
+  public:
+    Result::Enum Result;
+    unsigned short TwiceOffsetX;
+    unsigned short TwiceOffsetY;
+    unsigned char  SensorPixelsPerImagePixelX;
+    unsigned char  SensorPixelsPerImagePixelY;
+  };
+
 
   class Output_GetGreyscaleBlob
   {

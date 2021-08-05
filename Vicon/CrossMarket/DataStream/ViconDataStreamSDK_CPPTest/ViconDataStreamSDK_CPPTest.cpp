@@ -1203,6 +1203,33 @@ int main( int argc, char* argv[] )
           {
             unsigned int BlobCount = MyClient.GetGreyscaleBlobCount(CameraName).BlobCount;
             OutputStream << "    Blobs(" << BlobCount << "):" << std::endl;
+
+            Output_GetCameraSensorMode _Output_SensorMode = MyClient.GetCameraSensorMode(CameraName);
+            if (_Output_SensorMode.Result == Result::Success)
+            {
+              OutputStream << "   SensorMode( " << _Output_SensorMode.SensorMode << "):" << std::endl;
+            }
+
+            Output_GetCameraWindowSize _Output_CameraWindowSize = MyClient.GetCameraWindowSize(CameraName);
+            if (_Output_CameraWindowSize.Result == Result::Success)
+            {
+              OutputStream << "   WindowSize( "
+                << _Output_CameraWindowSize.WindowStartX << ", "
+                << _Output_CameraWindowSize.WindowStartY<< ", "
+                << _Output_CameraWindowSize.WindowWidth << ", "
+                << _Output_CameraWindowSize.WindowHeight << " ):" << std::endl;
+            }
+
+            Output_GetGreyscaleBlobSubsampleInfo _Output_SubsampleInfo = MyClient.GetGreyscaleBlobSubsampleInfo(CameraName);
+            if( _Output_SubsampleInfo.Result == Result::Success )
+            {
+              OutputStream << "   Subsampling( "
+                << _Output_SubsampleInfo.TwiceOffsetX << ", "
+                << _Output_SubsampleInfo.TwiceOffsetY << ", "
+                << static_cast< unsigned int >( _Output_SubsampleInfo.SensorPixelsPerImagePixelX ) << ", "
+                << static_cast<unsigned int>( _Output_SubsampleInfo.SensorPixelsPerImagePixelY ) << " ):" << std::endl;
+            }
+
             for (unsigned int BlobIndex = 0; BlobIndex < BlobCount; ++BlobIndex)
             {
               OutputStream << "      Blob #" << BlobIndex << ":" << std::endl;

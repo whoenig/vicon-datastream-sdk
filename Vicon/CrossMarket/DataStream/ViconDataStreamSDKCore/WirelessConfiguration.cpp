@@ -253,13 +253,13 @@ VWirelessConfiguration::~VWirelessConfiguration()
 {
 }
 
-bool VWirelessConfiguration::BackgroundScan( std::string& o_rError, bool i_Enable )
+bool VWirelessConfiguration::BackgroundScan( std::string& o_rError, [[maybe_unused]] bool i_Enable )
 {
   o_rError = "Supported on Windows only.";
   return false;
 }
 
-bool VWirelessConfiguration::StreamingMode( std::string& o_rError, bool i_Enable )
+bool VWirelessConfiguration::StreamingMode( std::string& o_rError, [[maybe_unused]] bool i_Enable )
 {
   o_rError = "Supported on Windows only.";
   return false;

@@ -38,6 +38,10 @@ namespace ClientUtils
 
   void Clear( unsigned int & o_rValue );
 
+  void Clear( unsigned short & o_rValue );
+
+  void Clear( unsigned char & o_rValue );
+
   void Clear( double & o_rValue );
 
   void Clear( std::string & o_rValue );

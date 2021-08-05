@@ -47,6 +47,16 @@ namespace ClientUtils
     o_rValue = 0;
   }
 
+  void Clear(unsigned short & o_rValue)
+  {
+    o_rValue = 0;
+  }
+
+  void Clear(unsigned char & o_rValue)
+  {
+    o_rValue = 0;
+  }
+
   void Clear( double & o_rValue )
   {
     o_rValue = 0.0;

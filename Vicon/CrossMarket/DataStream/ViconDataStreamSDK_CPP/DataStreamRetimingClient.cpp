@@ -45,7 +45,7 @@ namespace ViconDataStreamSDK
     public:
       RetimingClientImpl()
         : m_pCoreClient(new ViconDataStreamSDK::Core::VClient())
-        , m_pCoreRetimingClient(new ViconDataStreamSDK::Core::VRetimingClient(*m_pCoreClient))
+        , m_pCoreRetimingClient(new ViconDataStreamSDK::Core::VRetimingClient(m_pCoreClient))
         , m_pStringFactory(new VStringFactory())
       {
       }

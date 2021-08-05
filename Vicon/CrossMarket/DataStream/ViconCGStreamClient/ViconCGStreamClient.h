@@ -36,6 +36,7 @@
 #include <ViconCGStream/CameraCalibrationHealth.h>
 #include <ViconCGStream/CameraCalibrationInfo.h>
 #include <ViconCGStream/CameraInfo.h>
+#include <ViconCGStream/CameraSensorInfo.h>
 #include <ViconCGStream/SubjectScale.h>
 #include <ViconCGStream/ChannelInfo.h>
 #include <ViconCGStream/DeviceInfo.h>
@@ -62,6 +63,7 @@
 #include <ViconCGStream/FrameRateInfo.h>
 #include <ViconCGStream/GlobalSegments.h>
 #include <ViconCGStream/GreyscaleBlobs.h>
+#include <ViconCGStream/GreyscaleSubsampledBlobs.h>
 #include <ViconCGStream/HardwareFrameInfo.h>
 #include <ViconCGStream/LabeledReconRayAssignments.h>
 #include <ViconCGStream/LabeledRecons.h>
@@ -96,6 +98,7 @@ public:
   boost::optional< ViconCGStream::VApplicationInfo > m_ApplicationInfo;
 
   typedef std::vector< ViconCGStream::VCameraInfo > TCameraInfo;
+  typedef std::vector< ViconCGStream::VCameraSensorInfo > TCameraSensorInfo;
   typedef std::vector< ViconCGStream::VCameraCalibrationInfo > TCameraCalibrationInfo;
   typedef std::shared_ptr< ViconCGStream::VCameraCalibrationHealth > TCameraCalibrationHealth;
   typedef std::vector< ViconCGStream::VSubjectInfo > TSubjectInfo;
@@ -114,6 +117,7 @@ public:
   typedef std::map< TNestedIDPair, unsigned int > TNestedIndexMap;
 
   TCameraInfo m_CameraInfo;
+  TCameraSensorInfo m_CameraSensorInfo;
   TCameraCalibrationInfo m_CameraCalibrationInfo;
   TCameraCalibrationHealth m_pCameraCalibrationHealth;
   TSubjectInfo m_SubjectInfo;
@@ -135,6 +139,7 @@ public:
   TNestedIndexMap m_ChannelMap;
 
   ViconCGStream::VCameraInfo& AddCameraInfo();
+  ViconCGStream::VCameraSensorInfo& AddCameraSensorInfo();
   ViconCGStream::VCameraCalibrationInfo& AddCameraCalibrationInfo();
   ViconCGStream::VCameraCalibrationHealth& ResetCameraCalibrationHealth();
   ViconCGStream::VSubjectInfo& AddSubjectInfo();
@@ -173,6 +178,7 @@ public:
   std::vector< ViconCGStream::VGlobalSegments > m_GlobalSegments;
   std::vector< ViconCGStream::VLightweightSegments > m_LightweightSegments;
   std::vector< ViconCGStream::VGreyscaleBlobs > m_GreyscaleBlobs;
+  std::vector< ViconCGStream::VGreyscaleSubsampledBlobs > m_GreyscaleSubsampledBlobs;
   std::vector< ViconCGStream::VEdgePairs > m_EdgePairs;
   std::vector< ViconCGStream::VForceFrame > m_ForceFrames;
   std::vector< ViconCGStream::VMomentFrame > m_MomentFrames;
@@ -190,6 +196,7 @@ public:
   ViconCGStream::VGlobalSegments& AddGlobalSegments();
   ViconCGStream::VLightweightSegments& AddLightweightSegments();
   ViconCGStream::VGreyscaleBlobs& AddGreyscaleBlobs();
+  ViconCGStream::VGreyscaleSubsampledBlobs& AddGreyscaleSubsampledBlobs();
   ViconCGStream::VEdgePairs& AddEdgePairs();
   ViconCGStream::VForceFrame& AddForceFrame();
   ViconCGStream::VMomentFrame& AddMomentFrame();

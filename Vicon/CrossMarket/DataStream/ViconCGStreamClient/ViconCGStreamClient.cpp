@@ -58,8 +58,6 @@ namespace
   // Send buffer size.
   const size_t s_SocketBufferSize = 4 * 1024 * 1024;
 
-  const size_t s_GetFrameMaxSize = 20;
-
   // Number of pings to use to keep average
   const size_t s_MaxPings = 20;
 
@@ -109,6 +107,12 @@ ViconCGStream::VGreyscaleBlobs& VDynamicObjects::AddGreyscaleBlobs()
 {
   m_GreyscaleBlobs.push_back( ViconCGStream::VGreyscaleBlobs() );
   return m_GreyscaleBlobs.back();
+}
+
+ViconCGStream::VGreyscaleSubsampledBlobs& VDynamicObjects::AddGreyscaleSubsampledBlobs()
+{
+  m_GreyscaleSubsampledBlobs.push_back(ViconCGStream::VGreyscaleSubsampledBlobs());
+  return m_GreyscaleSubsampledBlobs.back();
 }
 
 ViconCGStream::VEdgePairs& VDynamicObjects::AddEdgePairs()
@@ -179,6 +183,12 @@ ViconCGStream::VCameraInfo& VStaticObjects::AddCameraInfo()
 {
   m_CameraInfo.resize( m_CameraInfo.size() + 1 );
   return m_CameraInfo.back();
+}
+
+ViconCGStream::VCameraSensorInfo& VStaticObjects::AddCameraSensorInfo()
+{
+  m_CameraSensorInfo.resize(m_CameraSensorInfo.size() + 1);
+  return m_CameraSensorInfo.back();
 }
 
 ViconCGStream::VCameraCalibrationInfo& VStaticObjects::AddCameraCalibrationInfo()
@@ -642,8 +652,8 @@ void VViconCGStreamClient::SetServerToTransmitMulticast( std::string i_Multicast
     boost::asio::ip::address_v4 MulticastAddress = FirstV4AddressFromString( i_MulticastIPAddress );
     boost::asio::ip::address_v4 ServerAddress = FirstV4AddressFromString( i_ServerIPAddress );
 
-    RequestMulticast.m_MulticastIpAddress = MulticastAddress.to_ulong();
-    RequestMulticast.m_SourceIpAddress = ServerAddress.to_ulong();
+    RequestMulticast.m_MulticastIpAddress = static_cast< ViconCGStreamType::UInt32 >( MulticastAddress.to_ulong() );
+    RequestMulticast.m_SourceIpAddress = static_cast< ViconCGStreamType::UInt32 >( ServerAddress.to_ulong() );
     RequestMulticast.m_Port = i_Port;
 
     Objects.Write( RequestMulticast );
@@ -891,6 +901,9 @@ void VViconCGStreamClient::CopyObjects( const ViconCGStream::VContents& i_rConte
     case ViconCGStreamEnum::CameraInfo:
       o_rStaticObjects.m_CameraInfo = i_rStaticObjects.m_CameraInfo;
       break;
+    case ViconCGStreamEnum::CameraSensorInfo:
+      o_rStaticObjects.m_CameraSensorInfo = i_rStaticObjects.m_CameraSensorInfo;
+      break;
     case ViconCGStreamEnum::CameraCalibrationInfo:
       o_rStaticObjects.m_CameraCalibrationInfo = i_rStaticObjects.m_CameraCalibrationInfo;
       break;
@@ -983,6 +996,9 @@ void VViconCGStreamClient::CopyObjects( const ViconCGStream::VContents& i_rConte
       break;
     case ViconCGStreamEnum::GreyscaleBlobs:
       o_rDynamicObjects.m_GreyscaleBlobs = i_rDynamicObjects.m_GreyscaleBlobs;
+      break;
+    case ViconCGStreamEnum::GreyscaleSubsampledBlobs:
+      o_rDynamicObjects.m_GreyscaleSubsampledBlobs = i_rDynamicObjects.m_GreyscaleSubsampledBlobs;
       break;
     case ViconCGStreamEnum::EdgePairs:
       o_rDynamicObjects.m_EdgePairs = i_rDynamicObjects.m_EdgePairs;
@@ -1111,6 +1127,15 @@ bool VViconCGStreamClient::ReadObjects( VCGStreamReaderWriter& i_rReaderWriter )
       if( !pStaticObjects )
         pStaticObjects.reset( new VStaticObjects() );
       if( !Object.Read( pStaticObjects->AddCameraInfo() ) )
+      {
+        return false;
+      }
+
+      break;
+    case ViconCGStreamEnum::CameraSensorInfo:
+      if (!pStaticObjects)
+        pStaticObjects.reset(new VStaticObjects());
+      if (!Object.Read(pStaticObjects->AddCameraSensorInfo()))
       {
         return false;
       }
@@ -1338,6 +1363,15 @@ bool VViconCGStreamClient::ReadObjects( VCGStreamReaderWriter& i_rReaderWriter )
       if( !pDynamicObjects )
         pDynamicObjects.reset( new VDynamicObjects() );
       if( !Object.Read( pDynamicObjects->AddGreyscaleBlobs() ) )
+      {
+        return false;
+      }
+
+      break;
+    case ViconCGStreamEnum::GreyscaleSubsampledBlobs:
+      if (!pDynamicObjects)
+        pDynamicObjects.reset(new VDynamicObjects());
+      if (!Object.Read(pDynamicObjects->AddGreyscaleSubsampledBlobs()))
       {
         return false;
       }

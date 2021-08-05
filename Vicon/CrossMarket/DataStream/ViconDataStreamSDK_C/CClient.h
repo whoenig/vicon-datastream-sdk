@@ -295,10 +295,13 @@ CDLL_EXPORT CEnum Client_DisableMarkerRayData( CClient* client );
 CDLL_EXPORT CEnum Client_DisableCentroidData( CClient* client );
 CDLL_EXPORT CEnum Client_DisableGreyscaleData( CClient* client );
 CDLL_EXPORT CEnum Client_DisableDebugData( CClient* client );
+
 CDLL_EXPORT CBool Client_IsMarkerRayDataEnabled( CClient* client );
 CDLL_EXPORT CBool Client_IsCentroidDataEnabled( CClient* client );
 CDLL_EXPORT CBool Client_IsGreyscaleDataEnabled( CClient* client );
+CDLL_EXPORT CBool Client_IsVideoDataEnabled( CClient* client );
 CDLL_EXPORT CBool Client_IsDebugDataEnabled( CClient* client );
+CDLL_EXPORT void Client_SetBufferSize( CClient* client, unsigned int bufferSize );
 
 CDLL_EXPORT void Client_GetServerOrientation( CClient* client, COutput_GetServerOrientation* outptr );
 CDLL_EXPORT void Client_GetHardwareFrameNumber( CClient* client, COutput_GetHardwareFrameNumber* outptr );

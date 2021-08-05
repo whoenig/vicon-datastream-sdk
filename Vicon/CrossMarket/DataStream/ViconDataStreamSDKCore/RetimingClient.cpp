@@ -26,10 +26,16 @@
 #include "CoreClient.h"
 #include "RetimerUtils.h"
 
+#ifdef WIN32
 #pragma warning ( push )
 #pragma warning ( disable : 4265 )
+#endif
+
 #include <thread>
+
+#ifdef WIN32
 #pragma warning ( pop )
+#endif
 
 #include <algorithm>
 #include <iostream>
@@ -58,14 +64,11 @@ namespace ViconDataStreamSDK
       return Result::Unknown;
     }
 
-    static unsigned int s_BufSize = 3;
-
-    VRetimingClient::VRetimingClient(VClient & i_rClient)
-      : m_rClient(i_rClient)
+    VRetimingClient::VRetimingClient(std::shared_ptr<VClient> i_rClient)
+      : m_pClient(i_rClient)
       , m_bInputStopped(false)
       , m_bOutputStopped(false)
       , m_OutputLatency(0.0)
-      , m_FrameArrivalJitter(0.0)
     {
       // Store a relative start time for our timestamps
       m_Epoch = hrc::now();
@@ -84,9 +87,9 @@ namespace ViconDataStreamSDK
     {
 
       // We can afford to buffer a little, as it doesn't matter if frames come in at once.
-      m_rClient.SetBufferSize(10);
+      m_pClient->SetBufferSize(10);
 
-      Result::Enum Result = m_rClient.Connect(i_pClient, i_rHostName);
+      Result::Enum Result = m_pClient->Connect(i_pClient, i_rHostName);
 
       if( Result == Result::Success )
       {
@@ -94,15 +97,15 @@ namespace ViconDataStreamSDK
         if( i_bLightweight )
         {
           // Use lightweight mode
-          m_rClient.EnableLightweightSegmentData();
+          m_pClient->EnableLightweightSegmentData();
         }
         else
         {
-          m_rClient.EnableSegmentData();
+          m_pClient->EnableSegmentData();
         }
 
         // We need to work in server push mode
-        m_rClient.SetStreamMode(StreamMode::ServerPush);
+        m_pClient->SetStreamMode(StreamMode::ServerPush);
 
         // Start frame acquisition thread
         m_pInputThread.reset(new boost::thread(std::bind(&VRetimingClient::InputThread, this)));
@@ -120,7 +123,7 @@ namespace ViconDataStreamSDK
       // Stop input thread
       StopInput();
 
-      return m_rClient.Disconnect();
+      return m_pClient->Disconnect();
     }
 
 
@@ -139,7 +142,7 @@ namespace ViconDataStreamSDK
       unsigned int RunInPeriod = 20;
       while( FrameCount < RunInPeriod )
       {
-        m_rClient.GetFrame();
+        m_pClient->GetFrame();
         ++FrameCount;
       }
 
@@ -153,7 +156,7 @@ namespace ViconDataStreamSDK
       }
       else
       {
-        m_rClient.GetFrameRate(FrameRate);
+        m_pClient->GetFrameRate(FrameRate);
       }
 
 
@@ -205,7 +208,7 @@ namespace ViconDataStreamSDK
       o_rResult = Result::Success;
 
       unsigned int SubjectCount = 0;
-      if( !m_rClient.IsConnected() )
+      if( !m_pClient->IsConnected() )
       {
         o_rResult = Result::NotConnected;
       }
@@ -804,11 +807,11 @@ namespace ViconDataStreamSDK
     {
       while( !m_bInputStopped )
       {
-        if( m_rClient.IsConnected() )
+        if( m_pClient->IsConnected() )
         {
 
           // Get a frame
-          while( m_rClient.GetFrame() != Result::Success && m_rClient.IsConnected() )
+          while( m_pClient->GetFrame() != Result::Success && m_pClient->IsConnected() )
           {
             // Sleep a little so that we don't lumber the CPU with a busy poll
 #ifdef WIN32
@@ -821,15 +824,15 @@ namespace ViconDataStreamSDK
           // Get the system latencies as individual components for debugging
           std::map< std::string, double > Latencies;
           unsigned int LatencySampleCount;
-          if( m_rClient.GetLatencySampleCount(LatencySampleCount) == Result::Success )
+          if( m_pClient->GetLatencySampleCount(LatencySampleCount) == Result::Success )
           {
             for( unsigned int SampleIndex = 0; SampleIndex < LatencySampleCount; ++SampleIndex )
             {
               std::string SampleName;
-              if( m_rClient.GetLatencySampleName(SampleIndex, SampleName) == Result::Success )
+              if( m_pClient->GetLatencySampleName(SampleIndex, SampleName) == Result::Success )
               {
                 double SampleValue = 0;
-                if( m_rClient.GetLatencySampleValue(SampleName, SampleValue) == Result::Success )
+                if( m_pClient->GetLatencySampleValue(SampleName, SampleValue) == Result::Success )
                 {
                   Latencies[SampleName] = SampleValue;
                 }
@@ -839,8 +842,8 @@ namespace ViconDataStreamSDK
 
           unsigned int FrameNumber;
           double FrameRateHz;
-          Result::Enum FrameNumberResult = m_rClient.GetFrameNumber(FrameNumber);
-          Result::Enum FrameRateResult = m_rClient.GetFrameRate(FrameRateHz);
+          Result::Enum FrameNumberResult = m_pClient->GetFrameNumber(FrameNumber);
+          Result::Enum FrameRateResult = m_pClient->GetFrameRate(FrameRateHz);
 
           if( FrameNumberResult == Result::Success && FrameRateResult == Result::Success )
           {
@@ -855,7 +858,7 @@ namespace ViconDataStreamSDK
 
             // Count the number of subjects
             unsigned int SubjectCount;
-            m_rClient.GetSubjectCount(SubjectCount);
+            m_pClient->GetSubjectCount(SubjectCount);
             for( unsigned int SubjectIndex = 0; SubjectIndex < SubjectCount; ++SubjectIndex )
             {
 
@@ -870,22 +873,22 @@ namespace ViconDataStreamSDK
 
               // Get the subject name
               std::string SubjectName;
-              m_rClient.GetSubjectName(SubjectIndex, SubjectName);
+              m_pClient->GetSubjectName(SubjectIndex, SubjectName);
 
               // Get the root segment
               std::string RootSegment;
-              m_rClient.GetSubjectRootSegmentName(SubjectName, RootSegment);
+              m_pClient->GetSubjectRootSegmentName(SubjectName, RootSegment);
 
               pPoseData->Name = SubjectName;
               pPoseData->RootSegment = RootSegment;
 
               // Count the number of segments
               unsigned int SegmentCount;
-              m_rClient.GetSegmentCount(SubjectName, SegmentCount);
+              m_pClient->GetSegmentCount(SubjectName, SegmentCount);
               for( unsigned int SegmentIndex = 0; SegmentIndex < SegmentCount; ++SegmentIndex )
               {
                 std::string SegmentName;
-                m_rClient.GetSegmentName(SubjectName, SegmentIndex, SegmentName);
+                m_pClient->GetSegmentName(SubjectName, SegmentIndex, SegmentName);
 
                 pPoseData->m_SegmentNames.push_back( SegmentName );
 
@@ -894,19 +897,19 @@ namespace ViconDataStreamSDK
 
                 // Get our parent name (if we have one)
                 std::string ParentName;
-                if( m_rClient.GetSegmentParentName(SubjectName, SegmentName, ParentName) == Result::Success )
+                if( m_pClient->GetSegmentParentName(SubjectName, SegmentName, ParentName) == Result::Success )
                 {
                   pSegmentPoseData->Parent = ParentName;
                 }
 
                 // Add some information about the children of this segment
                 unsigned int ChildSegmentCount;
-                if( m_rClient.GetSegmentChildCount(SubjectName, SegmentName, ChildSegmentCount) == Result::Success )
+                if( m_pClient->GetSegmentChildCount(SubjectName, SegmentName, ChildSegmentCount) == Result::Success )
                 {
                   for( unsigned int ChildSegmentIndex = 0; ChildSegmentIndex < ChildSegmentCount; ++ChildSegmentIndex )
                   {
                     std::string ChildSegmentName;
-                    if( m_rClient.GetSegmentChildName(SubjectName, SegmentName, ChildSegmentIndex, ChildSegmentName) == Result::Success )
+                    if( m_pClient->GetSegmentChildName(SubjectName, SegmentName, ChildSegmentIndex, ChildSegmentName) == Result::Success )
                     {
                       pSegmentPoseData->m_Children.push_back(ChildSegmentName);
                     }
@@ -916,37 +919,37 @@ namespace ViconDataStreamSDK
                 // Get the global segment translation
                 bool bOccluded = false;
                 double Translation[3];
-                m_rClient.GetSegmentGlobalTranslation(SubjectName, SegmentName, Translation, bOccluded);
+                m_pClient->GetSegmentGlobalTranslation(SubjectName, SegmentName, Translation, bOccluded);
                 std::copy(Translation, Translation + 3, pSegmentPoseData->T.begin());
 
                 // Get the global segment rotation in quaternion co-ordinates
                 double Rotation[4];
-                m_rClient.GetSegmentGlobalRotationQuaternion(SubjectName, SegmentName, Rotation, bOccluded);
+                m_pClient->GetSegmentGlobalRotationQuaternion(SubjectName, SegmentName, Rotation, bOccluded);
                 std::copy(Rotation, Rotation + 4, pSegmentPoseData->R.begin());
 
                 // Get local translation
                 double LocalTranslation[3];
-                m_rClient.GetSegmentLocalTranslation(SubjectName, SegmentName, LocalTranslation, bOccluded);
+                m_pClient->GetSegmentLocalTranslation(SubjectName, SegmentName, LocalTranslation, bOccluded);
                 std::copy(LocalTranslation, LocalTranslation + 3, pSegmentPoseData->T_Rel.begin());
 
                 // And local rotation
                 double LocalRotation[4];
-                m_rClient.GetSegmentLocalRotationQuaternion(SubjectName, SegmentName, LocalRotation, bOccluded);
+                m_pClient->GetSegmentLocalRotationQuaternion(SubjectName, SegmentName, LocalRotation, bOccluded);
                 std::copy(LocalRotation, LocalRotation + 4, pSegmentPoseData->R_Rel.begin());
 
                 // Get static translation
                 double StaticTranslation[3];
-                m_rClient.GetSegmentStaticTranslation(SubjectName, SegmentName, StaticTranslation);
+                m_pClient->GetSegmentStaticTranslation(SubjectName, SegmentName, StaticTranslation);
                 std::copy(StaticTranslation, StaticTranslation + 3, pSegmentPoseData->T_Stat.begin());
 
                 // And static rotation
                 double StaticRotation[4];
-                m_rClient.GetSegmentStaticRotationQuaternion(SubjectName, SegmentName, StaticRotation);
+                m_pClient->GetSegmentStaticRotationQuaternion(SubjectName, SegmentName, StaticRotation);
                 std::copy(StaticRotation, StaticRotation + 4, pSegmentPoseData->R_Stat.begin());
 
                 // and scale
                 double Scale[3];
-                if( m_rClient.GetSegmentStaticScale(SubjectName, SegmentName, Scale) == Result::Success )
+                if( m_pClient->GetSegmentStaticScale(SubjectName, SegmentName, Scale) == Result::Success )
                 {
                   std::copy(Scale, Scale + 3, pSegmentPoseData->Scale.begin());
                   pSegmentPoseData->bHasScale = true;

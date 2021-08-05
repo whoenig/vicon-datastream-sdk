@@ -216,9 +216,6 @@ namespace ViconDataStreamSDK
       std::map< std::string, std::deque< std::shared_ptr< const VSubjectPose > > > m_Data;
       std::map< std::string, std::shared_ptr< const VSubjectPose > > m_LatestOutputPoses;
 
-      boost::recursive_mutex m_FrameRateMutex;
-      double m_FrameRate;
-      unsigned int m_OutputFrameNumber;
 
       // Maximum time we should predict forwards (in milliseconds)
       double m_MaxPredictionTime;
@@ -242,8 +239,6 @@ namespace ViconDataStreamSDK
       void CloseDebugLog();
       mutable boost::mutex m_DebugLogMutex;
       mutable std::ofstream m_DebugLog;
-
-      double m_LastPurgeTime;
     };
 
 

@@ -328,6 +328,9 @@ public:
   Result::Enum GetCameraType( const std::string & i_rCameraName, std::string & o_rCameraType ) const;
   Result::Enum GetCameraDisplayName( const std::string & i_rCameraName, std::string & o_rCameraDisplayName ) const;
 
+  Result::Enum GetCameraSensorMode(const std::string & i_rCameraName, std::string & o_rMode) const;
+  Result::Enum GetCameraWindowSize(const std::string & i_rCameraName, unsigned int & o_rWindowOffsetX, unsigned int & o_rWindowOffsetY, unsigned int & o_rWindowWidth, unsigned int & o_rWindowHeight) const;
+
   Result::Enum GetCameraResolution( const std::string & i_rCameraName, unsigned int & o_rResolutionX, unsigned int & o_rResolutionY ) const;
   Result::Enum GetIsVideoCamera( const std::string & i_rCameraName, bool & o_rIsVideoCamera ) const;
 
@@ -342,6 +345,11 @@ public:
                                   double & o_rWeight ) const;
 
   Result::Enum GetGreyscaleBlobCount( const std::string & i_rCameraName, unsigned int & o_rCount ) const;
+  Result::Enum GetGreyscaleBlobSubsampleInfo( const std::string & i_rCameraName,
+                                              unsigned short & o_rTwiceOffsetX,
+                                              unsigned short & o_rTwiceOffsetY,
+                                              unsigned char & o_rSensorPixelsPerImagePixelX,
+                                              unsigned char & o_rSensorPixelsPerImagePixelY ) const;
   Result::Enum GetGreyscaleBlob( const std::string & i_rCameraName,
                                  const unsigned int i_BlobIndex,
                                  std::vector< unsigned int > & o_rLineXPositions,
@@ -381,6 +389,7 @@ private:
   const ViconCGStream::VObjectQuality   * GetObjectQuality( const unsigned int i_SubjectID ) const;
   const ViconCGStream::VDeviceInfo      * GetDevice( const std::string & i_rDeviceName, Result::Enum & o_rResult ) const;
   const ViconCGStream::VCameraInfo      * GetCamera( const std::string & i_rCameraName, Result::Enum & o_rResult ) const;
+  const ViconCGStream::VCameraSensorInfo * GetCameraSensorInfo( const unsigned int i_CameraID, Result::Enum & o_rResult ) const;
   const ViconCGStream::VCentroids       * GetCentroidSet( const unsigned int i_CameraID, Result::Enum & o_rResult ) const;
   const ViconCGStream::VCentroidWeights * GetCentroidWeightSet( const unsigned int i_CameraID, Result::Enum & o_rResult ) const;
   const ViconCGStream::VGreyscaleBlobs  * GetGreyscaleBlobs( const unsigned int i_CameraID, Result::Enum & o_rResult ) const;
@@ -419,6 +428,7 @@ private:
   template < typename T > bool InitGet( Result::Enum & o_rResult, T & o_rOutput ) const;
   template < typename T1, typename T2 > bool InitGet( Result::Enum & o_rResult, T1 & o_rOutput1, T2 & o_rOutput2  ) const;
   template < typename T1, typename T2, typename T3 > bool InitGet( Result::Enum & o_rResult, T1 & o_rOutput1, T2 & o_rOutput2, T3 & o_rOutput3  ) const;
+  template < typename T1, typename T2, typename T3, typename T4 > bool InitGet( Result::Enum & o_rResult, T1 & o_rOutput1, T2 & o_rOutput2, T3 & o_rOutput3, T4 & o_rOutput4 ) const;
 
   bool IsEyeTrackerDevice(unsigned int i_DeviceID) const;
 
@@ -436,7 +446,6 @@ private:
   // reference the client
   std::shared_ptr< ViconCGStreamClientSDK::ICGClient > m_pClient;
   std::string                                          m_ServerName;
-  unsigned short                                       m_ServerPort;
 
   bool m_bPreFetch;
 
@@ -457,7 +466,6 @@ private:
   bool m_bGreyscaleDataEnabled;
   bool m_bDebugDataEnabled;
   bool m_bCameraWand2dDataEnabled;
-  bool m_bFrameRateInfoDataEnabled;
   bool m_bVideoDataEnabled;
 
   // Literally, if subject scale is enabled
@@ -514,5 +522,14 @@ bool ViconDataStreamSDK::Core::VClient::InitGet( Result::Enum & o_rResult, T1 & 
   return InitGet( o_rResult );
 }
 
+template < typename T1, typename T2, typename T3, typename T4 >
+bool ViconDataStreamSDK::Core::VClient::InitGet(Result::Enum & o_rResult, T1 & o_rOutput1, T2 & o_rOutput2, T3 & o_rOutput3, T4 & o_rOutput4 ) const
+{
+  ClientUtils::Clear(o_rOutput1);
+  ClientUtils::Clear(o_rOutput2);
+  ClientUtils::Clear(o_rOutput3);
+  ClientUtils::Clear(o_rOutput4);
+  return InitGet(o_rResult);
+}
 } // End of namespace Core
 } // End of namespace ViconDataStreamSDK

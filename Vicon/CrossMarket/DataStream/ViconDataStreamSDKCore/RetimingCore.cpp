@@ -46,27 +46,14 @@ using namespace ClientUtils;
 
 namespace ViconDataStreamSDK
 {
-  namespace
-  {
-    const unsigned int TickRateInHz = 120000;
-
-    unsigned int TickFromHz( double i_Hz, unsigned int i_TickRateInHz )
-    {
-      const double Seconds = 1.0 / i_Hz;
-      return std::lround( static_cast< double >( i_TickRateInHz ) * Seconds );
-    }
-  }
-  
   namespace Core
   {
     static unsigned int s_BufSize = 2;
-    static unsigned int s_MaxFrameGap = 10000;
     static double s_PurgeLimit = 500.0;
 
     VRetimingCore::VRetimingCore()    
     : m_MaxPredictionTime( 100 )
     , m_bOutputLogHeaderWritten( true )
-    , m_LastPurgeTime( 0 )    
     {
     }
 

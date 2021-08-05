@@ -85,7 +85,8 @@ bool VSegmentPoseReader::Read( std::istream & i_rStream )
 
       if (pPose->FrameNumber != CurrentFrameNumber)
       {
-        if (CurrentFrameNumber != -1)
+        constexpr unsigned int NoFrameNumber(-1);
+        if (CurrentFrameNumber != NoFrameNumber)
         {
           m_Data[ CurrentFrameNumber ] = FrameMap;
           m_FrameToTime[ CurrentFrameTime ] = static_cast< unsigned int >( CurrentFrameNumber );

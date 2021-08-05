@@ -152,6 +152,7 @@ void VCGClient::ReadFramePair( const TFramePair& i_rPair, ICGFrameState& o_rFram
     }
     o_rFrameState.m_CameraCalibrations = rpStaticState->m_CameraCalibrationInfo;
     o_rFrameState.m_Cameras = rpStaticState->m_CameraInfo;
+    o_rFrameState.m_CamerasSensorInfo = rpStaticState->m_CameraSensorInfo;
     o_rFrameState.m_Subjects = rpStaticState->m_SubjectInfo;
     o_rFrameState.m_SubjectTopologies = rpStaticState->m_SubjectTopology;
     o_rFrameState.m_SubjectScales = rpStaticState->m_SubjectScale;
@@ -176,6 +177,7 @@ void VCGClient::ReadFramePair( const TFramePair& i_rPair, ICGFrameState& o_rFram
     o_rFrameState.m_FrameRateInfo = rpDynamicState->m_FrameRateInfo;
     o_rFrameState.m_EdgePairs = rpDynamicState->m_EdgePairs;
     o_rFrameState.m_GreyscaleBlobs = rpDynamicState->m_GreyscaleBlobs;
+    o_rFrameState.m_GreyscaleSubsampledBlobs = rpDynamicState->m_GreyscaleSubsampledBlobs;
     o_rFrameState.m_Centroids = rpDynamicState->m_Centroids;
     o_rFrameState.m_CentroidTracks = rpDynamicState->m_CentroidTracks;
     o_rFrameState.m_CentroidWeights = rpDynamicState->m_CentroidWeights;

@@ -1519,6 +1519,32 @@ namespace CPP
   }
 
   CLASS_DECLSPEC
+  Output_GetCameraSensorMode Client::GetCameraSensorMode( const std::string & i_rCameraName ) const
+  {
+    Output_GetCameraSensorMode Output;
+    std::string _SensorMode;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetCameraSensorMode(i_rCameraName, _SensorMode ) );
+    Output.SensorMode.Set( _SensorMode.c_str(), *m_pClientImpl->m_pStringFactory.get() );
+
+    return Output;
+  }
+
+  CLASS_DECLSPEC
+  Output_GetCameraWindowSize Client::GetCameraWindowSize( const std::string & i_rCameraName ) const
+  {
+    Output_GetCameraWindowSize Output;
+    Output.Result = Adapt(m_pClientImpl->m_pCoreClient->GetCameraWindowSize(
+      i_rCameraName,
+      Output.WindowStartX,
+      Output.WindowStartY,
+      Output.WindowWidth,
+      Output.WindowHeight ));
+
+    return Output;
+  }
+
+
+  CLASS_DECLSPEC
   Output_GetCentroidCount Client::GetCentroidCount( const std::string & i_rCameraName ) const
   {
     Output_GetCentroidCount Output;
@@ -1550,6 +1576,21 @@ namespace CPP
   {
     Output_GetGreyscaleBlobCount Output;
     Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetGreyscaleBlobCount( i_rCameraName, Output.BlobCount ) );
+
+    return Output;
+  }
+
+  CLASS_DECLSPEC
+    Output_GetGreyscaleBlobSubsampleInfo Client::GetGreyscaleBlobSubsampleInfo(const std::string & i_rCameraName) const
+  {
+    Output_GetGreyscaleBlobSubsampleInfo Output;
+    Output.Result = Adapt(m_pClientImpl->m_pCoreClient->GetGreyscaleBlobSubsampleInfo(
+      i_rCameraName,
+      Output.TwiceOffsetX,
+      Output.TwiceOffsetY,
+      Output.SensorPixelsPerImagePixelX,
+      Output.SensorPixelsPerImagePixelY
+    ));
 
     return Output;
   }

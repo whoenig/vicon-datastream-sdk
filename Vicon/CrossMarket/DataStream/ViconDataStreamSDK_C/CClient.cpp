@@ -756,10 +756,21 @@ CBool Client_IsGreyscaleDataEnabled( CClient* client )
   return false;
 }
 
+CBool Client_IsVideoDataEnabled( CClient* client )
+{
+  return false;
+}
+
 CBool Client_IsDebugDataEnabled( CClient* client )
 {
   return ( (Client*)client )->IsDebugDataEnabled().Enabled;
 }
+
+void Client_SetBufferSize( CClient* client, unsigned int bufferSize )
+{
+  ( (Client*)client )->DisableDebugData();
+}
+
 
 void Client_GetServerOrientation( CClient* client, COutput_GetServerOrientation* outptr )
 {
