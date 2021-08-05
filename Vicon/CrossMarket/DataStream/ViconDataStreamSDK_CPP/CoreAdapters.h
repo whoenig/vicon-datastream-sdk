@@ -121,6 +121,9 @@ static ViconDataStreamSDK::CPP::Result::Enum Adapt(ViconDataStreamSDK::Core::Res
   case ViconDataStreamSDK::Core::Result::LateDataRequested: return ViconDataStreamSDK::CPP::Result::LateDataRequested;
   case ViconDataStreamSDK::Core::Result::InvalidOperation: return ViconDataStreamSDK::CPP::Result::InvalidOperation;
   case ViconDataStreamSDK::Core::Result::NullClient:
+  case ViconDataStreamSDK::Core::Result::NotSupported: return ViconDataStreamSDK::CPP::Result::NotSupported;
+  case ViconDataStreamSDK::Core::Result::ConfigurationFailed: return ViconDataStreamSDK::CPP::Result::ConfigurationFailed;
+  case ViconDataStreamSDK::Core::Result::NotPresent: return ViconDataStreamSDK::CPP::Result::NotPresent;
   default: assert(!"Unexpected result code returned");
     return ViconDataStreamSDK::CPP::Result::Unknown;
   }

@@ -22,19 +22,22 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //////////////////////////////////////////////////////////////////////////////////
-#include "ClientUtils.h"
-
 #include "CoreClient.h"
+#include "ClientUtils.h"
+#include "WirelessConfiguration.h"
 
-#include <boost/bind.hpp>
+#include <functional>
+
 #include <boost/lexical_cast.hpp>
+#include <boost/filesystem.hpp>
+#include <boost/algorithm/string.hpp>
 
 #include <ViconCGStreamClient/ViconCGStreamClient.h>
+#include <ViconCGStreamClient/CGStreamPostalService.h>
 
 #include "ViconDataStreamSDKCoreVersion.h"
 
 typedef std::pair< ViconCGStreamType::UInt64, ViconCGStreamType::UInt64 > TPeriod;
-
 
 using namespace ClientUtils;
 
@@ -42,6 +45,10 @@ namespace
 {
   // Timeout for wait-for-frame operations (in milliseconds) 
   static const unsigned int s_WaitFrameTimeout = 1000;
+
+  // Number of frames to wait for before starting to log, in the hope of getting all of the
+  // columns in.
+  static const size_t s_LogPreamble = 200;
 
   // [ Start tick, End tick ) pair.
   TPeriod GetFramePeriod( const ViconCGStreamClientSDK::ICGFrameState & i_rFrame )
@@ -114,6 +121,7 @@ namespace
     return true;
   }
 
+
   const size_t BadIndex = -1;
   
   const ViconCGStreamType::UInt32 BadFrameValue = -1;
@@ -125,11 +133,12 @@ namespace ViconDataStreamSDK
 namespace Core
 {
 
+
 VClient::VClient()
-: m_ServerPort( 0 )
-, m_bContinuePreFetch( false )
+: m_bPreFetch( false )
 , m_bNewCachedFrame( false )
 , m_bSegmentDataEnabled( false )
+, m_bLightweightSegmentDataEnabled( false )
 , m_bMarkerDataEnabled( false )
 , m_bUnlabeledMarkerDataEnabled( false )
 , m_bMarkerRayDataEnabled( false )
@@ -139,6 +148,7 @@ VClient::VClient()
 , m_bDebugDataEnabled( false )
 , m_bCameraWand2dDataEnabled( false )
 , m_bVideoDataEnabled( false )
+, m_bSubjectScaleEnabled ( false )
 , m_BufferSize( 1 )
 {
   SetAxisMapping( Direction::Forward, Direction::Left, Direction::Up );
@@ -155,7 +165,8 @@ VClient::~VClient()
 
 void VClient::GetVersion( unsigned int & o_rMajor, 
                           unsigned int & o_rMinor, 
-                          unsigned int & o_rPoint ) const
+                          unsigned int & o_rPoint,
+                          unsigned int & o_rRevision ) const
 {
   // Warning! Don't change these version numbers unless you understand the
   // impact of it. They should not change without the approval of Product
@@ -171,17 +182,24 @@ void VClient::GetVersion( unsigned int & o_rMajor,
   o_rMajor = VICONDATASTREAMSDKCORE_VERSION_MAJOR;
   o_rMinor = VICONDATASTREAMSDKCORE_VERSION_MINOR;
   o_rPoint = VICONDATASTREAMSDKCORE_VERSION_POINT;
+  o_rRevision = VICONDATASTREAMSDKCORE_VERSION_REVISION;
 }
 
-Result::Enum VClient::Connect(       std::shared_ptr< ViconCGStreamClientSDK::ICGClient > i_pClient, 
-                               const std::string &                                          i_rHostName )
-{
-  if( i_rHostName.length() == 0 )
-  {
-    return Result::InvalidHostName;
-  }
 
-  if( !i_pClient )
+Result::Enum VClient::Connect(       std::shared_ptr< ViconCGStreamClientSDK::ICGClient > i_pClient, 
+                               const std::string &                                        i_rHostName )
+{
+  std::vector< std::string > HostNames;
+  boost::split(HostNames, i_rHostName, boost::is_any_of( ";" ) );
+
+  return Connect(i_pClient, HostNames);
+}
+
+
+Result::Enum VClient::Connect(       std::shared_ptr< ViconCGStreamClientSDK::ICGClient > i_pClient,
+                               const std::vector< std::string > &                         i_rHostNames )
+{
+  if (!i_pClient)
   {
     return Result::NullClient;
   }
@@ -194,40 +212,52 @@ Result::Enum VClient::Connect(       std::shared_ptr< ViconCGStreamClientSDK::IC
   // Kill any old client
   m_pClient.reset();
 
-  // Parse the supplied host name
-  std::string    HostName = i_rHostName;
-  unsigned short HostPort = 801;
+  std::vector< std::pair< std::string, unsigned short > > Hosts;
+
+  for( const auto & rHost : i_rHostNames )
   {
-    size_t Colon = HostName.rfind( ":" );
-    if( Colon != std::string::npos )
+
+    // Parse the supplied host name
+    std::string HostName = rHost;
+    unsigned short HostPort = 801;
     {
-      try
+      size_t Colon = HostName.rfind(":");
+      if (Colon != std::string::npos)
       {
-        HostPort = boost::lexical_cast< unsigned short >( HostName.substr( Colon+1 ) );
-        HostName = HostName.substr( 0, Colon );
-      }
-      catch ( boost::bad_lexical_cast& )
-      {
-        // Revert to unparsed version
-        HostName = i_rHostName;
-        HostPort = 801;
+        try
+        {
+          HostPort = boost::lexical_cast<unsigned short>(HostName.substr(Colon + 1));
+          HostName = HostName.substr(0, Colon);
+        }
+        catch (boost::bad_lexical_cast&)
+        {
+          continue;
+        }
       }
     }
-  }  
+    if ( !HostName.empty() )
+    {
+      Hosts.push_back( std::make_pair( HostName, HostPort ) );
+    }
+    
+  }
+
+  if (Hosts.empty())
+  {
+    return Result::InvalidHostName;
+  }
 
   // here we attempt to connect to the IP address
-  i_pClient->Connect( HostName, HostPort );
+  i_pClient->Connect( Hosts );
 
-  if( !i_pClient->IsConnected() )
+  if (!i_pClient->IsConnected())
   {
     return Result::ClientConnectionFailed;
   }
 
   // copy the pointer if all is well
-  m_pClient    = i_pClient;
-  m_pClient->SetBufferSize( m_BufferSize );
-  m_ServerName = HostName;
-  m_ServerPort = HostPort;
+  m_pClient = i_pClient;
+  m_pClient->SetBufferSize(m_BufferSize);
 
   // set some default request types
   m_pClient->SetRequestTypes( ViconCGStreamEnum::Contents );
@@ -243,7 +273,7 @@ Result::Enum VClient::Connect(       std::shared_ptr< ViconCGStreamClientSDK::IC
 
 
   // turn everything else off
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::CameraCalibrationInfo, false);
+  m_pClient->SetRequestTypes(ViconCGStreamEnum::CameraCalibrationInfo, false);
   m_pClient->SetRequestTypes( ViconCGStreamEnum::CameraInfo, false );
   m_pClient->SetRequestTypes( ViconCGStreamEnum::Centroids, false );
   m_pClient->SetRequestTypes( ViconCGStreamEnum::CentroidWeights, false );
@@ -265,6 +295,11 @@ Result::Enum VClient::Connect(       std::shared_ptr< ViconCGStreamClientSDK::IC
   m_pClient->SetRequestTypes( ViconCGStreamEnum::ChannelInfo, false );
   m_pClient->SetRequestTypes( ViconCGStreamEnum::ChannelInfoExtra, false );
   m_pClient->SetRequestTypes( ViconCGStreamEnum::EyeTrackerInfo, false );
+
+  if (!m_ClientLogFile.empty())
+  {
+    m_pClient->SetLogFile(m_ClientLogFile);
+  }
 
   return Result::Success;
 }
@@ -354,11 +389,7 @@ Result::Enum VClient::Disconnect()
     return Result::NotConnected;
   }  
 
-  EndPreFetchThread();
-
   m_pClient.reset(); 
-  m_ServerName.clear();
-  m_ServerPort = 0;
 
   return Result::Success;
 }
@@ -442,28 +473,6 @@ Result::Enum VClient::StopTransmittingMulticast()
   return Result::Success;
 }
 
-void VClient::BeginPreFetchThread()
-{
-  m_bContinuePreFetch = true;
-
-  // Cache a frame before we start the thread running
-  FetchNextFrame();
-
-  if (!m_pPreFetchThread)
-  {
-    m_pPreFetchThread.reset( new boost::thread( boost::bind( &VClient::PreFetchThreadBody, this ) ) );
-  }
-}
-
-void VClient::EndPreFetchThread()
-{
-  if( m_pPreFetchThread )
-  { 
-    m_bContinuePreFetch = false;
-    m_pPreFetchThread->join();
-    m_pPreFetchThread.reset();
-  }
-}
 
 bool VClient::IsConnected() const
 {
@@ -492,15 +501,27 @@ Result::Enum VClient::GetFrame()
   }
 
   // Get the next frame
-  if( !m_pPreFetchThread || !m_bContinuePreFetch )
+  if( !m_bPreFetch )
   {
     // Not in pre-fetch mode
-    FetchNextFrame();
+    // Request the next frame.  If streaming, this does nothing.
+    if( m_pClient )
+    {
+      m_pClient->RequestFrame();
+      // Wait for it to arrive.
+      FetchNextFrame();
+    }
   }
   else
   {
     // In pre-fetch mode
     // The pre-fetch thread should have got a frame for us
+    // Request the subsequent frame so it is ready for the next call.
+    if( m_pClient )
+    {
+      FetchNextFrame();
+      m_pClient->RequestNextFrame();
+    }
   }
 
   // Is the latest frame different from the one we dispatched?
@@ -513,6 +534,16 @@ Result::Enum VClient::GetFrame()
   else
   {
     m_LatestFrame = m_CachedFrame;
+
+    // Find somewhere better for this to live.
+    if ( m_bLightweightSegmentDataEnabled )
+    {
+      CalculateGlobalsFromLocals();
+    }
+
+    // Send a ping to the server to keep our network latency statistics updated
+    m_pClient->SendPing();
+
     m_bNewCachedFrame = false;
     return Result::Success;
   }
@@ -617,12 +648,6 @@ Result::Enum VClient::GetTimecode( unsigned int           & o_rHours,
   }
 
   return Result::Success;
-}
-
-Result::Enum VClient::GetNetworkLatency(double & o_rLatency)
-{
-  bool bSuccess = m_pClient->NetworkLatency(o_rLatency);
-  return bSuccess ? Result::Success : Result::NoFrame;
 }
 
 Result::Enum VClient::GetLatencyTotal( double & o_rLatency ) const
@@ -789,7 +814,50 @@ Result::Enum VClient::SetSegmentDataEnabled( const bool i_bEnabled )
   m_pClient->SetRequestTypes( ViconCGStreamEnum::GlobalSegments, i_bEnabled );
   m_pClient->SetRequestTypes( ViconCGStreamEnum::SubjectTopology, i_bEnabled );
 
+  m_bSubjectScaleEnabled = m_pClient->SetRequestTypes( ViconCGStreamEnum::SubjectScale, i_bEnabled );
+
+  if ( i_bEnabled )
+  {
+    m_pClient->SetRequestTypes( ViconCGStreamEnum::LightweightSegments, false );
+  }
+
   m_bSegmentDataEnabled = i_bEnabled;
+  return Result::Success;
+}
+
+Result::Enum VClient::SetLightweightSegmentDataEnabled( const bool i_bEnabled )
+{
+  boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
+
+  if ( !IsConnected() )
+  {
+    return Result::NotConnected;
+  }
+
+  if( !m_pClient->SetRequestTypes( ViconCGStreamEnum::LightweightSegments, i_bEnabled ) )
+  {
+    return Result::InvalidOperation;
+  }
+
+  // Probably want to disable a load of other types too. Question is, do we want this call to do it.
+  if ( i_bEnabled )
+  {
+    DisableSegmentData();
+    DisableMarkerData();
+    DisableUnlabeledMarkerData();
+    DisableMarkerRayData();
+    DisableDeviceData();
+    DisableCentroidData();
+    DisableGreyscaleData();
+    DisableDebugData();
+    DisableCameraWand2dData();
+    DisableVideoData();
+  }
+
+  m_pClient->SetRequestTypes( ViconCGStreamEnum::SubjectTopology, i_bEnabled );
+  m_pClient->SetRequestTypes( ViconCGStreamEnum::SubjectScale, i_bEnabled );
+
+  m_bLightweightSegmentDataEnabled = i_bEnabled;
   return Result::Success;
 }
 
@@ -950,6 +1018,13 @@ bool VClient::IsSegmentDataEnabled() const
   return m_bSegmentDataEnabled;
 }
 
+bool VClient::IsLightweightSegmentDataEnabled() const
+{
+  boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
+
+  return m_bLightweightSegmentDataEnabled;
+}
+
 bool VClient::IsMarkerDataEnabled() const
 {
   boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
@@ -1025,15 +1100,17 @@ Result::Enum VClient::SetStreamMode( const StreamMode::Enum i_Mode )
 
   switch( i_Mode )
   {
-  case StreamMode::ServerPush         : EndPreFetchThread();
+  case StreamMode::ServerPush         : m_bPreFetch = false;
                                         m_pClient->SetStreamMode( true );
                                         break;
   case StreamMode::ClientPullPreFetch : m_pClient->SetStreamMode( false );
-                                        BeginPreFetchThread();
+                                        m_bPreFetch = true;
+                                        m_pClient->ClearBuffer();
+                                        m_pClient->RequestNextFrame();
                                         break;
   case StreamMode::ClientPull         : 
   default                             : m_pClient->SetStreamMode( false );
-                                        EndPreFetchThread();
+                                        m_bPreFetch = false;
                                         break;
   }
 
@@ -1124,7 +1201,7 @@ Result::Enum VClient::GetServerOrientation( ServerOrientation::Enum & o_rServerO
   else
   {
     o_rServerOrientation=ServerOrientation::Unknown;
-    return Result::NotImplemented;
+    return Result::NotSupported;
   }
   
 }
@@ -1279,7 +1356,7 @@ Result::Enum VClient::GetSegmentChildCount( const std::string  & i_rSubjectName,
     }
   }
 
-  return Result::NotImplemented;
+  return Result::Unknown;
 }
 
 Result::Enum VClient::GetSegmentChildName( const std::string& i_rSubjectName, const std::string& i_rSegmentName, unsigned int i_SegmentIndex, std::string& o_rSegmentName ) const
@@ -1331,7 +1408,7 @@ Result::Enum VClient::GetSegmentChildName( const std::string& i_rSubjectName, co
     }
   }
 
-  return Result::NotImplemented;
+  return Result::Unknown;
 }
 
 Result::Enum VClient::GetSegmentParentName( const std::string& i_rSubjectName, const std::string& i_rSegmentName, std::string& o_rSegmentName ) const
@@ -1393,7 +1470,7 @@ Result::Enum VClient::GetSegmentParentName( const std::string& i_rSubjectName, c
     }
   }
 
-  return Result::NotImplemented;
+  return Result::Unknown;
 }
 
 Result::Enum VClient::GetSegmentStaticTranslation( const std::string&   i_rSubjectName, 
@@ -1651,12 +1728,13 @@ Result::Enum VClient::GetUnlabeledMarkerCount( unsigned int & o_rMarkerCount ) c
 }
 
 Result::Enum VClient::GetUnlabeledMarkerGlobalTranslation( const unsigned int   i_MarkerIndex,
-                                                                 double      (& o_rTranslation)[3] ) const
+                                                                 double( &o_rTranslation )[3],
+                                                                 unsigned int & o_rTrajID ) const
 {
   boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
   
   Result::Enum GetResult = Result::Success;
-  if ( !InitGet( GetResult, o_rTranslation ) )
+  if ( !InitGet( GetResult, o_rTranslation, o_rTrajID ) )
   {
     return GetResult; 
   }
@@ -1667,6 +1745,7 @@ Result::Enum VClient::GetUnlabeledMarkerGlobalTranslation( const unsigned int   
   }
 
   CopyAndTransformT( m_LatestFrame.m_UnlabeledRecons.m_UnlabeledRecons[ i_MarkerIndex ].m_Position, o_rTranslation );
+  o_rTrajID = m_LatestFrame.m_UnlabeledRecons.m_UnlabeledRecons[i_MarkerIndex].m_TrajectoryId;
   return Result::Success;
 }
 
@@ -1684,12 +1763,13 @@ Result::Enum VClient::GetLabeledMarkerCount( unsigned int & o_rMarkerCount ) con
 }
 
 Result::Enum VClient::GetLabeledMarkerGlobalTranslation( const unsigned int   i_MarkerIndex,
-                                                               double      (& o_rTranslation)[3] ) const
+                                                               double( &o_rTranslation )[3],
+                                                               unsigned int & o_rTrajID ) const
 {
   boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
 
   Result::Enum GetResult = Result::Success;
-  if ( !InitGet( GetResult, o_rTranslation ) )
+  if ( !InitGet( GetResult, o_rTranslation, o_rTrajID ) )
   {
     return GetResult;
   }
@@ -1700,8 +1780,177 @@ Result::Enum VClient::GetLabeledMarkerGlobalTranslation( const unsigned int   i_
   }
 
   CopyAndTransformT( m_LatestFrame.m_LabeledRecons.m_LabeledRecons[ i_MarkerIndex ].m_Position, o_rTranslation );
+  o_rTrajID = m_LatestFrame.m_LabeledRecons.m_LabeledRecons[i_MarkerIndex].m_TrajectoryId;
   return Result::Success;
 }
+
+Result::Enum VClient::CalculateGlobalsFromLocals()
+{
+  boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
+
+  Result::Enum GetResult = Result::Success;
+
+  // We don't want to call this when we actually have local and global data
+  if ( !m_bLightweightSegmentDataEnabled )
+  {
+    return Result::InvalidOperation;
+  }
+
+  // For all subjects
+  for ( const auto & rSubject : m_LatestFrame.m_Subjects )
+  {
+    const std::string & rSubjectName = rSubject.m_Name;
+    std::string SubjectRoot;
+    GetResult = GetSubjectRootSegmentName( rSubjectName, SubjectRoot );
+
+    if ( GetResult != Result::Success )
+    {
+      break;
+    }
+
+    for ( const auto & rLightweightSegments : m_LatestFrame.m_LightweightSegments )
+    {
+      if ( rLightweightSegments.m_SubjectID == rSubject.m_SubjectID )
+      {
+        // Unit rotation for the parent of the root element, relative to the origin
+        std::array< double, 3 > Origin = { 0,0,0 };
+        std::array< double, 9 > UnitRotation = { 1,0,0,0,1,0,0,0,1 };
+
+        // Create some new segments. SHould probably check that there isn't already an entry for this subject...
+        bool bGlobalsFound = false;
+        for ( const auto & rGlobalSegments : m_LatestFrame.m_GlobalSegments )
+        {
+          if ( rGlobalSegments.m_SubjectID == rSubject.m_SubjectID )
+          {
+            bGlobalsFound = true;
+            break;
+          }
+        }
+        if ( bGlobalsFound )
+        {
+          return Result::InvalidOperation;
+        }
+
+        bool bLocalsFound = false;
+        for ( const auto & rLocalSegments : m_LatestFrame.m_LocalSegments )
+        {
+          if ( rLocalSegments.m_SubjectID == rSubject.m_SubjectID )
+          {
+            bLocalsFound = true;
+            break;
+          }
+        }
+
+        if ( bLocalsFound )
+        {
+          return Result::InvalidOperation;
+        }
+
+        ViconCGStream::VGlobalSegments GlobalSegments;
+        GlobalSegments.m_SubjectID = rSubject.m_SubjectID;
+
+        ViconCGStream::VLocalSegments LocalSegments;
+        LocalSegments.m_SubjectID = rSubject.m_SubjectID;
+
+        GetResult = CalculateSegmentGlobalFromLocal( rSubjectName, SubjectRoot, Origin, UnitRotation, rLightweightSegments, GlobalSegments, LocalSegments );
+
+        if( GetResult == Result::Success )
+        { 
+          // Add these segments to the frame
+          m_LatestFrame.m_GlobalSegments.push_back( GlobalSegments );
+          m_LatestFrame.m_LocalSegments.push_back( LocalSegments );
+        }
+        break;
+      }
+    }
+  }
+
+  return GetResult;
+}
+
+Result::Enum VClient::CalculateSegmentGlobalFromLocal( const std::string & i_rSubjectName,
+                                                       const std::string & i_rSegmentName,
+                                                       const std::array< double, 3 > i_rParentTranslation,
+                                                       const std::array< double, 9 > i_rParentRotation,
+                                                       const ViconCGStream::VLightweightSegments & i_rLightweightSegments,
+                                                             ViconCGStream::VGlobalSegments & o_rGlobalSegments,
+                                                             ViconCGStream::VLocalSegments & o_rLocalSegments )
+{
+
+  Result::Enum GetResult = Result::Success;
+
+  unsigned int SubjectID, SegmentID;
+
+  GetResult = GetSubjectAndSegmentID( i_rSubjectName, i_rSegmentName, SubjectID, SegmentID );
+
+  if ( GetResult != Result::Success )
+  {
+    return GetResult;
+  }
+
+  // Extract the local translation and rotation matrix from the lightweight segment data
+  std::array< double, 3 > LocalTranslation;
+  std::array< double, 9 > LocalRotation;
+
+  bool bFound = false;
+  for ( const auto & rLightweightSegment : i_rLightweightSegments.m_Segments )
+  {
+    if ( rLightweightSegment.m_SegmentID == SegmentID )
+    {
+      std::copy( std::begin( rLightweightSegment.m_Translation ), std::end( rLightweightSegment.m_Translation ), LocalTranslation.begin() );
+      double LocalRotationM[9];
+      HelicalToMatrix( rLightweightSegment.m_Rotation, LocalRotationM );
+      std::copy( std::begin( LocalRotationM ), std::end( LocalRotationM ), LocalRotation.begin() );
+      bFound = true;
+      break;
+    }
+  }
+
+  if ( !bFound )
+  {
+    return Result::InvalidSegmentName;
+  }
+
+  // Calculate the global pose for this segment based on its local pose and its parents global pose
+  std::array< double, 3 > LocalTranslationInParentCoordinateSystem = i_rParentRotation * LocalTranslation;
+  std::array< double, 3 > GlobalTranslation = i_rParentTranslation + LocalTranslationInParentCoordinateSystem;
+  std::array< double, 9 > GlobalRotation = i_rParentRotation * LocalRotation;
+
+  // Now add this data to the frame
+  ViconCGStreamDetail::VGlobalSegments_Segment GlobalSegment;
+  GlobalSegment.m_SegmentID = SegmentID;
+  std::copy( GlobalTranslation.begin(), GlobalTranslation.end(), std::begin( GlobalSegment.m_Translation ) );
+  std::copy( GlobalRotation.begin(), GlobalRotation.end(), std::begin( GlobalSegment.m_Rotation ) );
+  o_rGlobalSegments.m_Segments.push_back( GlobalSegment );
+  
+  ViconCGStreamDetail::VLocalSegments_Segment LocalSegment;
+  LocalSegment.m_SegmentID = SegmentID;
+  std::copy( LocalTranslation.begin(), LocalTranslation.end(), std::begin( LocalSegment.m_Translation ) );
+  std::copy( LocalRotation.begin(), LocalRotation.end(), std::begin( LocalSegment.m_Rotation ) );
+  o_rLocalSegments.m_Segments.push_back( LocalSegment );
+
+  // And do the same for its children
+  unsigned int ChildCount;
+  GetSegmentChildCount( i_rSubjectName, i_rSegmentName, ChildCount );
+  for ( unsigned int ChildNum = 0; ChildNum < ChildCount; ++ChildNum )
+  {
+    std::string ChildName;
+    GetResult = GetSegmentChildName( i_rSubjectName, i_rSegmentName, ChildNum, ChildName );
+    
+    if ( GetResult == Result::Success )
+    {
+      GetResult = CalculateSegmentGlobalFromLocal( i_rSubjectName, ChildName, GlobalTranslation, GlobalRotation, i_rLightweightSegments, o_rGlobalSegments, o_rLocalSegments );
+    }
+
+    if ( GetResult != Result::Success )
+    {
+      return GetResult;
+    }
+  }
+
+  return GetResult;
+}
+
 
 Result::Enum VClient::GetSegmentGlobalTranslation( const std::string & i_rSubjectName, 
                                                    const std::string & i_rSegmentName, 
@@ -1709,7 +1958,7 @@ Result::Enum VClient::GetSegmentGlobalTranslation( const std::string & i_rSubjec
                                                          bool        & o_rbOccludedFlag ) const
 {
   boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
-  
+
   Result::Enum GetResult = Result::Success;
   if ( !InitGet( GetResult, o_rThreeVector, o_rbOccludedFlag ) )
   {
@@ -1724,22 +1973,22 @@ Result::Enum VClient::GetSegmentGlobalTranslation( const std::string & i_rSubjec
   {
     return _Result;
   }
-
+  
   // go through the frame's segment data and find its position in this frame
-  for (unsigned int i = 0; i < m_LatestFrame.m_GlobalSegments.size(); i++)
+  for ( unsigned int i = 0; i < m_LatestFrame.m_GlobalSegments.size(); i++ )
   {
     const ViconCGStream::VGlobalSegments& rSegments = m_LatestFrame.m_GlobalSegments[i];
-    if (rSegments.m_SubjectID == SubjectID)
+    if ( rSegments.m_SubjectID == SubjectID )
     {
       // now look through its segments
-      for (unsigned int j = 0; j < rSegments.m_Segments.size(); j++)
+      for ( unsigned int j = 0; j < rSegments.m_Segments.size(); j++ )
       {
         const ViconCGStreamDetail::VGlobalSegments_Segment& rSegment = rSegments.m_Segments[j];
-        if (rSegment.m_SegmentID == SegmentID)
+        if ( rSegment.m_SegmentID == SegmentID )
         {
           CopyAndTransformT( rSegment.m_Translation, o_rThreeVector );
           return Result::Success;
-        }       
+        }
       }
     }
   }
@@ -1780,7 +2029,7 @@ Result::Enum VClient::GetSegmentGlobalRotationMatrix( const std::string & i_rSub
                                                             bool        & o_rbOccluded ) const
 {
   boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
-  
+
   Result::Enum GetResult = Result::Success;
   if ( !InitGet( GetResult, o_rRotation, o_rbOccluded ) )
   {
@@ -1797,26 +2046,27 @@ Result::Enum VClient::GetSegmentGlobalRotationMatrix( const std::string & i_rSub
   }
 
   // go through the frame's segment data and find its position in this frame
-  std::vector< ViconCGStream::VGlobalSegments >::const_iterator SegmentIt  = m_LatestFrame.m_GlobalSegments.begin();
+  std::vector< ViconCGStream::VGlobalSegments >::const_iterator SegmentIt = m_LatestFrame.m_GlobalSegments.begin();
   std::vector< ViconCGStream::VGlobalSegments >::const_iterator SegmentEnd = m_LatestFrame.m_GlobalSegments.end();
-  for( ; SegmentIt != SegmentEnd ; ++SegmentIt )
+  for ( ; SegmentIt != SegmentEnd; ++SegmentIt )
   {
     const ViconCGStream::VGlobalSegments & rSegments( *SegmentIt );
-    if( rSegments.m_SubjectID == SubjectID )
+    if ( rSegments.m_SubjectID == SubjectID )
     {
       // now look through the segment detail
-      std::vector< ViconCGStreamDetail::VGlobalSegments_Segment >::const_iterator SegmentDetailIt  = rSegments.m_Segments.begin();
+      std::vector< ViconCGStreamDetail::VGlobalSegments_Segment >::const_iterator SegmentDetailIt = rSegments.m_Segments.begin();
       std::vector< ViconCGStreamDetail::VGlobalSegments_Segment >::const_iterator SegmentDetailEnd = rSegments.m_Segments.end();
-      for( ; SegmentDetailIt != SegmentDetailEnd ; ++SegmentDetailIt )
+      for ( ; SegmentDetailIt != SegmentDetailEnd; ++SegmentDetailIt )
       {
         const ViconCGStreamDetail::VGlobalSegments_Segment & rSegment( *SegmentDetailIt );
-        if( rSegment.m_SegmentID == SegmentID )
+        if ( rSegment.m_SegmentID == SegmentID )
         {
           // copy out the answer
+
           CopyAndTransformR( rSegment.m_Rotation, o_rRotation );
           o_rbOccluded = false;
           return Result::Success;
-        }       
+        }
       }
     }
   }
@@ -1978,6 +2228,58 @@ Result::Enum VClient::GetSegmentStaticRotationEulerXYZ( const std::string & i_rS
   return _Result;
 }
 
+Result::Enum VClient::GetSegmentStaticScale(const std::string & i_rSubjectName,
+  const std::string & i_rSegmentName,
+  double(&o_rThreeVector)[3]) const
+{
+  boost::recursive_mutex::scoped_lock Lock(m_FrameMutex);
+
+  if (m_bSegmentDataEnabled && !m_bSubjectScaleEnabled)
+  {
+    return Result::NotSupported;
+  }
+
+  Result::Enum GetResult = Result::Success;
+  if( !InitGet(GetResult, o_rThreeVector) )
+  {
+    return GetResult;
+  }
+
+  // Look up the ids for the subject and segment
+  unsigned int SubjectID = 0;
+  unsigned int SegmentID = 0;
+  Result::Enum _Result = GetSubjectAndSegmentID(i_rSubjectName, i_rSegmentName, SubjectID, SegmentID);
+  if( Result::Success != _Result )
+  {
+    return _Result;
+  }
+
+  const ViconCGStream::VSubjectScale *pSubjectScale = GetSubjectScale(SubjectID);
+  if( !pSubjectScale )
+  {
+    return Result::NotPresent;
+  }
+
+  // go through the frame's segment data and find its position in this frame
+  std::vector< ViconCGStreamDetail::VSubjectScale_Segment >::const_iterator SegmentIt = pSubjectScale->m_Segments.begin();
+  std::vector< ViconCGStreamDetail::VSubjectScale_Segment >::const_iterator SegmentEnd = pSubjectScale->m_Segments.end();
+  for( ; SegmentIt != SegmentEnd; ++SegmentIt )
+  {
+    const ViconCGStreamDetail::VSubjectScale_Segment & rSegment(*SegmentIt);
+    if( rSegment.m_SegmentID == SegmentID )
+    {
+      // copy out the answer, without transforming it.
+      for( unsigned int i = 0; i < 3; ++i )
+      {
+        o_rThreeVector[i] = rSegment.m_Scale[i];
+      }
+      return Result::Success;
+    }
+  }
+
+  return Result::Unknown;
+}
+
 Result::Enum VClient::GetSegmentLocalTranslation( const std::string & i_rSubjectName, 
                                                   const std::string & i_rSegmentName, 
                                                         double    ( & o_rThreeVector)[3], 
@@ -1985,6 +2287,7 @@ Result::Enum VClient::GetSegmentLocalTranslation( const std::string & i_rSubject
 {
   boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
   
+
   Result::Enum GetResult = Result::Success;
   if ( !InitGet( GetResult, o_rThreeVector, o_rbOccluded ) )
   {
@@ -2001,20 +2304,20 @@ Result::Enum VClient::GetSegmentLocalTranslation( const std::string & i_rSubject
   }
 
   // go through the frame's segment data and find its position in this frame
-  for (unsigned int i = 0; i < m_LatestFrame.m_LocalSegments.size(); i++)
+  for ( unsigned int i = 0; i < m_LatestFrame.m_LocalSegments.size(); i++ )
   {
     const ViconCGStream::VLocalSegments& rSegments = m_LatestFrame.m_LocalSegments[i];
-    if (rSegments.m_SubjectID == SubjectID)
+    if ( rSegments.m_SubjectID == SubjectID )
     {
       // now look through its segments
-      for (unsigned int j = 0; j < rSegments.m_Segments.size(); j++)
+      for ( unsigned int j = 0; j < rSegments.m_Segments.size(); j++ )
       {
         const ViconCGStreamDetail::VLocalSegments_Segment& rSegment = rSegments.m_Segments[j];
-        if (rSegment.m_SegmentID == SegmentID)
+        if ( rSegment.m_SegmentID == SegmentID )
         {
           CopyAndTransformT( rSegment.m_Translation, o_rThreeVector );
           return Result::Success;
-        }       
+        }
       }
     }
   }
@@ -2054,7 +2357,8 @@ Result::Enum VClient::GetSegmentLocalRotationMatrix( const std::string & i_rSubj
                                                            bool        & o_rbOccluded ) const
 {
   boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
-  
+
+
   Result::Enum GetResult = Result::Success;
   if ( !InitGet( GetResult, o_rRotation, o_rbOccluded ) )
   {
@@ -2071,26 +2375,26 @@ Result::Enum VClient::GetSegmentLocalRotationMatrix( const std::string & i_rSubj
   }
 
   // go through the frame's segment data and find its position in this frame
-  std::vector< ViconCGStream::VLocalSegments >::const_iterator SegmentIt  = m_LatestFrame.m_LocalSegments.begin();
+  std::vector< ViconCGStream::VLocalSegments >::const_iterator SegmentIt = m_LatestFrame.m_LocalSegments.begin();
   std::vector< ViconCGStream::VLocalSegments >::const_iterator SegmentEnd = m_LatestFrame.m_LocalSegments.end();
-  for( ; SegmentIt != SegmentEnd ; ++SegmentIt )
+  for ( ; SegmentIt != SegmentEnd; ++SegmentIt )
   {
     const ViconCGStream::VLocalSegments & rSegments( *SegmentIt );
-    if( rSegments.m_SubjectID == SubjectID )
+    if ( rSegments.m_SubjectID == SubjectID )
     {
       // now look through the segment detail
-      std::vector< ViconCGStreamDetail::VLocalSegments_Segment >::const_iterator SegmentDetailIt  = rSegments.m_Segments.begin();
+      std::vector< ViconCGStreamDetail::VLocalSegments_Segment >::const_iterator SegmentDetailIt = rSegments.m_Segments.begin();
       std::vector< ViconCGStreamDetail::VLocalSegments_Segment >::const_iterator SegmentDetailEnd = rSegments.m_Segments.end();
-      for( ; SegmentDetailIt != SegmentDetailEnd ; ++SegmentDetailIt )
+      for ( ; SegmentDetailIt != SegmentDetailEnd; ++SegmentDetailIt )
       {
         const ViconCGStreamDetail::VLocalSegments_Segment & rSegment( *SegmentDetailIt );
-        if( rSegment.m_SegmentID == SegmentID )
+        if ( rSegment.m_SegmentID == SegmentID )
         {
           // copy out the answer
           CopyAndTransformR( rSegment.m_Rotation, o_rRotation );
           o_rbOccluded = false;
           return Result::Success;
-        }       
+        }
       }
     }
   }
@@ -2130,7 +2434,7 @@ Result::Enum VClient::GetSegmentLocalRotationEulerXYZ( const std::string & i_rSu
                                                              bool        & o_rbOccluded ) const
 {
   boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
-  
+
   Clear( o_rThreeVector );
   Clear( o_rbOccluded );
 
@@ -2348,6 +2652,24 @@ const ViconCGStream::VSubjectTopology * VClient::GetSubjectTopology( const unsig
   return 0;
 }
 
+
+const ViconCGStream::VSubjectScale * VClient::GetSubjectScale(const unsigned int i_SubjectID) const
+{
+  boost::recursive_mutex::scoped_lock Lock(m_FrameMutex);
+
+  std::vector< ViconCGStream::VSubjectScale >::const_iterator It = m_LatestFrame.m_SubjectScales.begin();
+  std::vector< ViconCGStream::VSubjectScale >::const_iterator End = m_LatestFrame.m_SubjectScales.end();
+  for( ; It != End; ++It )
+  {
+    if( i_SubjectID == It->m_SubjectID )
+    {
+      return &( *It );
+    }
+  }
+
+  return 0;
+}
+
 const ViconCGStream::VObjectQuality * VClient::GetObjectQuality( const unsigned int i_SubjectID ) const
 {
   boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
@@ -2443,7 +2765,8 @@ void VClient::GetVideoFrame( const unsigned int i_CameraID, Result::Enum & o_rRe
   else
   {
     o_rResult = Result::InvalidIndex;
-    o_rVideoFramePtr.Clear();
+//    o_rVideoFramePtr.Clear();
+    o_rVideoFramePtr.reset();
   }
 }
 
@@ -2630,7 +2953,7 @@ template < typename T >
 Result::Enum ViconDataStreamSDK::Core::VClient::GetForcePlateVector( const unsigned int i_PlateID,
                                                                      const unsigned int i_ForcePlateSubsamples,
                                                                      const std::vector< T > & i_rFrameVector,
-                                                                     boost::array< double, 3 > & o_rForcePlateVector ) const
+                                                                     std::array< double, 3 > & o_rForcePlateVector ) const
 {
   boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
 
@@ -2697,7 +3020,7 @@ Result::Enum ViconDataStreamSDK::Core::VClient::GetForcePlateVector( const unsig
 // Internal function used by local and global force functions.
 Result::Enum VClient::GetForceVector( const unsigned int i_PlateID, 
                                       const unsigned int i_ForcePlateSubsamples,
-                                      boost::array< double, 3 > & o_rForceVector ) const
+                                      std::array< double, 3 > & o_rForceVector ) const
 {
   return GetForcePlateVector( i_PlateID, i_ForcePlateSubsamples, m_LatestFrame.m_Forces, o_rForceVector );
 }
@@ -2705,7 +3028,7 @@ Result::Enum VClient::GetForceVector( const unsigned int i_PlateID,
 // Internal function used by local and global moment functions.
 Result::Enum VClient::GetMomentVector( const unsigned int i_PlateID, 
                                        const unsigned int i_ForcePlateSubsamples,
-                                       boost::array< double, 3 > & o_rMomentVector ) const
+                                       std::array< double, 3 > & o_rMomentVector ) const
 {
   return GetForcePlateVector( i_PlateID, i_ForcePlateSubsamples, m_LatestFrame.m_Moments, o_rMomentVector );
 }
@@ -2713,7 +3036,7 @@ Result::Enum VClient::GetMomentVector( const unsigned int i_PlateID,
 // Internal function used by local and global CoP functions.
 Result::Enum VClient::GetCentreOfPressure( const unsigned int i_PlateID, 
                                            const unsigned int i_ForcePlateSubsamples,
-                                           boost::array< double, 3 > & o_rLocation ) const
+                                           std::array< double, 3 > & o_rLocation ) const
 {
   return GetForcePlateVector( i_PlateID, i_ForcePlateSubsamples, m_LatestFrame.m_CentresOfPressure, o_rLocation );
 }
@@ -2726,7 +3049,7 @@ Result::Enum VClient::GetForceVector( const unsigned int i_PlateID,
   
   Clear( o_rForceVector );
 
-  boost::array< double, 3 > ForceVector;
+  std::array< double, 3 > ForceVector;
   Result::Enum Result = GetForceVector( i_PlateID, i_Subsample, ForceVector );
 
   if( Result == Result::Success )
@@ -2745,7 +3068,7 @@ Result::Enum VClient::GetMomentVector( const unsigned int i_PlateID,
   
   Clear( o_rMomentVector );
 
-  boost::array< double, 3 > MomentVector;
+  std::array< double, 3 > MomentVector;
   Result::Enum Result = GetMomentVector( i_PlateID, i_Subsample, MomentVector );
 
   if( Result == Result::Success )
@@ -2764,7 +3087,7 @@ Result::Enum VClient::GetCentreOfPressure( const unsigned int i_PlateID,
   
   Clear( o_rLocation );
 
-  boost::array< double, 3 > Location;
+  std::array< double, 3 > Location;
   Result::Enum Result = GetCentreOfPressure( i_PlateID, i_Subsample, Location );
 
   if( Result == Result::Success )
@@ -2783,7 +3106,7 @@ Result::Enum VClient::GetGlobalForceVector( const unsigned int i_PlateID,
   
   Clear( o_rForceVector );
 
-  boost::array< double, 3 > ForceVector;
+  std::array< double, 3 > ForceVector;
 
   Result::Enum Result = GetForceVector( i_PlateID, i_Subsample, ForceVector );
 
@@ -2801,10 +3124,10 @@ Result::Enum VClient::GetGlobalForceVector( const unsigned int i_PlateID,
 
     const ViconCGStream::VForcePlateInfo & rForcePlate = m_LatestFrame.m_ForcePlates[ PlateIndex ];
 
-    boost::array< double, 3 * 3 > WorldRotation;
+    std::array< double, 3 * 3 > WorldRotation;
     std::copy( rForcePlate.m_WorldRotation, rForcePlate.m_WorldRotation + 9, WorldRotation.begin() );
 
-    boost::array< double, 3 > WorldForceVector;
+    std::array< double, 3 > WorldForceVector;
 
     WorldForceVector = WorldRotation * ForceVector;
 
@@ -2822,7 +3145,7 @@ Result::Enum VClient::GetGlobalMomentVector( const unsigned int i_PlateID,
   
   Clear( o_rMomentVector );
 
-  boost::array< double, 3 > MomentVector;
+  std::array< double, 3 > MomentVector;
   Result::Enum Result = GetMomentVector( i_PlateID, i_Subsample, MomentVector );
 
   if( Result == Result::Success )
@@ -2835,10 +3158,10 @@ Result::Enum VClient::GetGlobalMomentVector( const unsigned int i_PlateID,
 
     const ViconCGStream::VForcePlateInfo & rForcePlate = m_LatestFrame.m_ForcePlates[ PlateIndex ];
 
-    boost::array< double, 3 * 3 > WorldRotation;
+    std::array< double, 3 * 3 > WorldRotation;
     std::copy( rForcePlate.m_WorldRotation, rForcePlate.m_WorldRotation + 9, WorldRotation.begin() );
 
-    boost::array< double, 3 > WorldMomentVector;
+    std::array< double, 3 > WorldMomentVector;
 
     WorldMomentVector = WorldRotation * MomentVector;
 
@@ -2856,7 +3179,7 @@ Result::Enum VClient::GetGlobalCentreOfPressure( const unsigned int i_PlateID,
   
   Clear( o_rLocation );
 
-  boost::array< double, 3 > LocationVector;
+  std::array< double, 3 > LocationVector;
   Result::Enum Result = GetCentreOfPressure( i_PlateID, i_Subsample, LocationVector );
 
   if( Result == Result::Success )
@@ -2869,16 +3192,16 @@ Result::Enum VClient::GetGlobalCentreOfPressure( const unsigned int i_PlateID,
 
     const ViconCGStream::VForcePlateInfo & rForcePlate = m_LatestFrame.m_ForcePlates[ PlateIndex ];
 
-    boost::array< double, 3 * 3 > WorldRotation;
+    std::array< double, 3 * 3 > WorldRotation;
     std::copy( rForcePlate.m_WorldRotation, rForcePlate.m_WorldRotation + 9, WorldRotation.begin() );
 
-    boost::array< double, 3 > WorldTranslation;
+    std::array< double, 3 > WorldTranslation;
     std::copy( rForcePlate.m_WorldTranslation, rForcePlate.m_WorldTranslation + 3, WorldTranslation.begin() );
 
     // Force Plate Info is in mm.  Result CoP is in meters.
     WorldTranslation /= 1000.0;
 
-    boost::array< double, 3 > WorldLocationVector;
+    std::array< double, 3 > WorldLocationVector;
 
     WorldLocationVector = WorldRotation * LocationVector + WorldTranslation;
 
@@ -3130,16 +3453,16 @@ Result::Enum VClient::GetEyeTrackerGlobalPosition( const unsigned int i_EyeTrack
         {
           // Use the segment to calculate global eye location.
 
-          boost::array< double, 3 * 3 > WorldRotation;
+          std::array< double, 3 * 3 > WorldRotation;
           std::copy( rSegment.m_Rotation, rSegment.m_Rotation + 9, WorldRotation.begin() );
 
-          boost::array< double, 3 > WorldTranslation;
+          std::array< double, 3 > WorldTranslation;
           std::copy( rSegment.m_Translation, rSegment.m_Translation + 3, WorldTranslation.begin() );
 
-          boost::array< double, 3 > EyeTranslation;
+          std::array< double, 3 > EyeTranslation;
           std::copy( rEyeTracker.m_LocalTranslation, rEyeTracker.m_LocalTranslation + 3, EyeTranslation.begin() );
 
-          const boost::array< double, 3 > WorldEyeTranslation = WorldRotation * EyeTranslation + WorldTranslation;
+          const std::array< double, 3 > WorldEyeTranslation = WorldRotation * EyeTranslation + WorldTranslation;
 
           CopyAndTransformT( WorldEyeTranslation.data(), o_rThreeVector );
           return Result::Success;
@@ -3221,16 +3544,16 @@ Result::Enum VClient::GetEyeTrackerGlobalGazeVector( const unsigned int i_EyeTra
         {
           // Use the segment to calculate global eye location.
 
-          boost::array< double, 3 * 3 > WorldRotation;
+          std::array< double, 3 * 3 > WorldRotation;
           std::copy( rSegment.m_Rotation, rSegment.m_Rotation + 9, WorldRotation.begin() );
 
-          boost::array< double, 3 * 3 > EyeRotation;
+          std::array< double, 3 * 3 > EyeRotation;
           std::copy( rEyeTracker.m_LocalRotation, rEyeTracker.m_LocalRotation + 9, EyeRotation.begin() );
 
-          boost::array< double, 3 > EyeGaze;
+          std::array< double, 3 > EyeGaze;
           std::copy( rEyeTrack.m_GazeVector, rEyeTrack.m_GazeVector + 3, EyeGaze.begin() );
 
-          const boost::array< double, 3 > WorldGazeVector = ( WorldRotation * EyeRotation ) * EyeGaze;
+          const std::array< double, 3 > WorldGazeVector = ( WorldRotation * EyeRotation ) * EyeGaze;
 
           CopyAndTransformT( WorldGazeVector.data(), o_rThreeVector );
           return Result::Success;
@@ -3266,14 +3589,6 @@ bool VClient::HasData() const
   return BadFrameValue != m_LatestFrame.m_Frame.m_FrameID;
 }
 
-void VClient::PreFetchThreadBody()
-{
-  while( m_bContinuePreFetch )
-  {
-    FetchNextFrame();   
-  }
-}
-
 void VClient::FetchNextFrame()
 {
   if( !m_pClient )
@@ -3289,6 +3604,12 @@ void VClient::FetchNextFrame()
     // copy out the last frame
     m_bNewCachedFrame = true;
     m_CachedFrame = Frame;
+
+    // Log this frame in timing information
+    if( m_pTimingLog)
+    { 
+      m_pTimingLog->WriteToLog(Frame.m_Frame.m_FrameID, Frame.m_Latency.m_Samples );
+    }
   }
 } 
 
@@ -3497,10 +3818,21 @@ Result::Enum VClient::GetDeviceOutputName( const std::string  & i_rDeviceName,
                                                  std::string  & o_rDeviceOutputName,
                                                  Unit::Enum   & o_rDeviceOutputUnit ) const
 {
+  // For backward compatibility here, we return the component name as the output name
+  std::string UnneededOutputName;
+  return GetDeviceOutputName( i_rDeviceName, i_DeviceOutputIndex, UnneededOutputName, o_rDeviceOutputName, o_rDeviceOutputUnit );
+}
+
+Result::Enum VClient::GetDeviceOutputName( const std::string  & i_rDeviceName,
+                                           const unsigned int   i_DeviceOutputIndex,
+                                                 std::string  & o_rDeviceOutputName,
+                                                 std::string  & o_rComponentName,
+                                                 Unit::Enum   & o_rDeviceOutputUnit ) const
+{
   boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
   
   Result::Enum GetResult = Result::Success;
-  if ( !InitGet( GetResult, o_rDeviceOutputName, o_rDeviceOutputUnit ) )
+  if ( !InitGet( GetResult, o_rDeviceOutputName, o_rComponentName, o_rDeviceOutputUnit ) )
   {
     return GetResult; 
   }
@@ -3536,7 +3868,8 @@ Result::Enum VClient::GetDeviceOutputName( const std::string  & i_rDeviceName,
     {
       if( CurrentDeviceOutputIndex == i_DeviceOutputIndex )
       {
-        o_rDeviceOutputName = AdaptDeviceOutputName( *ComponentIt, CurrentDeviceOutputIndex );
+        o_rDeviceOutputName = rChannel.m_Name;
+        o_rComponentName = AdaptDeviceOutputName( *ComponentIt, CurrentDeviceOutputIndex );
 
         if( bIsForcePlate )
         {
@@ -3735,17 +4068,33 @@ Result::Enum VClient::GetDeviceOutputName( const std::string  & i_rDeviceName,
 }
 
 Result::Enum VClient::GetDeviceOutputValue( const std::string & i_rDeviceName,
-                                            const std::string & i_rDeviceOutputName,
+                                            const std::string & i_rDeviceOutputComponentName,
                                                   double      & o_rValue,
                                                   bool        & o_rbOccluded ) const
 {
-  return GetDeviceOutputValue( i_rDeviceName, i_rDeviceOutputName, 0, o_rValue, o_rbOccluded );
+  return GetDeviceOutputValue( i_rDeviceName, std::string(), i_rDeviceOutputComponentName,  0, o_rValue, o_rbOccluded );
+}
+
+Result::Enum VClient::GetDeviceOutputValue( const std::string & i_rDeviceName,
+                                            const std::string & i_rDeviceOutputName,
+                                            const std::string & i_rComponentName,
+                                                  double      & o_rValue,
+                                                  bool        & o_rbOccluded ) const
+{
+  return GetDeviceOutputValue( i_rDeviceName, i_rDeviceOutputName, i_rComponentName, 0, o_rValue, o_rbOccluded );
 }
 
 
-
-Result::Enum VClient::GetDeviceOutputSubsamples( const std::string  & i_rDeviceName, 
+Result::Enum VClient::GetDeviceOutputSubsamples( const std::string  & i_rDeviceName,
+                                                 const std::string  & i_rDeviceOutputComponentName,
+                                                       unsigned int & o_rDeviceOutputSubsamples,
+                                                       bool         & o_rbOccluded ) const
+{
+  return GetDeviceOutputSubsamples( i_rDeviceName, std::string(), i_rDeviceOutputComponentName, o_rDeviceOutputSubsamples, o_rbOccluded );
+}
+Result::Enum VClient::GetDeviceOutputSubsamples( const std::string  & i_rDeviceName,
                                                  const std::string  & i_rDeviceOutputName, 
+                                                 const std::string  & i_rComponentName,
                                                        unsigned int & o_rDeviceOutputSubsamples,
                                                        bool         & o_rbOccluded ) const
 {
@@ -3773,14 +4122,22 @@ Result::Enum VClient::GetDeviceOutputSubsamples( const std::string  & i_rDeviceN
   unsigned int CurrentDeviceOutputIndex = 0;
   std::vector< ViconCGStream::VChannelInfo >::const_iterator ChannelIt  = m_LatestFrame.m_Channels.begin();
   std::vector< ViconCGStream::VChannelInfo >::const_iterator ChannelEnd = m_LatestFrame.m_Channels.end();
-  for( ; ChannelIt != ChannelEnd ; ++ChannelIt )
+  for ( ; ChannelIt != ChannelEnd; ++ChannelIt )
   {
     const ViconCGStream::VChannelInfo & rChannel( *ChannelIt );
 
     // Wrong device
-    if( rChannel.m_DeviceID != DeviceID )
+    if ( rChannel.m_DeviceID != DeviceID )
     {
       continue;
+    }
+
+    if ( !i_rDeviceOutputName.empty() )
+    {
+      if ( rChannel.m_Name != i_rDeviceOutputName )
+      {
+        continue;
+      }
     }
 
     if( rChannel.m_ComponentNames.empty() )
@@ -3792,7 +4149,7 @@ Result::Enum VClient::GetDeviceOutputSubsamples( const std::string  & i_rDeviceN
     std::vector< std::string >::const_iterator ComponentEnd = rChannel.m_ComponentNames.end();
     for( unsigned int ComponentIndex = 0 ; ComponentIt != ComponentEnd ; ++ComponentIt, ++ComponentIndex, ++CurrentDeviceOutputIndex )
     {
-      if( i_rDeviceOutputName == AdaptDeviceOutputName( *ComponentIt, CurrentDeviceOutputIndex ) )
+      if( i_rComponentName == AdaptDeviceOutputName( *ComponentIt, CurrentDeviceOutputIndex ) )
       {
         // This is the correct component.
         // Find the correct data array.
@@ -3823,7 +4180,17 @@ Result::Enum VClient::GetDeviceOutputSubsamples( const std::string  & i_rDeviceN
 }
 
 Result::Enum VClient::GetDeviceOutputValue( const std::string  & i_rDeviceName,
+                                            const std::string  & i_rDeviceOutputComponentName,
+                                                  unsigned int   i_Subsample,
+                                                  double       & o_rValue,
+                                                  bool         & o_rbOccluded ) const
+{
+  return GetDeviceOutputValue( i_rDeviceName, std::string(), i_rDeviceOutputComponentName, i_Subsample, o_rValue, o_rbOccluded );
+}
+
+Result::Enum VClient::GetDeviceOutputValue( const std::string  & i_rDeviceName,
                                             const std::string  & i_rDeviceOutputName,
+                                            const std::string  & i_rComponentName,
                                                   unsigned int   i_Subsample,
                                                   double       & o_rValue,
                                                   bool         & o_rbOccluded ) const
@@ -3863,11 +4230,19 @@ Result::Enum VClient::GetDeviceOutputValue( const std::string  & i_rDeviceName,
       continue;
     }
 
+    if ( !i_rDeviceOutputName.empty() )
+    {
+      if ( rChannel.m_Name != i_rDeviceOutputName )
+      {
+        continue;
+      }
+    }
+
     std::vector< std::string >::const_iterator ComponentIt  = rChannel.m_ComponentNames.begin();
     std::vector< std::string >::const_iterator ComponentEnd = rChannel.m_ComponentNames.end();
     for( unsigned int ComponentIndex = 0 ; ComponentIt != ComponentEnd ; ++ComponentIt, ++ComponentIndex, ++CurrentDeviceOutputIndex )
     {
-      if( i_rDeviceOutputName == AdaptDeviceOutputName( *ComponentIt, CurrentDeviceOutputIndex ) )
+      if( i_rComponentName == AdaptDeviceOutputName( *ComponentIt, CurrentDeviceOutputIndex ) )
       {
         // This is the correct component. Now figure out where to get the data from
 
@@ -4376,6 +4751,38 @@ Result::Enum VClient::SetCameraFilter( const std::vector< unsigned int > & i_rCa
   return Result::Success;
 }
 
+Result::Enum VClient::ClearSubjectFilter()
+{
+  m_Filter.Clear(ViconCGStreamEnum::SubjectInfo);
+  m_Filter.Clear( ViconCGStreamEnum::GlobalSegments );
+  m_Filter.Clear( ViconCGStreamEnum::LocalSegments );
+  m_Filter.Clear( ViconCGStreamEnum::LightweightSegments );
+  m_Filter.Clear( ViconCGStreamEnum::SubjectScale );
+  m_Filter.Clear( ViconCGStreamEnum::SubjectTopology );
+
+  m_pClient->SetFilter(m_Filter);
+
+  return Result::Success;
+}
+
+Result::Enum VClient::AddToSubjectFilter(const std::string & i_rSubjectName)
+{
+  Result::Enum Result;
+  if( InitGet(Result) )
+  {
+    const auto & rpSubjectInfo = GetSubjectInfo(i_rSubjectName, Result);
+    if( Result == Result::Success && rpSubjectInfo )
+    {
+      m_Filter.Add(ViconCGStreamEnum::GlobalSegments, rpSubjectInfo->m_SubjectID);
+      m_Filter.Add(ViconCGStreamEnum::LocalSegments, rpSubjectInfo->m_SubjectID);
+      m_Filter.Add(ViconCGStreamEnum::LightweightSegments, rpSubjectInfo->m_SubjectID);
+      m_Filter.Add(ViconCGStreamEnum::ObjectQuality, rpSubjectInfo->m_SubjectID);
+
+      m_pClient->SetFilter(m_Filter);
+    }
+  }
+  return Result;
+}
 
 ViconCGStreamClientSDK::ICGFrameState& VClient::LatestFrame()
 { 
@@ -4387,7 +4794,66 @@ ViconCGStreamClientSDK::ICGFrameState& VClient::CachedFrame()
   return m_CachedFrame; 
 }
 
-void VClient::CopyAndTransformT( const double i_Translation[ 3 ], double ( & io_Translation )[ 3 ] ) const
+Result::Enum VClient::SetTimingLog(const std::string & i_rClientLog, const std::string & i_rCGStreamLog )
+{
+  if (!m_pTimingLog)
+  {
+    m_pTimingLog = std::make_shared< VClientTimingLog >();
+  }
+
+  bool bClientLogOk = m_pTimingLog->CreateLog(i_rClientLog);
+  bool bCGStreamLogOK = true;
+  if( m_pClient )
+  {
+    bCGStreamLogOK = m_pClient->SetLogFile(i_rCGStreamLog);
+  }
+  else
+  {
+    m_ClientLogFile = i_rCGStreamLog;
+  }
+
+  Result::Enum Output = ( bClientLogOk && bCGStreamLogOK ) ? Result::Success : Result::InvalidOperation;
+  return Output;
+}
+
+Result::Enum VClient::ConfigureWireless( std::string& o_rError )
+{
+  if( !m_pWirelessConfiguration )
+  {
+    std::string Error;
+    m_pWirelessConfiguration = VWirelessConfiguration::Create( Error );
+
+    if( !m_pWirelessConfiguration )
+    {
+      o_rError = Error;
+      return Result::NotSupported;
+    }
+  }
+
+  std::string Error;
+  if( ! m_pWirelessConfiguration->StreamingMode( Error, true ) )
+  {
+    o_rError = "Streaming Mode " + Error;
+    return Result::ConfigurationFailed;
+  }
+
+  if( !m_pWirelessConfiguration->BackgroundScan( Error, false ) )
+  {
+    o_rError = "Background Scan " + Error;
+    return Result::ConfigurationFailed;
+  }
+
+  return Result::Success;
+}
+
+void VClient::CopyAndTransformT( const float i_Translation[3], double( &io_Translation )[3] ) const
+{
+  double TranslationD[3];
+  for ( unsigned int i = 0; i < 3; ++i ) TranslationD[i] = static_cast< double >( i_Translation[i] );
+  CopyAndTransformT( TranslationD, io_Translation );
+}
+
+void VClient::CopyAndTransformT( const double i_Translation[3], double( &io_Translation )[3] ) const
 {
   if (m_pAxisMapping)
   {
@@ -4537,5 +5003,7 @@ ViconCGStreamType::UInt64 VClient::GetDeviceStartTick( const unsigned int i_Devi
   }
   return 0;
 }
+
+
 } // End of namespace Core
 } // End of namespace ViconDataStreamSDK

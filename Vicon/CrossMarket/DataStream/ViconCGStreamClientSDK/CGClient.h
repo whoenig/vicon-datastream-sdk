@@ -47,14 +47,15 @@ public:
 
   // ICGClient
   virtual void Destroy();
-  virtual void Connect( std::string i_IPAddress, unsigned short i_Port );
+  virtual void Connect( std::string i_IPAddress, unsigned short i_Port ) override;
+  virtual void Connect( const std::vector< std::pair< std::string, unsigned short > > & i_rHosts ) override;
   virtual void ReceiveMulticastData( std::string i_MulticastIPAddress, std::string i_LocalIPAddress, unsigned short i_Port );
   virtual void StopReceivingMulticastData( );
 
   virtual bool IsConnected() const;
   virtual bool IsMulticastReceiving() const;
 
-  virtual void SetRequestTypes( ViconCGStreamType::Enum i_RequestedType, bool i_bEnable = true);
+  virtual bool SetRequestTypes( ViconCGStreamType::Enum i_RequestedType, bool i_bEnable = true);
   virtual void SetBufferSize( unsigned int i_MaxFrames );
   virtual void SetDecodeVideo( bool i_bDecode );
   virtual void SetStreamMode( bool i_bStream );
@@ -68,11 +69,6 @@ public:
   virtual bool WaitFrames( std::vector< ICGFrameState > & o_rFrames, unsigned int i_TimeoutMs );
   virtual bool WaitFrame( ICGFrameState& o_rFrame, unsigned int i_TimeoutMs );
 
-  virtual void VideoFrameAddRef( const ViconCGStream::VVideoFrame * i_pVideoFrame );
-  virtual void VideoFrameRelease( const ViconCGStream::VVideoFrame * i_pVideoFrame );
-
-  virtual bool NetworkLatency(double & o_rLatency) const;
-
   // maintains a list of devices with haptic feedback on. 
   // if on add to the list,
   // if off delete from the list if existed in the list.
@@ -81,11 +77,19 @@ public:
   /// Allows filtering of items in a group, e.g. only get centroids for a given camera id, etc.
   virtual void SetFilter( const ViconCGStream::VFilter & i_rFilter );
 
+  virtual void SendPing();
+  virtual bool SetLogFile( const std::string& i_rLog );
+
+  virtual void RequestFrame() override;
+  virtual void RequestNextFrame() override;
+
+  virtual void ClearBuffer() override;
+
   // mirrors IViconCGStreamClientCallback
-  virtual void OnConnect();
+  virtual void OnConnect( size_t i_ClientID );
   virtual void OnStaticObjects(  std::shared_ptr< const VStaticObjects >  i_pStaticObjects );
-  virtual void OnDynamicObjects( std::shared_ptr< const VDynamicObjects > i_pDynamicObjects );
-  virtual void OnDisconnect();
+  virtual void OnDynamicObjects( std::shared_ptr< const VDynamicObjects > i_pDynamicObjects, size_t i_ClientID );
+  virtual void OnDisconnect( size_t i_ClientID );
 
 protected:
 
@@ -94,12 +98,12 @@ protected:
   typedef std::deque< TFramePair > TFrameDeque;
 
   void ReadFramePair( const TFramePair& i_rPair, ICGFrameState& o_rFrameState );
-  void VideoFrameAddRefInitialise( std::shared_ptr< const ViconCGStream::VVideoFrame > i_pVideoFrame );
 
   // The C++ client which does all of the work for us
-  std::shared_ptr< VViconCGStreamClient >   m_pClient;
-  std::shared_ptr< VCGClientCallback >      m_pCallback;
-  bool                                      m_bConnected;
+  std::vector< std::shared_ptr< VViconCGStreamClient > > m_pClients;
+  std::vector< std::shared_ptr< VCGClientCallback > >    m_pCallbacks;
+  std::vector< ViconCGStreamType::UInt32 >               m_LastFrameIDs;
+  std::map< size_t, bool >                               m_Connected;
   bool                                      m_bMulticastReceiving;
   bool                                      m_bMulticastController;
   std::set< unsigned int >                  m_HapticDeviceOnList;
@@ -112,24 +116,7 @@ protected:
   TFrameDeque                               m_FrameDeque;
   unsigned int                              m_MaxBufferSize;
 
-  boost::condition                          m_NewFramesCondition;
-  
-  
-  class VVideoFrameReferenceCount
-  {
-  public:
-    VVideoFrameReferenceCount()
-    : m_ReferenceCount( 0 )
-    {
-    }
-    int m_ReferenceCount;
-    std::shared_ptr< const ViconCGStream::VVideoFrame > m_pVideoFrame;
-  };
-  
-  typedef std::map< const ViconCGStream::VVideoFrame *, VVideoFrameReferenceCount > TVideoFrameReferenceCounted;
-  TVideoFrameReferenceCounted m_VideoFrameReferenceCounted;
-  
-  bool m_bDestroyAfterVideo;
+  boost::condition                          m_NewFramesCondition; 
 };
 
 } // End of namespace ViconCGStreamClientSDK

@@ -31,6 +31,7 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <array>
 
 namespace ViconCGStreamIO
 {
@@ -63,6 +64,13 @@ public:
   bool Read( T ( & o_pValues )[ N ] ) const
   {
     return VBufferDetail< VIsPod< T >::Answer >::Read( m_BufferImpl, o_pValues, N );
+  }
+
+  /// Read array.
+  template< typename T, unsigned int N >
+  bool Read( std::array< T, N > & o_rValue ) const
+  {
+    return VBufferDetail< VIsPod< T >::Answer >::Read( m_BufferImpl, o_rValue.data(), N );
   }
   
   /// Read vector.
@@ -140,6 +148,13 @@ public:
   void Write( const T ( & i_pValues )[ N ] )
   {
     VBufferDetail< VIsPod< T >::Answer >::Write( m_BufferImpl, i_pValues, N );
+  }
+
+  /// Write array.
+  template< typename T, unsigned int N >
+  void Write( const std::array< T, N > & i_rValues )
+  {
+    VBufferDetail< VIsPod< T >::Answer >::Write( m_BufferImpl, i_rValues.data(), N );
   }
   
   /// Write vector.

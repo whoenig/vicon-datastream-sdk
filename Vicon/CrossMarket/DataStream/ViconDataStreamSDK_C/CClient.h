@@ -109,16 +109,19 @@ CDLL_EXPORT CEnum Client_StartTransmittingMulticast(CClient* client, CString Ser
 CDLL_EXPORT CEnum Client_StopTransmittingMulticast(CClient* client);
 
 CDLL_EXPORT CEnum Client_EnableSegmentData(CClient* client);
+CDLL_EXPORT CEnum Client_EnableLightweightSegmentData( CClient* client );
 CDLL_EXPORT CEnum Client_EnableMarkerData(CClient* client);
 CDLL_EXPORT CEnum Client_EnableUnlabeledMarkerData(CClient* client);
 CDLL_EXPORT CEnum Client_EnableDeviceData(CClient* client);
 
 CDLL_EXPORT CEnum Client_DisableSegmentData(CClient* client);
+CDLL_EXPORT CEnum Client_DisableLightweightSegmentData( CClient* client );
 CDLL_EXPORT CEnum Client_DisableMarkerData(CClient* client);
 CDLL_EXPORT CEnum Client_DisableUnlabeledMarkerData(CClient* client);
 CDLL_EXPORT CEnum Client_DisableDeviceData(CClient* client);
 
 CDLL_EXPORT CBool Client_IsSegmentDataEnabled(CClient* client);
+CDLL_EXPORT CBool Client_IsLightweightSegmentDataEnabled( CClient* client );
 CDLL_EXPORT CBool Client_IsMarkerDataEnabled(CClient* client);
 CDLL_EXPORT CBool Client_IsUnlabeledMarkerDataEnabled(CClient* client);
 CDLL_EXPORT CBool Client_IsDeviceDataEnabled(CClient* client);
@@ -178,6 +181,9 @@ CDLL_EXPORT void Client_GetSegmentStaticRotationQuaternion(CClient* client, CStr
 CDLL_EXPORT void Client_GetSegmentStaticRotationEulerXYZ(CClient* client, CString  SubjectName,
                                                                           CString  SegmentName, COutput_GetSegmentStaticRotationEulerXYZ* outptr );
 
+CDLL_EXPORT void Client_GetSegmentStaticScale(CClient* client, CString  SubjectName,
+                                                                          CString  SegmentName, COutput_GetSegmentStaticScale* outptr);
+
 CDLL_EXPORT void Client_GetSegmentGlobalTranslation(CClient* client, CString  SubjectName,
                                                     CString  SegmentName, COutput_GetSegmentGlobalTranslation* outptr );
 
@@ -232,7 +238,10 @@ CDLL_EXPORT void Client_GetDeviceOutputCount(CClient* client, CString DeviceName
 
 CDLL_EXPORT CEnum Client_GetDeviceOutputName(CClient* client, CString   DeviceName,
                       unsigned int   DeviceOutputIndex, int sizeOfBuffer, char* outstr, CEnum* DeviceOutputUnit );
-    
+
+CDLL_EXPORT CEnum Client_GetDeviceOutputComponentName( CClient* client, CString   DeviceName,
+  unsigned int   DeviceOutputIndex, int sizeOfOutputBuffer, char* OutputOutstr, int sizeOfComponentBuffer, char* ComponentOutstr, CEnum* DeviceOutputUnit );
+
 CDLL_EXPORT void Client_GetDeviceOutputValue(CClient* client, CString  DeviceName,
                                               CString  DeviceOutputName, COutput_GetDeviceOutputValue* outptr );
 
@@ -243,6 +252,18 @@ CDLL_EXPORT void Client_GetDeviceOutputValueForSubsample(CClient* client, CStrin
                                                   CString  DeviceOutputName,
                                                   unsigned int Subsample,
                         COutput_GetDeviceOutputValue* outptr);
+
+CDLL_EXPORT void Client_GetDeviceOutputComponentValue( CClient* client, CString  DeviceName,
+  CString  DeviceOutputName, CString  DeviceOutputComponentName, COutput_GetDeviceOutputValue* outptr );
+
+CDLL_EXPORT void Client_GetDeviceOutputComponentSubsamples( CClient* client, CString  DeviceName,
+  CString  DeviceOutputName, CString  DeviceOutputComponentName, COutput_GetDeviceOutputSubsamples* outptr );
+
+CDLL_EXPORT void Client_GetDeviceOutputComponentValueForSubsample( CClient* client, CString  DeviceName,
+  CString  DeviceOutputName,
+  CString  DeviceOutputComponentName,
+  unsigned int Subsample,
+  COutput_GetDeviceOutputValue* outptr );
 
 CDLL_EXPORT void Client_GetForcePlateCount(CClient* client, COutput_GetForcePlateCount* outptr);
 
@@ -300,6 +321,12 @@ CDLL_EXPORT void Client_GetIsVideoCamera( CClient* client, CString i_rCameraName
 CDLL_EXPORT void Client_GetCentroidCount( CClient* client, CString i_rCameraName, COutput_GetCentroidCount* outptr );
 CDLL_EXPORT void Client_GetCentroidPosition( CClient* client, CString i_rCameraName, unsigned int i_CentroidIndex, COutput_GetCentroidPosition* outptr );
 CDLL_EXPORT void Client_GetCentroidWeight( CClient* client, CString i_rCameraName, unsigned int i_CentroidIndex, COutput_GetCentroidWeight* outptr );
+
+CDLL_EXPORT CEnum Client_ClearSubjectFilter( CClient* client);
+CDLL_EXPORT CEnum Client_AddToSubjectFilter( CClient* client, CString i_rSubjectName );
+
+CDLL_EXPORT CEnum Client_SetTimingLogFile( CClient* client, CString i_rClientLog, CString i_rStreamLog );
+CDLL_EXPORT CEnum Client_ConfigureWireless( CClient* client, int sizeOfBuffer, char* outstrError );
 
 
 #ifdef __cplusplus

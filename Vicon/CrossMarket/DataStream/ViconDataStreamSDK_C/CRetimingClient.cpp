@@ -46,14 +46,14 @@ void RetimingClient_Destroy( CRetimingClient* client )
 {
   if( client )
   {
-    delete ( (CRetimingClient*)client );
+    delete ( (RetimingClient*)client );
   }
 }
 
 void RetimingClient_GetVersion(CRetimingClient* client, COutput_GetVersion* outptr)
 {
   const Output_GetVersion& outp = ((RetimingClient*)client)->GetVersion();
-  outptr->Major = outp.Major; outptr->Minor = outp.Minor; outptr->Point = outp.Point;
+  outptr->Major = outp.Major; outptr->Minor = outp.Minor; outptr->Point = outp.Point; outptr->Revision = outp.Revision;
 }
 
 CEnum RetimingClient_Connect(CRetimingClient* client, CString HostName)
@@ -74,6 +74,21 @@ CEnum RetimingClient_Disconnect(CRetimingClient* client)
 CBool RetimingClient_IsConnected(CRetimingClient* client)
 {
   return ((RetimingClient*)client)->IsConnected().Connected;
+}
+
+CEnum RetimingClient_EnableLightweightSegmentData( CRetimingClient* client )
+{
+  return (( RetimingClient* )client )->EnableLightweightSegmentData().Result;
+}
+
+CEnum RetimingClient_DisableLightweightSegmentData( CRetimingClient* client )
+{
+  return (( RetimingClient* )client )->DisableLightweightSegmentData().Result;
+}
+
+CBool RetimingClient_IsLightweightSegmentDataEnabled( CRetimingClient* client )
+{
+  return (( RetimingClient* )client )->IsLightweightSegmentDataEnabled().Enabled;
 }
 
 CEnum RetimingClient_SetAxisMapping(CRetimingClient* client, CEnum XAxis, CEnum YAxis, CEnum ZAxis)
@@ -229,6 +244,15 @@ void RetimingClient_GetSegmentStaticRotationEulerXYZ(CRetimingClient* client, CS
   std::memcpy(outptr->Rotation, outp.Rotation, sizeof(outptr->Rotation));
 }
 
+void RetimingClient_GetSegmentStaticScale( CRetimingClient* client, CString SubjectName,
+                                                      CString SegmentName, COutput_GetSegmentStaticScale* outptr )
+{
+  const Output_GetSegmentStaticScale& outp = ( (RetimingClient*)client )->GetSegmentStaticScale( String( SubjectName ), String( SegmentName ) );
+
+  outptr->Result = outp.Result;
+  std::memcpy( outptr->Scale, outp.Scale, sizeof( outptr->Scale ) );
+}
+
 void RetimingClient_GetSegmentGlobalTranslation(CRetimingClient* client, CString  SubjectName,
   CString  SegmentName, COutput_GetSegmentGlobalTranslation* outptr)
 {
@@ -361,4 +385,21 @@ void RetimingClient_SetMaximumPrediction( CRetimingClient* client, CReal i_MaxPr
 CReal RetimingClient_MaximumPrediction( CRetimingClient* client )
 {
   return ((RetimingClient*)client)->MaximumPrediction();
+}
+
+CEnum RetimingClient_ClearSubjectFilter(CRetimingClient* client )
+{
+  Output_ClearSubjectFilter outpt = ( ( RetimingClient*)client )->ClearSubjectFilter();
+  return outpt.Result;
+}
+
+CEnum RetimingClient_AddToSubjectFilter(CRetimingClient* client, CString i_rSubjectName )
+{
+  Output_AddToSubjectFilter outpt = ( ( RetimingClient*)client )->AddToSubjectFilter( i_rSubjectName );
+  return outpt.Result;
+}
+
+CEnum RetimingClient_SetTimingLogFile(CRetimingClient* client, CString i_rClientLog, CString i_rStreamLog)
+{
+  return (( RetimingClient* )client)->SetTimingLogFile(( String )i_rClientLog, ( String )i_rStreamLog ).Result;
 }

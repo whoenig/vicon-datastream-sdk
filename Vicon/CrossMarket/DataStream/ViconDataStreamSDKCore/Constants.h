@@ -169,7 +169,10 @@ namespace Result
     HapticAlreadySet,
     EarlyDataRequested,
     LateDataRequested,
-    InvalidOperation
+    InvalidOperation,
+    NotSupported,
+    ConfigurationFailed,
+    NotPresent
   };
 }
 

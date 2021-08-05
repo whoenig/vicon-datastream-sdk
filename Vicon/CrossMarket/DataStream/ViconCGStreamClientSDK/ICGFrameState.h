@@ -42,12 +42,14 @@
 #include <ViconCGStream/CentreOfPressureFrame.h>
 #include <ViconCGStream/SubjectInfo.h>
 #include <ViconCGStream/SubjectTopology.h>
+#include <ViconCGStream/SubjectScale.h>
 #include <ViconCGStream/SubjectHealth.h>
 #include <ViconCGStream/ObjectQuality.h>
 #include <ViconCGStream/FrameInfo.h>
 #include <ViconCGStream/FrameRateInfo.h>
 #include <ViconCGStream/HardwareFrameInfo.h>
 #include <ViconCGStream/LatencyInfo.h>
+#include <ViconCGStream/LightweightSegments.h>
 #include <ViconCGStream/LocalSegments.h>
 #include <ViconCGStream/GlobalSegments.h>
 #include <ViconCGStream/LabeledRecons.h>
@@ -67,6 +69,7 @@
 #include <ViconCGStream/FrameRateInfo.h>
 
 #include <boost/optional.hpp>
+#include <memory>
 #include <vector>
 
 #include "ICGClient.h"
@@ -74,68 +77,7 @@
 namespace ViconCGStreamClientSDK
 {
 
-class VVideoFramePtr
-{
-public:
-
-  VVideoFramePtr()
-  : m_pClient( 0 )
-  , m_pVideoFrame( 0 )
-  {
-  }
-  
-  VVideoFramePtr( ICGClient * i_pClient, ViconCGStream::VVideoFrame * i_pVideoFrame )
-  : m_pClient( i_pClient )
-  , m_pVideoFrame( i_pVideoFrame )
-  {
-  }
-
-  VVideoFramePtr( const VVideoFramePtr & i_rVideoFramePtr )
-  : m_pClient( i_rVideoFramePtr.m_pClient )
-  , m_pVideoFrame( i_rVideoFramePtr.m_pVideoFrame )
-  {
-    if ( m_pClient && m_pVideoFrame )
-    {
-      m_pClient->VideoFrameAddRef( m_pVideoFrame );
-    }
-  }
-  
-  ~VVideoFramePtr()
-  {
-    Clear();
-  }
-  
-  const ViconCGStream::VVideoFrame & operator * () const
-  {
-    return *m_pVideoFrame;
-  }
-  
-  ViconCGStream::VVideoFrame & operator * ()
-  {
-    return *m_pVideoFrame;
-  }
-
-  explicit operator bool()
-  {
-    return m_pClient && m_pVideoFrame;
-  }
-
-  void Clear()
-  {
-    if( m_pClient && m_pVideoFrame )
-    {
-      m_pClient->VideoFrameRelease( m_pVideoFrame );
-      m_pClient = 0;
-      m_pVideoFrame = 0;
-    }
-  }
-
-private:
-
-  ICGClient * m_pClient;  
-  ViconCGStream::VVideoFrame * m_pVideoFrame;
-};
-
+typedef std::shared_ptr< const ViconCGStream::VVideoFrame > VVideoFramePtr;
 
 class ICGFrameState
 {
@@ -187,10 +129,12 @@ public:
   // Subjects
   std::vector< ViconCGStream::VSubjectInfo >           m_Subjects;
   std::vector< ViconCGStream::VSubjectTopology >       m_SubjectTopologies;
+  std::vector< ViconCGStream::VSubjectScale >          m_SubjectScales;
   std::vector< ViconCGStream::VSubjectHealth >         m_SubjectHealths;
   std::vector< ViconCGStream::VObjectQuality >         m_ObjectQualities;
   std::vector< ViconCGStream::VGlobalSegments >        m_GlobalSegments;
   std::vector< ViconCGStream::VLocalSegments >         m_LocalSegments;
+  std::vector< ViconCGStream::VLightweightSegments >   m_LightweightSegments;
 };
 
 } // End of namespace ViconCGStreamClientSDK

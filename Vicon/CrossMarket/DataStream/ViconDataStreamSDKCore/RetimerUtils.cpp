@@ -31,9 +31,9 @@ namespace bmc = boost::math::constants;
 
 namespace ClientUtils
 {
-  typedef boost::array< double, 4 > Quaternion;
-  typedef boost::array< double, 3 > Axis;
-  typedef boost::array< double, 3 > Displacement;
+  typedef std::array< double, 4 > Quaternion;
+  typedef std::array< double, 3 > Axis;
+  typedef std::array< double, 3 > Displacement;
 
   Quaternion Conjugate( const Quaternion & i_rInput )
   {
@@ -232,6 +232,24 @@ namespace ClientUtils
     Displacement d3 = d1 + disp;
 
     return d3;
+  }
+
+  double PredictVal(const double d1, const double t1, const double d2, const double t2, double t3)
+  {
+    // disp is displacement from t1 to t2
+    double disp( d2 - d1 );
+
+    // extrapolation factor
+    double dt = ( t3 - t1 ) / ( t2 - t1 );
+
+    // multiply displacement by extrapolation factor
+    disp *= dt;
+
+    // Combine with first displacement
+    double d3 = d1 + disp;
+
+    return d3;
+
   }
 }
 

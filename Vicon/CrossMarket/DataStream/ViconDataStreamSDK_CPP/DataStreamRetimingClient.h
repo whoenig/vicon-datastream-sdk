@@ -55,15 +55,15 @@ namespace ViconDataStreamSDK
     ///  from an internal buffer to predict the position of each segment to the current time. 
     ///
     ///  The system and network latencies are used when determining the amount of prediction required.
-    ///  If additional prediction is required, for example for use in a VR system where an additional latency 
+    ///  If additional prediction is required, for example, for use in a VR system where an additional latency 
     ///  is present due to rendering and display latency; this may be requested in the call to UpdateFrame().
     ///
-    ///  The user will either call UpdateFrame(), which will update the current frame state to 
+    ///  The user will call UpdateFrame(), which will update the current frame state to 
     ///  the time of calling and return immediately. This is intended for use in systems where you require
     ///  subject data positions at times driven by an external clock.
     ///
     ///  If you do not have an external clock, and require behavior similar to that of the standard DataStream 
-    ///  client running in ServerPush streaming mode, than the system may be configured to provide frame data
+    ///  client running in ServerPush streaming mode, then the system may be configured to provide frame data
     ///  at a consistent frame rate by providing a frame rate to the Connect() call. The user will then call 
     ///  WaitForFrame(), which will block in a similar method to Client::GetFrame(), but using retimed data
     ///  in order to keep the frame period very consistent.
@@ -71,7 +71,7 @@ namespace ViconDataStreamSDK
     ///  Examples of use
     ///  --------------
     /// 
-    ///  If you are using the client in a situation where you need to obtain the position of subjects in  
+    ///  If you are using the client in a situation where you need to obtain the position of subjects  
     /// 
     ///       ViconDataStreamSDK::CPP::RetimingClient _MyClient;
     ///       _MyClient.Connect( "localhost" );
@@ -138,7 +138,7 @@ namespace ViconDataStreamSDK
       /// Instances of the Vicon Data Stream RetimingClient create a DataStreamClient internally that manages the connection 
       /// to the data stream.
       /// 
-      /// The RetimingClient will set the underlying client up to receive the required data from the stream and to set the 
+      /// The RetimingClient will set up the underlying client to receive the required data from the stream and to set the 
       /// correct data delivery mode, so it is not necessary to set this up manually.
       ///
       ///
@@ -367,6 +367,135 @@ namespace ViconDataStreamSDK
       ///         connected to the stream, otherwise false.
       Output_IsConnected IsConnected() const;
 
+      /// Enable a lightweight transmission protocol for kinematic segment data in the Vicon DataStream. 
+      /// This will reduce the network bandwidth required to transmit segment data to approximately a quarter of that required by the 
+      /// previous method, at the expense of a small amount of precision.
+      /// Use the existing methods such as GetSegmentGlobalTranslation() and GetSegmentGlobalRotationMatrix() as usual to obtain the segment data.
+      /// Calling this method will automatically disable all other configurable output types. These may be re-enabled after the call if required.
+      ///
+      /// Call this function on startup, after connecting to the server, and before trying to read local or global segment data.
+      ///
+      /// See Also: IsSegmentDataEnabled(), DisableSegmentData(), EnableMarkerData(), EnableUnlabeledMarkerData(), EnableDeviceData(), GetSegmentCount(), GetSegmentName(), GetSegmentGlobalTranslation(), GetSegmentGlobalRotationEulerXYZ(), GetSegmentLocalTranslation(), GetSegmentLocalRotationEulerXYZ()
+      ///
+      ///
+      /// C example
+      ///      
+      ///      CClient * pClient = Client_Create();
+      ///      Client_Connect( pClient, "localhost" );
+      ///      Client_EnableLightweightSegmentData();
+      ///      Client_Destroy( pClient );
+      ///      
+      /// C++ example
+      ///      
+      ///      ViconDataStreamSDK::CPP::Client MyClient;
+      ///      MyClient.Connect( "localhost" );
+      ///      Output_EnableLightweightSegmentData Output = MyClient.EnableLightweightSegmentData();
+      ///      
+      /// MATLAB example
+      ///      
+      ///      MyClient = Client();
+      ///      MyClient.Connect( "localhost" );
+      ///      Output_EnableLightweightSegmentData Output = MyClient.EnableLightweightSegmentData();
+      ///      
+      /// .NET example
+      ///      
+      ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
+      ///      MyClient.Connect( "localhost" );
+      ///      Output_EnableLightweightSegmentData Output = MyClient.EnableLightweightSegmentData();
+      /// -----
+      /// \return An Output_EnableSegmentData class containing the result of the operation.
+      ///         - The Result will be:
+      ///           + Success
+      ///           + NotConnected
+      Output_EnableLightweightSegmentData         EnableLightweightSegmentData();
+
+      /// Disable the lightweight output mode for kinematic segment data in the Vicon DataStream.
+      /// Calling this mode does not automatically enable any other data types
+      ///
+      /// See Also: IsSegmentDataEnabled(), EnableSegmentData(), EnableMarkerData(), EnableUnlabeledMarkerData(), EnableDeviceData(), GetSegmentCount(), GetSegmentName(), GetSegmentGlobalTranslation(), GetSegmentGlobalRotationEulerXYZ(), GetSegmentLocalTranslation(), GetSegmentLocalRotationEulerXYZ()
+      ///
+      ///
+      ///
+      /// C example
+      ///      
+      ///      CClient * pClient = Client_Create();
+      ///      Client_Connect( pClient, "localhost" );
+      ///      Client_DisableLightweightSegmentData();
+      ///      Client_Destroy( pClient );
+      ///      
+      /// C++ example
+      ///      
+      ///      ViconDataStreamSDK::CPP::Client MyClient;
+      ///      MyClient.Connect( "localhost" );
+      ///      Output_DisableLightweightSegmentData Output = MyClient.DisableLightweightSegmentData();
+      ///      
+      /// MATLAB example
+      ///      
+      ///      MyClient = Client();
+      ///      MyClient.Connect( "localhost" );
+      ///      Output = MyClient.DisableLightweightSegmentData ();
+      ///      
+      /// .NET example
+      ///      
+      ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
+      ///      MyClient.Connect( "localhost" );
+      ///      Output_DisableLightweightSegmentData Output = MyClient.DisableLightweightSegmentData ();
+      /// -----
+      /// \return An Output_DisableLightweightSegmentData class containing the result of the operation.
+      ///         - The Result will be:
+      ///           + Success
+      ///           + NotConnected
+      Output_DisableLightweightSegmentData         DisableLightweightSegmentData();
+      
+      /// Return whether the lightweight transport mode for kinematic segment data is enabled in the Vicon DataStream.
+      ///
+      /// See Also: EnableSegmentData(), DisableSegmentData(), IsMarkerDataEnabled(), IsUnlabeledMarkerDataEnabled(), IsDeviceDataEnabled()
+      ///
+      ///
+      /// C example
+      ///      
+      ///      CClient * pClient = Client_Create();
+      ///      Client_Connect( pClient, "localhost" );
+      ///      CBool Output = Client_IsLightweightSegmentDataEnabled( pClient )
+      ///      // Output == 0
+      ///      Client_EnabledSegmentData( pClient );
+      ///      CBool Output = Client_IsLightweightSegmentDataEnabled( pClient )
+      ///      // Output == 1
+      ///      Client_Destroy( pClient );
+      ///      
+      /// C++ example
+      ///      
+      ///      ViconDataStreamSDK::CPP::Client MyClient;
+      ///      MyClient.Connect( "localhost" );
+      ///      Output_IsLightweightSegmentDataEnabled Output = MyClient.IsLightweightSegmentDataEnabled();
+      ///      // Output.Enabled == false
+      ///      MyClient.EnableSegmentData();
+      ///      Output_IsLightweightSegmentDataEnabled Output = MyClient.IsLightweightSegmentDataEnabled();
+      ///      // Output.Enabled == true
+      ///      
+      /// MATLAB example
+      ///      
+      ///      MyClient = Client();
+      ///      MyClient.Connect( "localhost" );
+      ///      Output = MyClient.IsLightweightSegmentDataEnabled(); % Output.Enabled == false
+      ///      MyClient.EnableSegmentData();
+      ///      Output = MyClient.IsLightweightSegmentDataEnabled(); % Output.Enabled == true
+      ///      
+      /// .NET example
+      ///      
+      ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
+      ///      MyClient.Connect( "localhost" );
+      ///      Output_IsLightweightSegmentDataEnabled Output = MyClient.IsLightweightSegmentDataEnabled();
+      ///      // Output.Enabled == false
+      ///      MyClient.EnableSegmentData();
+      ///      Output_IsLightweightSegmentDataEnabled Output = MyClient.IsLightweightSegmentDataEnabled();
+      ///      // Output.Enabled == true
+      /// -----
+      /// \return An Output_IsLightweightSegmentDataEnabled class containing the result of the operation.
+      ///         - The Result will be:
+      ///           + Whether the data is enabled
+      Output_IsLightweightSegmentDataEnabled         IsLightweightSegmentDataEnabled() const;
+      
       /// Remaps the 3D axis.
       /// Vicon Data uses a right-handed coordinate system, with +X forward, +Y left, and +Z up. 
       /// Other systems use different coordinate systems. The SDK can transform its data into any valid right-handed coordinate system by re-mapping each axis. 
@@ -462,7 +591,7 @@ namespace ViconDataStreamSDK
       /// and GetSegmentGlobalRotationQuaternion() will all return the stream contents and position at the
       /// time that this call was made. 
       /// 
-      /// If no call to UpdateFrame() is made, calls querying the stream state will return NoFrame
+      /// If no call to UpdateFrame() is made, calls querying the stream state will return NoFrame.
       /// 
       ///
       /// C example
@@ -495,9 +624,9 @@ namespace ViconDataStreamSDK
       ///      Output = MyClient.UpdateFrame(20); // Output.Result == Success
       /// -----      
       ///  
-      /// \param Offset An additional offset that will be applied to the time at which which the predicted
+      /// \param Offset An additional offset that will be applied to the time at which the predicted
       ///               position is calculated. This may be used to compensate for additional delays that 
-      ///               are in the users system, such as render delay. This is implemnted in a separate overloaded
+      ///               are in the user's system, such as render delay. This is implemented in a separate overloaded
       ///               method in .NET.
       ///
       /// \return An Output_UpdateFrame class containing the result of the operation.
@@ -509,7 +638,7 @@ namespace ViconDataStreamSDK
       /// Used when running the retiming client with a specified frame rate. This call will
       /// block until the next frame is available, as driven by an internal clock running at
       /// the frame rate specified by Connect( Host, FrameRate). The frame data is re-timed to the
-      /// correct time point
+      /// correct time point.
       /// 
       ///
       /// C example
@@ -1309,6 +1438,9 @@ namespace ViconDataStreamSDK
       Output_GetSegmentStaticRotationEulerXYZ GetSegmentStaticRotationEulerXYZ(const String & SubjectName,
         const String & SegmentName) const;
 
+      ///@private
+      Output_GetSegmentStaticScale GetSegmentStaticScale(const String & SubjectName, const String & SegmentName) const;
+
       /// Return the translation of a subject segment in global coordinates.
       /// The translation is of the form ( x, y, z ) where x, y and z are in millimeters with respect to the global origin.
       ///
@@ -1809,12 +1941,6 @@ namespace ViconDataStreamSDK
         const String & SegmentName) const;
 
 
-      ///@private
-      void SetOutputLatency(double OutputLatency);
-
-      ///@private
-      double OutputLatency() const;
-
       /// Sets the maximum amount by which the interpolation engine will predict later than the latest received frame. If required to predict by more than this amount,
       /// the result LateDataRequested will be returned.
       /// 
@@ -1876,6 +2002,35 @@ namespace ViconDataStreamSDK
       /// -----      
       /// \return The maximum prediction allowed in milliseconds
       double MaximumPrediction() const;
+
+      /// Set a debug log file that will contain timing information to allow analysis of the retiming performance
+      /// \return false if the log file could not be opened.
+      /// @private
+      bool SetDebugLogFile(const String & LogFile);
+
+      /// Set an output file that will save the input data to allow offline processing of this data to be performed
+      /// \return false if the file could not be opened.
+      /// @private
+      bool SetOutputFile(const String & LogFile);
+
+      /// Clear the subject filter. This will result in all subjects being sent.
+      /// @private
+      Output_ClearSubjectFilter ClearSubjectFilter();
+
+      /// Add a subject name to the subject filter. Only subjects present in the subject filter will be sent - if no filtered subjects are
+      /// present, they will all be sent.
+      /// @private
+      Output_AddToSubjectFilter AddToSubjectFilter( const String& SubjectName );
+
+      /// Output timing information to a log file
+      /// @private
+      Output_SetTimingLogFile SetTimingLogFile(const String & ClientLog, const String & StreamLog);
+
+      ///@private
+      void SetOutputLatency(double OutputLatency);
+
+      ///@private
+      double OutputLatency() const;
 
     private:
       RetimingClientImpl * m_pClientImpl;

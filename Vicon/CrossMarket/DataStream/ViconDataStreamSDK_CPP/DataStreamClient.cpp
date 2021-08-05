@@ -32,6 +32,7 @@
 #include "StringFactory.h"
 
 #include "CoreAdapters.h"
+namespace ph = std::placeholders;
 
 namespace ViconDataStreamSDK
 {
@@ -78,7 +79,8 @@ namespace CPP
     Output_GetVersion Output;
     m_pClientImpl->m_pCoreClient->GetVersion( Output.Major, 
                                               Output.Minor, 
-                                              Output.Point );
+                                              Output.Point,
+                                              Output.Revision );
 
     return Output;
   }
@@ -88,7 +90,7 @@ namespace CPP
   Output_Connect Client::Connect( const String & HostName )
   {
     std::shared_ptr< ViconCGStreamClientSDK::ICGClient > pClient( ViconCGStreamClientSDK::ICGClient::CreateCGClient(), 
-                                                                    boost::bind( &ViconCGStreamClientSDK::ICGClient::Destroy, _1 ) );
+                                                                    std::bind( &ViconCGStreamClientSDK::ICGClient::Destroy, ph::_1 ) );
     Output_Connect Output;
     Output.Result = Adapt( m_pClientImpl->m_pCoreClient->Connect( pClient, HostName ) );
     
@@ -101,7 +103,7 @@ namespace CPP
                                                         const String & MulticastIP )
   {
     std::shared_ptr< ViconCGStreamClientSDK::ICGClient > pClient( ViconCGStreamClientSDK::ICGClient::CreateCGClient(), 
-                                                                    boost::bind( &ViconCGStreamClientSDK::ICGClient::Destroy, _1 ) );
+                                                                    std::bind( &ViconCGStreamClientSDK::ICGClient::Destroy, ph::_1 ) );
     Output_ConnectToMulticast Output;
     Output.Result = Adapt( m_pClientImpl->m_pCoreClient->ConnectToMulticast( pClient, LocalIP, MulticastIP ) );
     
@@ -165,6 +167,16 @@ namespace CPP
   {
     Output_EnableSegmentData Output;
     Output.Result = Adapt( m_pClientImpl->m_pCoreClient->EnableSegmentData() );
+
+    return Output;
+  }
+
+  // EnableLightweightSegmentData
+  CLASS_DECLSPEC
+    Output_EnableLightweightSegmentData Client::EnableLightweightSegmentData()
+  {
+    Output_EnableLightweightSegmentData Output;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->EnableLightweightSegmentData() );
 
     return Output;
   }
@@ -254,7 +266,17 @@ namespace CPP
 
     return Output;
   }
+  
+  // DisableSegmentData
+  CLASS_DECLSPEC
+  Output_DisableLightweightSegmentData Client::DisableLightweightSegmentData()
+{
+    Output_DisableLightweightSegmentData Output;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->DisableLightweightSegmentData() );
 
+    return Output;
+  }
+  
   // DisableMarkerData
   CLASS_DECLSPEC
   Output_DisableMarkerData Client::DisableMarkerData()
@@ -338,6 +360,16 @@ namespace CPP
   {
     Output_IsSegmentDataEnabled Output;
     Output.Enabled = m_pClientImpl->m_pCoreClient->IsSegmentDataEnabled();
+
+    return Output;
+  }
+
+  // IsSegmentLightweightDataEnabled
+  CLASS_DECLSPEC
+  Output_IsLightweightSegmentDataEnabled Client::IsLightweightSegmentDataEnabled() const
+  {
+    Output_IsLightweightSegmentDataEnabled Output;
+    Output.Enabled = m_pClientImpl->m_pCoreClient->IsLightweightSegmentDataEnabled();
 
     return Output;
   }
@@ -851,6 +883,19 @@ namespace CPP
     return Output;
   }
 
+  // GetSegmentStaticScale
+  CLASS_DECLSPEC
+    Output_GetSegmentStaticScale Client::GetSegmentStaticScale(const String & SubjectName,
+      const String & SegmentName) const
+  {
+    Output_GetSegmentStaticScale Output;
+    Output.Result = Adapt(m_pClientImpl->m_pCoreClient->GetSegmentStaticScale(SubjectName,
+      SegmentName,
+      Output.Scale));
+
+    return Output;
+  }
+
   // GetSegmentLocalTranslation
   CLASS_DECLSPEC
   Output_GetSegmentLocalTranslation Client::GetSegmentLocalTranslation( const String & SubjectName,
@@ -1017,7 +1062,7 @@ namespace CPP
   Output_GetUnlabeledMarkerGlobalTranslation Client::GetUnlabeledMarkerGlobalTranslation( const unsigned int MarkerIndex ) const
   {
     Output_GetUnlabeledMarkerGlobalTranslation Output;
-    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetUnlabeledMarkerGlobalTranslation( MarkerIndex, Output.Translation ) );
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetUnlabeledMarkerGlobalTranslation( MarkerIndex, Output.Translation, Output.MarkerID ) );
 
     return Output;
   }
@@ -1037,7 +1082,7 @@ namespace CPP
   Output_GetLabeledMarkerGlobalTranslation Client::GetLabeledMarkerGlobalTranslation( const unsigned int MarkerIndex ) const
   {
     Output_GetLabeledMarkerGlobalTranslation Output;
-    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetLabeledMarkerGlobalTranslation( MarkerIndex, Output.Translation ) );
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetLabeledMarkerGlobalTranslation( MarkerIndex, Output.Translation, Output.MarkerID ) );
 
     return Output;
   }
@@ -1081,18 +1126,43 @@ namespace CPP
 
   // GetDeviceOutputName
   CLASS_DECLSPEC
-  Output_GetDeviceOutputName Client::GetDeviceOutputName( const String  & DeviceName,
-                                                          const unsigned int   DeviceOutputIndex ) const
+    Output_GetDeviceOutputName Client::GetDeviceOutputName( const String  & DeviceName,
+      const unsigned int   DeviceOutputIndex ) const
   {
     Output_GetDeviceOutputName Output;
     std::string                          _DeviceOutputName;
+    std::string                          _DeviceOutputComponentName;
+    ViconDataStreamSDK::Core::Unit::Enum _DeviceOutputUnit;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetDeviceOutputName( DeviceName,
+      DeviceOutputIndex,
+      _DeviceOutputName,
+      _DeviceOutputComponentName,
+      _DeviceOutputUnit ) );
+
+    // Set the output name to the component name, to avoid breaking existing clients as this was the previous behaviour
+    Output.DeviceOutputName.Set( _DeviceOutputComponentName.c_str(), *m_pClientImpl->m_pStringFactory.get() );
+    Output.DeviceOutputUnit = Adapt( _DeviceOutputUnit );
+
+    return Output;
+  }
+  
+  // GetDeviceOutputComponentName
+  CLASS_DECLSPEC
+  Output_GetDeviceOutputComponentName Client::GetDeviceOutputComponentName( const String  & DeviceName,
+                                                          const unsigned int   DeviceOutputIndex ) const
+  {
+    Output_GetDeviceOutputComponentName Output;
+    std::string                          _DeviceOutputName;
+    std::string                          _DeviceOutputComponentName;
     ViconDataStreamSDK::Core::Unit::Enum _DeviceOutputUnit;
     Output.Result =  Adapt( m_pClientImpl->m_pCoreClient->GetDeviceOutputName( DeviceName, 
                                                                                DeviceOutputIndex, 
-                                                                               _DeviceOutputName, 
+                                                                               _DeviceOutputName,
+                                                                               _DeviceOutputComponentName,
                                                                                _DeviceOutputUnit ) );
 
     Output.DeviceOutputName.Set( _DeviceOutputName.c_str(), *m_pClientImpl->m_pStringFactory.get() );
+    Output.DeviceOutputComponentName.Set( _DeviceOutputComponentName.c_str(), *m_pClientImpl->m_pStringFactory.get() );
     Output.DeviceOutputUnit = Adapt( _DeviceOutputUnit );
     
     return Output;
@@ -1112,6 +1182,22 @@ namespace CPP
     return Output;
   }
 
+  // GetDeviceOutputValue
+  CLASS_DECLSPEC
+    Output_GetDeviceOutputValue Client::GetDeviceOutputValue( const String & DeviceName,
+                                                              const String & DeviceOutputName,
+                                                              const String & DeviceOutputComponentName ) const
+  {
+    Output_GetDeviceOutputValue Output;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetDeviceOutputValue( DeviceName,
+      DeviceOutputName,
+      DeviceOutputComponentName,
+      Output.Value,
+      Output.Occluded ) );
+
+    return Output;
+  }
+
   // GetDeviceOutputSubsamples
   CLASS_DECLSPEC
   Output_GetDeviceOutputSubsamples Client::GetDeviceOutputSubsamples( const String & DeviceName,
@@ -1122,6 +1208,22 @@ namespace CPP
                                                                                     DeviceOutputName, 
                                                                                     Output.DeviceOutputSubsamples, 
                                                                                     Output.Occluded ) );
+
+    return Output;
+  }
+
+  // GetDeviceOutputSubsamples
+  CLASS_DECLSPEC
+    Output_GetDeviceOutputSubsamples Client::GetDeviceOutputSubsamples( const String & DeviceName,
+                                                                        const String & DeviceOutputName,
+                                                                        const String & DeviceOutputComponentName ) const
+  {
+    Output_GetDeviceOutputSubsamples Output;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetDeviceOutputSubsamples( DeviceName,
+      DeviceOutputName,
+      DeviceOutputComponentName,
+      Output.DeviceOutputSubsamples,
+      Output.Occluded ) );
 
     return Output;
   }
@@ -1138,6 +1240,24 @@ namespace CPP
                                                                                Subsample,
                                                                                Output.Value, 
                                                                                Output.Occluded ) );
+
+    return Output;
+  }
+
+  // GetDeviceOutputValue
+  CLASS_DECLSPEC
+    Output_GetDeviceOutputValue Client::GetDeviceOutputValue( const String & DeviceName,
+                                                              const String & DeviceOutputName,
+                                                              const String & DeviceOutputComponentName,
+                                                              const unsigned int Subsample ) const
+  {
+    Output_GetDeviceOutputValue Output;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetDeviceOutputValue( DeviceName,
+      DeviceOutputName,
+      DeviceOutputComponentName,
+      Subsample,
+      Output.Value,
+      Output.Occluded ) );
 
     return Output;
   }
@@ -1457,6 +1577,8 @@ namespace CPP
       Output.m_Format  = (*VideoFramePtr).m_Format;
       Output.m_Width   = (*VideoFramePtr).m_Width;
       Output.m_Height  = (*VideoFramePtr).m_Height;
+      Output.m_OffsetX = (*VideoFramePtr).m_Position[0];
+      Output.m_OffsetY = (*VideoFramePtr).m_Position[1];
 
       Output.m_Data.reset( new std::vector< unsigned char >( (*VideoFramePtr).m_VideoData.size() ) );
       try
@@ -1481,6 +1603,40 @@ namespace CPP
     Output_SetCameraFilter Output;
 
     Output.Result = Adapt( m_pClientImpl->m_pCoreClient->SetCameraFilter( i_rCameraIdsForCentroids, i_rCameraIdsForBlobs, i_rCameraIdsForVideo ) );
+    return Output;
+  }
+
+  CLASS_DECLSPEC
+  Output_ClearSubjectFilter Client::ClearSubjectFilter()
+  {
+    Output_ClearSubjectFilter Output;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->ClearSubjectFilter() );
+    return Output;
+  }
+
+  CLASS_DECLSPEC
+  Output_AddToSubjectFilter Client::AddToSubjectFilter( const String& SubjectName)
+  {
+    Output_AddToSubjectFilter Output;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->AddToSubjectFilter( SubjectName ) );
+    return Output;
+  }
+
+  CLASS_DECLSPEC
+  Output_SetTimingLogFile Client::SetTimingLogFile(const String & ClientLog, const String & StreamLog)
+  {
+    Output_SetTimingLogFile Output;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->SetTimingLog( ClientLog, StreamLog ) );
+    return Output;
+  };
+
+  CLASS_DECLSPEC
+  Output_ConfigureWireless Client::ConfigureWireless()
+  {
+    Output_ConfigureWireless Output;
+    std::string Error;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->ConfigureWireless( Error ) );
+    Output.Error = Error;
     return Output;
   }
 

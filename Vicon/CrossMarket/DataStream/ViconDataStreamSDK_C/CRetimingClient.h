@@ -63,6 +63,10 @@ CDLL_EXPORT CBool RetimingClient_ConnectAndStart(CRetimingClient* client, CStrin
 CDLL_EXPORT CEnum RetimingClient_Disconnect(CRetimingClient* client);
 CDLL_EXPORT CEnum RetimingClient_IsConnected(CRetimingClient* client);
 
+CDLL_EXPORT CEnum RetimingClient_EnableLightweightSegmentData( CRetimingClient* client );
+CDLL_EXPORT CEnum RetimingClient_DisableLightweightSegmentData( CRetimingClient* client );
+CDLL_EXPORT CBool RetimingClient_IsLightweightSegmentDataEnabled( CRetimingClient* client );
+
 CDLL_EXPORT CEnum RetimingClient_SetAxisMapping(CRetimingClient* client, CEnum XAxis, CEnum YAxis, CEnum ZAxis);
 CDLL_EXPORT void RetimingClient_GetAxisMapping(CRetimingClient* client, COutput_GetAxisMapping* outptr);
 
@@ -105,6 +109,9 @@ CDLL_EXPORT void RetimingClient_GetSegmentStaticRotationQuaternion(CRetimingClie
 CDLL_EXPORT void RetimingClient_GetSegmentStaticRotationEulerXYZ(CRetimingClient* client, CString  SubjectName,
   CString  SegmentName, COutput_GetSegmentStaticRotationEulerXYZ* outptr);
 
+CDLL_EXPORT void RetimingClient_GetSegmentStaticScale( CRetimingClient* client, CString SubjectName,
+                                                                  CString SegmentName, COutput_GetSegmentStaticScale* outptr );
+
 CDLL_EXPORT void RetimingClient_GetSegmentGlobalTranslation(CRetimingClient* client, CString  SubjectName,
   CString  SegmentName, COutput_GetSegmentGlobalTranslation* outptr);
 
@@ -141,6 +148,11 @@ CDLL_EXPORT CReal RetimingClient_OutputLatency( CRetimingClient* client );
 
 CDLL_EXPORT void RetimingClient_SetMaximumPrediction( CRetimingClient* client, CReal i_MaxPrediction );
 CDLL_EXPORT CReal RetimingClient_MaximumPrediction( CRetimingClient* client );
+
+CDLL_EXPORT CEnum RetimingClient_ClearSubjectFilter( CClient* client );
+CDLL_EXPORT CEnum RetimingClient_AddToSubjectFilter( CClient* client, CString i_rSubjectName );
+
+CDLL_EXPORT CEnum RetimingClient_SetTimingLogFile( CRetimingClient* client, CString i_rClientLog, CString i_rStreamLog);
 
 #ifdef __cplusplus
 }

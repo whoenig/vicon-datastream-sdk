@@ -24,14 +24,14 @@
 //////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include <boost/array.hpp>
+#include <array>
 
 namespace ClientUtils
 {
-  typedef boost::array< double, 4 > Quaternion;
-  typedef boost::array< double, 9 > RotationMatrix;
-  typedef boost::array< double, 3 > Axis;
-  typedef boost::array< double, 3 > Displacement;
+  typedef std::array< double, 4 > Quaternion;
+  typedef std::array< double, 9 > RotationMatrix;
+  typedef std::array< double, 3 > Axis;
+  typedef std::array< double, 3 > Displacement;
 
   // Simple Quaternion and Vector operation, to remove vnl/tmv dependency
   Quaternion Conjugate( const Quaternion & i_rInput );
@@ -56,6 +56,9 @@ namespace ClientUtils
   /// Returns a translation prediction at time t3 from 2 translations at time d1, t1; d2, t2 where t3 > t2 > t1 
   /// Can also be used for linear interpolation where t2 > t3 > t1
   Displacement PredictDisplacement( const Displacement & d1, double t1, const Displacement & d2, double t2, double t3 );
+
+  /// Linear interpolation between doubles
+  double PredictVal( const double d1, double t1, const double d2, double t2, double t3 );
 }
 
 

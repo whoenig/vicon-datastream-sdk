@@ -24,8 +24,9 @@
 //////////////////////////////////////////////////////////////////////////////////
 
 #include "CGStreamAsyncReaderWriter.h"
-#include <boost/bind.hpp>
+#include <functional>
 #include <boost/ref.hpp>
+namespace ph = std::placeholders;
 
 #ifdef WIN32
 #pragma warning(disable:4503) // warning C4503: decorated name length exceeded...
@@ -33,47 +34,49 @@
 
 void VCGStreamAsyncReaderWriter::ReadBuffer(  boost::asio::ip::tcp::socket& i_rSocket,
                                               ViconCGStreamIO::VBuffer& i_rBuffer,
-                                              boost::function< void( bool ) > i_Handler )
+                                              std::function< bool( ViconCGStreamType::Enum, ViconCGStreamType::UInt32 ) > i_VerifyHandler,
+                                              std::function< void( bool ) > i_Handler )
 {
   i_rBuffer.SetLength( sizeof( ViconCGStreamType::Enum ) + sizeof( ViconCGStreamType::UInt32 ) );
   i_rBuffer.SetOffset( 0 );
   boost::asio::async_read(  i_rSocket,
                             boost::asio::buffer( i_rBuffer.Raw(), i_rBuffer.Length() ),
-                            boost::bind( &VCGStreamAsyncReaderWriter::OnBufferHeaderRead, _1, _2,
-                              boost::ref( i_rSocket ), boost::ref( i_rBuffer ), i_Handler ) );
+                            std::bind( &VCGStreamAsyncReaderWriter::OnBufferHeaderRead, ph::_1, ph::_2,
+                              std::ref( i_rSocket ), std::ref( i_rBuffer ), i_VerifyHandler, i_Handler ) );
 }
 
 void VCGStreamAsyncReaderWriter::WriteBuffer( boost::asio::ip::tcp::socket& i_rSocket,
                                               const ViconCGStreamIO::VBuffer& i_rBuffer,
-                                              boost::function< void( bool ) > i_Handler )
+                                              std::function< void( bool ) > i_Handler )
 {
   boost::asio::async_write( i_rSocket,
                             boost::asio::buffer( i_rBuffer.Raw(), i_rBuffer.Length() ),
-                            boost::bind( &VCGStreamAsyncReaderWriter::OnBufferWritten, _1, _2, i_Handler ) );
+                            std::bind( &VCGStreamAsyncReaderWriter::OnBufferWritten, ph::_1, ph::_2, i_Handler ) );
 }
 
 void VCGStreamAsyncReaderWriter::SendBuffer( std::shared_ptr< boost::asio::ip::udp::socket > i_pSocket,
                                              const ViconCGStreamIO::VBuffer& i_rBuffer,
-                                             boost::function< void( bool ) > i_Handler )
+                                             std::function< void( bool ) > i_Handler )
 {
   i_pSocket->async_send( boost::asio::buffer( i_rBuffer.Raw(), i_rBuffer.Length() ),
-                         boost::bind( &VCGStreamAsyncReaderWriter::OnBufferSent, i_pSocket, _1, _2, i_Handler ) );
+                         std::bind( &VCGStreamAsyncReaderWriter::OnBufferSent, i_pSocket, ph::_1, ph::_2, i_Handler ) );
 }
 
 void VCGStreamAsyncReaderWriter::SendBufferTo( std::shared_ptr< boost::asio::ip::udp::socket > i_pSocket,
                                              const ViconCGStreamIO::VBuffer& i_rBuffer,
                                              const boost::asio::ip::udp::endpoint& i_rEndpoint,
-                                             boost::function< void( bool ) > i_Handler )
+                                             std::function< void( bool ) > i_Handler )
 {
   i_pSocket->async_send_to( boost::asio::buffer( i_rBuffer.Raw(), i_rBuffer.Length() ), i_rEndpoint,
-                         boost::bind( &VCGStreamAsyncReaderWriter::OnBufferSent, i_pSocket, _1, _2, i_Handler ) );
+                         std::bind( &VCGStreamAsyncReaderWriter::OnBufferSent, i_pSocket, ph::_1, ph::_2, i_Handler ) );
 }
 
 void VCGStreamAsyncReaderWriter::OnBufferHeaderRead(  const boost::system::error_code i_Error,
                                                       const std::size_t /*i_BytesRead*/,
                                                       boost::asio::ip::tcp::socket& i_rSocket,
                                                       ViconCGStreamIO::VBuffer& i_rBuffer,
-                                                      boost::function< void( bool ) > i_Handler )
+                                                      std::function< bool( ViconCGStreamType::Enum, ViconCGStreamType::UInt32 ) > i_VerifyHandler,
+                                                      std::function< void( bool ) > i_Handler )
 {
   if( i_Error )
   {
@@ -81,25 +84,33 @@ void VCGStreamAsyncReaderWriter::OnBufferHeaderRead(  const boost::system::error
     return;
   }
 
-  ViconCGStreamType::UInt32 BlockLength;
-  i_rBuffer.SetOffset( sizeof( ViconCGStreamType::Enum ) );
+  ViconCGStreamType::Enum Enum = 0;
+  ViconCGStreamType::UInt32 BlockLength = 0;
+  i_rBuffer.Read( Enum );
   i_rBuffer.Read( BlockLength );
+
+  if( !i_VerifyHandler( Enum, BlockLength ) )
+  {
+    i_Handler( false );
+    return;
+  }
+
   i_rBuffer.SetLength( i_rBuffer.Length() + BlockLength );
   boost::asio::mutable_buffers_1 AsioBuffer(  boost::asio::buffer( i_rBuffer.Raw() + i_rBuffer.Offset(), BlockLength ) );
   i_rBuffer.SetOffset( 0 );
-  boost::asio::async_read(  i_rSocket, AsioBuffer, boost::bind( &VCGStreamAsyncReaderWriter::OnBufferBodyRead, _1, _2, i_Handler ) );
+  boost::asio::async_read(  i_rSocket, AsioBuffer, std::bind( &VCGStreamAsyncReaderWriter::OnBufferBodyRead, ph::_1, ph::_2, i_Handler ) );
 }
 
 void VCGStreamAsyncReaderWriter::OnBufferBodyRead(    const boost::system::error_code i_Error,
                                                       const std::size_t /*i_BytesRead*/,
-                                                      boost::function< void( bool ) > i_Handler )
+                                                      std::function< void( bool ) > i_Handler )
 {
   i_Handler( !i_Error );
 }
 
 void VCGStreamAsyncReaderWriter::OnBufferWritten(     const boost::system::error_code i_Error,
                                                       const std::size_t /*i_BytesRead*/,
-                                                      boost::function< void( bool ) > i_Handler )
+                                                      std::function< void( bool ) > i_Handler )
 {
   i_Handler( !i_Error );
 }
@@ -107,7 +118,7 @@ void VCGStreamAsyncReaderWriter::OnBufferWritten(     const boost::system::error
 void VCGStreamAsyncReaderWriter::OnBufferSent(        std::shared_ptr< boost::asio::ip::udp::socket > /*i_pSocket*/,
                                                       const boost::system::error_code i_Error,
                                                       const std::size_t /*i_BytesRead*/,
-                                                      boost::function< void( bool ) > i_Handler )
+                                                      std::function< void( bool ) > i_Handler )
 {
   i_Handler( !i_Error );
 }

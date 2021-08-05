@@ -217,9 +217,14 @@ int main(int argc, char* argv[])
   CBool EnableMultiCast = 0;
   CBool bReadCentroids = 0;
   CBool bReadRayData = 0;
+  CBool bMarkerTrajIds = 0;
+  CBool bLightweightSegments = 0;
+  CBool bSubjectFilterApplied = 0;
 
   unsigned int ClientBufferSize = 0;
   CString AxisMapping = "ZUp";
+  char** FilteredSubjects = NULL;
+  int SubjectFilterSize = 0;
   
   int a;
   for (a = 2; a < argc; ++a)
@@ -227,7 +232,7 @@ int main(int argc, char* argv[])
     CString arg = argv[a];
     if ( strcmp( arg, "--help") == 0 )
     {
-      printf( argv[0], " <HostName>: allowed options include:\n  --log_file <LogFile> --enable_multicast <MulticastAddress:Port> --connect_to_multicast <MulticastAddress:Port> --help --centroids --client-buffer-size <size>\n");
+      printf( "%s <HostName>: allowed options include:\n  --log_file <LogFile> --enable_multicast <MulticastAddress:Port> --connect_to_multicast <MulticastAddress:Port> --help --centroids --client-buffer-size <size>\n", argv[0]);
       return 0;
     }
     else if ( strcmp( arg, "--log_file") == 0 )
@@ -244,7 +249,7 @@ int main(int argc, char* argv[])
       EnableMultiCast = 1;
       if (a < argc)
       {
-        CString MulticastAddress = argv[a + 1];
+        MulticastAddress = argv[a + 1];
         printf( "Enabling multicast address <%s> ...\n", MulticastAddress);
         a = a +1;
       }
@@ -275,6 +280,10 @@ int main(int argc, char* argv[])
     {
       printf("Video data not supported by the C Client\n");
     }
+    else if ( strcmp( arg, "--marker-traj-id" ) == 0 )
+    {
+      bMarkerTrajIds = 1;
+    }
     else if( strcmp( arg, "--client-buffer-size" ) == 0 )
     {
       ++a;
@@ -300,6 +309,39 @@ int main(int argc, char* argv[])
           return 1;
         }
       }
+    }
+    else if ( strcmp( arg, "--lightweight" ) == 0 )
+    {
+      bLightweightSegments = 1;
+    }
+    else if (strcmp( arg, "--subjects" ) == 0)
+    {
+      ++a;
+      if( a < argc )
+      {
+        size_t MaxSubjectSize = argc - a;
+        FilteredSubjects = malloc( (argc - a) * sizeof( char* ) );
+        size_t j = 0;
+        for( j=0; j < MaxSubjectSize; ++j)
+        {
+          FilteredSubjects[j] = NULL;
+        }
+      }
+      int i = 0;
+      while( a < argc )
+      {
+        if (strncmp( argv[a], "--", 2 ) == 0)
+        { 
+          --a;
+          break;
+        }
+        // 
+        char* Subject = argv[a];
+        FilteredSubjects[i] = Subject;
+        ++a;
+        ++i;
+      }
+      SubjectFilterSize = i;
     }
     else
     {
@@ -375,9 +417,14 @@ int main(int argc, char* argv[])
     {
       Client_EnableMarkerRayData(pClient);
     }
-
+    if ( bLightweightSegments )
+    {
+      Client_EnableLightweightSegmentData( pClient );
+    }
+    
     printf( "Segment Data Enabled: %s\n", Adapt(Client_IsSegmentDataEnabled(pClient)));
-    printf( "Marker Data Enabled: %s\n",  Adapt(Client_IsMarkerDataEnabled(pClient)));
+    printf( "Lightweight Segment Data Enabled: %s\n", Adapt( Client_IsLightweightSegmentDataEnabled( pClient ) ) );
+    printf( "Marker Data Enabled: %s\n", Adapt( Client_IsMarkerDataEnabled( pClient ) ) );
     printf( "Unlabeled Marker Data Enabled: %s\n", Adapt(Client_IsUnlabeledMarkerDataEnabled(pClient)));
     printf( "Device Data Enabled: %s\n", Adapt(Client_IsDeviceDataEnabled(pClient)));
     printf( "Centroid Data Enabled: %s\n", Adapt(Client_IsCentroidDataEnabled(pClient)));
@@ -411,7 +458,7 @@ int main(int argc, char* argv[])
     // Discover the version number
     COutput_GetVersion _Output_GetVersion;
     Client_GetVersion(pClient, &_Output_GetVersion);
-    printf( "Version: %d.%d.%d\n", _Output_GetVersion.Major, _Output_GetVersion.Minor , _Output_GetVersion.Point);
+    printf( "Version: %d.%d.%d.%d\n", _Output_GetVersion.Major, _Output_GetVersion.Minor , _Output_GetVersion.Point, _Output_GetVersion.Revision );
 
     if (EnableMultiCast)
     {
@@ -470,6 +517,19 @@ int main(int argc, char* argv[])
         Counter = 0;
       }
 
+      if( !bSubjectFilterApplied )
+      {
+        int subject_index;
+        for( subject_index=0; subject_index<SubjectFilterSize; ++subject_index )
+        {
+          if ( FilteredSubjects[subject_index] != NULL )
+          {
+            char * Subject = FilteredSubjects[subject_index];
+            CEnum _Output_AddToSubjectFilter = Client_AddToSubjectFilter( pClient, Subject );
+            bSubjectFilterApplied = bSubjectFilterApplied || _Output_AddToSubjectFilter == CSuccess;
+          }
+        }
+      }
       // Get the frame number
       COutput_GetFrameNumber _Output_GetFrameNumber;
       Client_GetFrameNumber(pClient, &_Output_GetFrameNumber);
@@ -812,7 +872,7 @@ int main(int argc, char* argv[])
       // Get the unlabeled markers
       COutput_GetUnlabeledMarkerCount UnlabeledMarkerCount;
       Client_GetUnlabeledMarkerCount(pClient, &UnlabeledMarkerCount);
-      printf( "    Unlabeled Markers (%d):\n", UnlabeledMarkerCount.MarkerCount);
+      printf( "  Unlabeled Markers (%d):\n", UnlabeledMarkerCount.MarkerCount);
       unsigned int UnlabeledMarkerIndex;
       for (UnlabeledMarkerIndex = 0; UnlabeledMarkerIndex < UnlabeledMarkerCount.MarkerCount; ++UnlabeledMarkerIndex)
       {
@@ -820,17 +880,29 @@ int main(int argc, char* argv[])
         COutput_GetUnlabeledMarkerGlobalTranslation _Output_GetUnlabeledMarkerGlobalTranslation;
         Client_GetUnlabeledMarkerGlobalTranslation(pClient, UnlabeledMarkerIndex, &_Output_GetUnlabeledMarkerGlobalTranslation);
 
-        printf( "      Marker #%d: (%f, %f, %f)\n"
-          , UnlabeledMarkerIndex
-          , _Output_GetUnlabeledMarkerGlobalTranslation.Translation[0]
-          , _Output_GetUnlabeledMarkerGlobalTranslation.Translation[1]
-          , _Output_GetUnlabeledMarkerGlobalTranslation.Translation[2]);
+        if ( bMarkerTrajIds )
+        {
+          printf( "    Marker #%d: (%f, %f, %f): Traj ID %d\n"
+            , UnlabeledMarkerIndex
+            , _Output_GetUnlabeledMarkerGlobalTranslation.Translation[0]
+            , _Output_GetUnlabeledMarkerGlobalTranslation.Translation[1]
+            , _Output_GetUnlabeledMarkerGlobalTranslation.Translation[2]
+            , _Output_GetUnlabeledMarkerGlobalTranslation.MarkerID );
+        }
+        else
+        {
+          printf( "    Marker #%d: (%f, %f, %f)\n"
+            , UnlabeledMarkerIndex
+            , _Output_GetUnlabeledMarkerGlobalTranslation.Translation[0]
+            , _Output_GetUnlabeledMarkerGlobalTranslation.Translation[1]
+            , _Output_GetUnlabeledMarkerGlobalTranslation.Translation[2] );
+        }
       }
 
       // Get the labeled markers
       COutput_GetLabeledMarkerCount LabeledMarkerCount;
       Client_GetLabeledMarkerCount(pClient, &LabeledMarkerCount);
-      printf("    Labeled Markers (%d):\n", LabeledMarkerCount.MarkerCount);
+      printf("  Labeled Markers (%d):\n", LabeledMarkerCount.MarkerCount);
       unsigned int LabeledMarkerIndex;
       for (LabeledMarkerIndex = 0; LabeledMarkerIndex < LabeledMarkerCount.MarkerCount; ++LabeledMarkerIndex)
       {
@@ -838,11 +910,23 @@ int main(int argc, char* argv[])
         COutput_GetLabeledMarkerGlobalTranslation _Output_GetLabeledMarkerGlobalTranslation;
         Client_GetLabeledMarkerGlobalTranslation(pClient, LabeledMarkerIndex, &_Output_GetLabeledMarkerGlobalTranslation);
 
-        printf("      Marker #%d: (%f, %f, %f)\n"
-          , LabeledMarkerIndex
-          , _Output_GetLabeledMarkerGlobalTranslation.Translation[0]
-          , _Output_GetLabeledMarkerGlobalTranslation.Translation[1]
-          , _Output_GetLabeledMarkerGlobalTranslation.Translation[2]);
+        if( bMarkerTrajIds )
+        { 
+          printf( "    Marker #%d: (%f, %f, %f): Traj ID %d\n"
+            , LabeledMarkerIndex
+            , _Output_GetLabeledMarkerGlobalTranslation.Translation[0]
+            , _Output_GetLabeledMarkerGlobalTranslation.Translation[1]
+            , _Output_GetLabeledMarkerGlobalTranslation.Translation[2]
+            , _Output_GetLabeledMarkerGlobalTranslation.MarkerID );
+        }
+        else
+        {
+          printf( "    Marker #%d: (%f, %f, %f)\n"
+            , LabeledMarkerIndex
+            , _Output_GetLabeledMarkerGlobalTranslation.Translation[0]
+            , _Output_GetLabeledMarkerGlobalTranslation.Translation[1]
+            , _Output_GetLabeledMarkerGlobalTranslation.Translation[2] );
+        }
       }
 
       // Count the number of devices
@@ -871,12 +955,13 @@ int main(int argc, char* argv[])
         {
           // Get the device output name and unit
           char DeviceOutputName[128];
+          char DeviceOutputComponentName[128];
           CEnum DeviceOutputUnit; //TODO does this need fixing? 
-          Client_GetDeviceOutputName(pClient, DeviceName, DeviceOutputIndex, 128, DeviceOutputName, &DeviceOutputUnit);
+          Client_GetDeviceOutputComponentName(pClient, DeviceName, DeviceOutputIndex, 128, DeviceOutputName, 128, DeviceOutputComponentName, &DeviceOutputUnit);
 
           COutput_GetDeviceOutputSubsamples DeviceOutputSubsamples;
-          Client_GetDeviceOutputSubsamples(pClient, DeviceName,
-              DeviceOutputName, &DeviceOutputSubsamples);
+          Client_GetDeviceOutputComponentSubsamples(pClient, DeviceName,
+              DeviceOutputName, DeviceOutputComponentName, &DeviceOutputSubsamples);
 
           printf( "      Device Output #%d:\n", DeviceOutputIndex);
           printf( "      Samples (%d):\n", DeviceOutputSubsamples.DeviceOutputSubsamples);
@@ -889,7 +974,7 @@ int main(int argc, char* argv[])
             // Get the device output value
             //TODO check Client_GetDeviceOutputValue is equivelant to cpp
             COutput_GetDeviceOutputValue _Output_GetDeviceOutputValue;
-            Client_GetDeviceOutputValue(pClient, DeviceName, DeviceOutputName, &_Output_GetDeviceOutputValue);
+            Client_GetDeviceOutputComponentValue(pClient, DeviceName, DeviceOutputName, DeviceOutputComponentName, &_Output_GetDeviceOutputValue);
             
             printf( "          '%s' %f %s %s\n"
               , DeviceOutputName
@@ -1058,5 +1143,6 @@ int main(int argc, char* argv[])
 
   }
 
+  free( FilteredSubjects );
   return 0;
 }

@@ -27,7 +27,7 @@
 
 #include "Buffer.h"
 #include <boost/asio.hpp>
-#include <boost/function.hpp>
+#include <functional>
 
 /// Class containing function that implement async reading and writing with an asio socket for the CG stream.
 class VCGStreamAsyncReaderWriter
@@ -40,7 +40,8 @@ public:
   /// the buffer references remain valid until the handler is called.
   static void ReadBuffer(   boost::asio::ip::tcp::socket& i_rSocket,
                             ViconCGStreamIO::VBuffer& i_rBuffer,
-                            boost::function< void( bool ) > i_Handler );
+                            std::function< bool( ViconCGStreamType::Enum, ViconCGStreamType::UInt32 ) > i_VerifyHandler,
+                            std::function< void( bool ) > i_Handler );
 
   /// Asynchronously Write a CGStream block from the buffer to the socket.
   /// Calls the supplied handler with true on success or false on failure.
@@ -48,7 +49,7 @@ public:
   /// the buffer references remain valid until the handler is called.
   static void WriteBuffer(  boost::asio::ip::tcp::socket& i_rSocket,
                             const ViconCGStreamIO::VBuffer& i_rBuffer,
-                            boost::function< void( bool ) > i_Handler );
+                            std::function< void( bool ) > i_Handler );
 
   /// Asynchronously Send a CGStream block from the buffer to the socket.
   /// Calls the supplied handler with true on success or false on failure.
@@ -56,13 +57,13 @@ public:
   /// by the shared_ptr.
   static void SendBuffer(  std::shared_ptr< boost::asio::ip::udp::socket > i_pSocket,
                            const ViconCGStreamIO::VBuffer& i_rBuffer,
-                           boost::function< void( bool ) > i_Handler );
+                           std::function< void( bool ) > i_Handler );
 
   /// As SendBuffer but foe connectionless sockets
   static void SendBufferTo(   std::shared_ptr< boost::asio::ip::udp::socket > i_pSocket,
                               const ViconCGStreamIO::VBuffer& i_rBuffer,
                               const boost::asio::ip::udp::endpoint& i_rEndpoint,
-                              boost::function< void( bool ) > i_Handler );
+                              std::function< void( bool ) > i_Handler );
 
 private:
 
@@ -70,19 +71,20 @@ private:
                                   const std::size_t i_BytesRead,
                                   boost::asio::ip::tcp::socket& i_rSocket,
                                   ViconCGStreamIO::VBuffer& i_rBuffer,
-                                  boost::function< void( bool ) > i_Handler );
+                                  std::function< bool( ViconCGStreamType::Enum, ViconCGStreamType::UInt32 ) > i_VerifyHandler,
+                                  std::function< void( bool ) > i_Handler );
 
   static void OnBufferBodyRead(   const boost::system::error_code i_Error,
                                   const std::size_t i_BytesRead,
-                                  boost::function< void( bool ) > i_Handler );
+                                  std::function< void( bool ) > i_Handler );
 
   static void OnBufferWritten(    const boost::system::error_code i_Error,
                                   const std::size_t i_BytesRead,
-                                  boost::function< void( bool ) > i_Handler );
+                                  std::function< void( bool ) > i_Handler );
 
   static void OnBufferSent(       std::shared_ptr< boost::asio::ip::udp::socket > i_pSocket,
                                   const boost::system::error_code i_Error,
                                   const std::size_t i_BytesRead,
-                                  boost::function< void( bool ) > i_Handler );
+                                  std::function< void( bool ) > i_Handler );
 
 };

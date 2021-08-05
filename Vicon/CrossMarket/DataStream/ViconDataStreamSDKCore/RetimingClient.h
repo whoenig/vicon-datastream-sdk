@@ -25,14 +25,17 @@
 #pragma once
 
 #include <boost/thread.hpp>
-#include <boost/array.hpp>
+#include <array>
 #include <boost/thread/condition.hpp>
-#include <boost/timer/timer.hpp>
 #include <memory>
 #include <string>
 #include <map>
 #include <vector>
 #include <deque>
+#include <fstream>
+#include <chrono>
+
+#include "RetimingCore.h"
 
 #include "Constants.h"
 #include "ClientUtils.h"
@@ -47,63 +50,6 @@ namespace ViconDataStreamSDK
 
   namespace Core
   {
-    class VSegmentPose
-    {
-    public:
-
-      VSegmentPose() :
-        bOccluded(false) {}
-
-      std::string Name;
-      std::string Parent;
-
-      boost::array< double, 3 > T;
-      boost::array< double, 4 > R;
-
-      boost::array< double, 3 > T_Rel;
-      boost::array< double, 4 > R_Rel;
-
-      boost::array< double, 3 > T_Stat;
-      boost::array< double, 4 > R_Stat;
-
-      std::vector< std::string > m_Children;
-
-      bool   bOccluded;
-    };
-
-    class VSubjectPose
-    {
-    public:
-
-      enum EResult
-      {
-        ESuccess,
-        ENoData,
-        ENotConnected,
-        EUnknownSubject,
-        EEarly,
-        ELate,
-        EInvalid
-      };
-
-      VSubjectPose()
-        : Result(EInvalid)
-        , FrameTime(0)
-        , ReceiptTime(0)
-      {}
-
-      EResult Result;
-
-      std::string Name;
-      std::string RootSegment;
-
-      double Latency;
-      double FrameTime;
-      double ReceiptTime;
-
-      std::map< std::string, std::shared_ptr< VSegmentPose > > m_Segments;
-    };
-    
     class VClient;
 
     class VRetimingClient
@@ -115,7 +61,8 @@ namespace ViconDataStreamSDK
 
       // Connect client to the Vicon Data Stream
       Result::Enum Connect(std::shared_ptr< ViconCGStreamClientSDK::ICGClient > i_pClient,
-        const std::string & i_rHostName);
+        const std::string & i_rHostName,
+        bool i_bLightweight = false );
 
       // Disconnect from the Vicon Data Stream
       Result::Enum Disconnect();
@@ -143,6 +90,7 @@ namespace ViconDataStreamSDK
       Result::Enum GetSegmentStaticRotationMatrix(const std::string & i_rSubjectName, const std::string & i_rSegmentName, double(&o_rRotation)[9]) const;
       Result::Enum GetSegmentStaticRotationQuaternion(const std::string& i_rSubjectName, const std::string& i_rSegmentName, double(&o_rFourVector)[4]) const;
       Result::Enum GetSegmentStaticRotationEulerXYZ(const std::string& i_rSubjectName, const std::string& i_rSegmentName, double(&o_rThreeVector)[3]) const;
+      Result::Enum GetSegmentStaticScale ( const std::string& i_rSubjectName, const std::string& i_rSegmentName, double(&o_rThreeVector)[3] ) const;
 
       Result::Enum GetSegmentGlobalTranslation(const std::string& i_rSubjectName, const std::string& i_rSegmentName, double(&o_rThreeVector)[3], bool& o_rbOccluded) const;
       Result::Enum GetSegmentGlobalRotationHelical(const std::string& i_rSubjectName, const std::string& i_rSegmentName, double(&o_rThreeVector)[3], bool& o_rbOccluded) const;
@@ -175,16 +123,19 @@ namespace ViconDataStreamSDK
       // Set an estimate for (fixed) network latency
       void SetNetworkLatency(double i_Latency);
 
-      // This needs to be public, or make the unit test a friend
-      std::shared_ptr< const VSubjectPose > Predict(std::shared_ptr< const VSubjectPose > p1, std::shared_ptr< const VSubjectPose > p2, double t) const;
+      // Set a log file to write debug output about performance to
+      bool SetDebugLogFile(const std::string & i_rLogFile);
+
+      // Set a file to write input data to, allowing offline processing of the subequent file
+      bool SetOutputFile(const std::string & i_rLogFile);
 
     private:
 
       void InputThread();
       void StopInput();
-      void AddData(const std::string & i_rName, std::shared_ptr< VSubjectPose > i_pData);
-      Result::Enum GetSubject(const std::string & i_rSubjectName, std::shared_ptr< const VSubjectPose > & o_rpSubject) const;
 
+      typedef std::chrono::high_resolution_clock hrc;
+      hrc::time_point m_Epoch;
 
       bool InitGet(Result::Enum & o_rResult) const;
       template < typename T > bool InitGet(Result::Enum & o_rResult, T & o_rOutput) const;
@@ -195,19 +146,19 @@ namespace ViconDataStreamSDK
 
 
       VClient & m_rClient;
+      
+      VRetimingCore m_Retimer;
 
       void OutputThread();
 
 
       mutable boost::recursive_mutex m_DataMutex;
-      std::map< std::string, std::deque< std::shared_ptr< const VSubjectPose > > > m_Data;
 
       boost::recursive_mutex m_FrameRateMutex;
       double m_FrameRate;
-      unsigned int m_OutputFrameNumber;
 
+      mutable boost::mutex     m_OutputMutex;
       mutable boost::condition m_OutputWait;
-      std::map< std::string, std::shared_ptr< const VSubjectPose > > m_LatestOutputPoses;
 
       std::unique_ptr< boost::thread > m_pInputThread;
       bool m_bInputStopped;
@@ -218,13 +169,8 @@ namespace ViconDataStreamSDK
       // Required output latency (in milliseconds)
       double m_OutputLatency;
 
-      // Maximum time we should predict forwards (in milliseconds)
-      double m_MaxPredictionTime;
-
-      // Estimated amount for network latency
-      double m_NetworkLatency;
-
-      boost::timer::cpu_timer m_Timer;
+      // Debugging parameter
+      double m_FrameArrivalJitter;
     };
 
     template < typename T >

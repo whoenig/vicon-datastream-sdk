@@ -82,7 +82,7 @@ bool VCGStreamReaderWriter::Fill()
       boost::asio::read( *m_pSocket, boost::asio::buffer( Raw(), Length() ) );
       
       SetOffset( sizeof( ViconCGStreamType::Enum ) );
-      ViconCGStreamType::UInt32 BlockLength;
+      ViconCGStreamType::UInt32 BlockLength = 0;
       Read( BlockLength );
       
       SetLength( Length() + BlockLength );

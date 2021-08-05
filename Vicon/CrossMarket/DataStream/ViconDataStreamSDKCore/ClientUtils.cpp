@@ -29,9 +29,10 @@
 
 #include <boost/asio.hpp>
 #include <boost/format.hpp>
-#include <boost/array.hpp>
+#include <array>
 
 #include <numeric>
+#include <cmath>
 
 namespace ClientUtils
 {
@@ -285,9 +286,41 @@ namespace ClientUtils
     }
   }
 
-    boost::array< double, 3 > operator*( const boost::array< double, 9 > & i_rM, const boost::array< double, 3 > & i_rX )
+  void HelicalToMatrix( const float i_rAA[3], double( &o_rM )[9] )
   {
-    boost::array< double, 3 > Result;
+   double angle, c, s, x, y, z;
+
+    angle = std::sqrt( i_rAA[ 0 ]*i_rAA[ 0 ] + i_rAA[ 1 ]*i_rAA[ 1 ] + i_rAA[ 2 ]*i_rAA[ 2 ] );
+    if ( angle < 10 * std::numeric_limits< double >::epsilon() * 10 ) 
+    {
+      o_rM[ 0 ] = o_rM[ 4 ] = o_rM[ 8 ] = 1.0;
+      o_rM[ 1 ] = o_rM[ 2 ] = o_rM[ 3 ] = o_rM[ 5 ] = o_rM[ 6 ] = o_rM[ 7 ] = 0.0;
+      return;
+    }
+    else 
+    {
+      x = i_rAA[ 0 ] / angle;
+      y = i_rAA[ 1 ] / angle;
+      z = i_rAA[ 2 ] / angle;
+    }
+    c = cos( angle );
+    s = sin( angle );
+
+    o_rM[ 0] = c + ( 1 - c )*x*x;
+    o_rM[ 1 ] = ( 1 - c )*x*y + s * ( -z );
+    o_rM[ 2 ] = ( 1 - c )*x*z + s * y;
+    o_rM[ 3 ] = ( 1 - c )*y*x + s * z;
+    o_rM[ 4 ] = c + ( 1 - c )*y*y;
+    o_rM[ 5 ] = ( 1 - c )*y*z + s * ( -x );
+    o_rM[ 6 ] = ( 1 - c )*z*x + s * ( -y );
+    o_rM[ 7 ] = ( 1 - c )*z*y + s * x;
+    o_rM[ 8 ] = c + ( 1 - c )*z*z;
+
+  }
+
+  std::array< double, 3 > operator*( const std::array< double, 9 > & i_rM, const std::array< double, 3 > & i_rX )
+  {
+    std::array< double, 3 > Result;
 
     for( size_t i = 0; i < 3; i++) 
     {  
@@ -302,35 +335,35 @@ namespace ClientUtils
   return Result;
   }
 
-  boost::array< double, 3 > & operator/=( boost::array< double, 3 > & i_rX, double i_Val )
+  std::array< double, 3 > & operator/=( std::array< double, 3 > & i_rX, double i_Val )
   {
     std::transform( i_rX.begin(), i_rX.end(), i_rX.begin(), [ i_Val ]( double x ){ return x / i_Val; } );
     return i_rX;
   }
 
-  boost::array< double, 3 > & operator*=( boost::array< double, 3 > & i_rX, double i_Val )
+  std::array< double, 3 > & operator*=( std::array< double, 3 > & i_rX, double i_Val )
   {
     std::transform( i_rX.begin(), i_rX.end(), i_rX.begin(), [ i_Val ]( double x ){ return x * i_Val; } );
     return i_rX;
   }
 
-  boost::array< double, 3 > operator+( const boost::array< double, 3 > & i_rX, const boost::array< double, 3 > & i_rY )
+  std::array< double, 3 > operator+( const std::array< double, 3 > & i_rX, const std::array< double, 3 > & i_rY )
   {
-    boost::array< double, 3 > Result;
+    std::array< double, 3 > Result;
     std::transform( i_rX.begin(), i_rX.end(), i_rY.begin(), Result.begin(), []( double x, double y ){ return x + y; } );
     return Result;
   }
 
-  boost::array< double, 3 > operator-( const boost::array< double, 3 > & i_rX, const boost::array< double, 3 > & i_rY )
+  std::array< double, 3 > operator-( const std::array< double, 3 > & i_rX, const std::array< double, 3 > & i_rY )
   {
-    boost::array< double, 3 > Result;
+    std::array< double, 3 > Result;
     std::transform( i_rX.begin(), i_rX.end(), i_rY.begin(), Result.begin(), []( double x, double y ){ return x - y; } );
     return Result;
   }
     
-  boost::array< double, 9 > operator*( const boost::array< double, 9 > & i_rM, const boost::array< double, 9 > & i_rN )
+  std::array< double, 9 > operator*( const std::array< double, 9 > & i_rM, const std::array< double, 9 > & i_rN )
   {
-    boost::array< double, 9 > Result;
+    std::array< double, 9 > Result;
 
     for( size_t i = 0; i < 3; i++) 
     {  
@@ -349,9 +382,9 @@ namespace ClientUtils
   }
 
 
-  boost::array< double, 9 > Transpose( const boost::array< double, 9 > & i_rM )
+  std::array< double, 9 > Transpose( const std::array< double, 9 > & i_rM )
   {
-    boost::array< double, 9 > Result;
+    std::array< double, 9 > Result;
 
     for( size_t i = 0; i < 3; i++) 
     {  
@@ -364,9 +397,9 @@ namespace ClientUtils
     return Result;
   }
 
-  boost::array< double, 16 > Transpose( const boost::array< double, 16 > & i_rM )
+  std::array< double, 16 > Transpose( const std::array< double, 16 > & i_rM )
   {
-    boost::array< double, 16 > Result;
+    std::array< double, 16 > Result;
 
     for( size_t i = 0; i < 4; i++) 
     {  
@@ -379,16 +412,16 @@ namespace ClientUtils
     return Result;
   }
 
-  boost::array< double, 3 > CrossProduct( boost::array< double, 3 > & i_rA, boost::array< double, 3 > & i_rB )
+  std::array< double, 3 > CrossProduct( std::array< double, 3 > & i_rA, std::array< double, 3 > & i_rB )
   {
-    boost::array< double, 3 > Result;
+    std::array< double, 3 > Result;
     Result[0] = i_rA[1] * i_rB[2] - i_rA[2] * i_rB[1];
     Result[1] = i_rA[2] * i_rB[0] - i_rA[0] * i_rB[2];
     Result[2] = i_rA[0] * i_rB[1] - i_rA[1] * i_rB[0];
     return Result;
   }
 
-  double DotProduct( boost::array<double, 3> & i_rA, boost::array<double, 3> & i_rB )
+  double DotProduct( std::array<double, 3> & i_rA, std::array<double, 3> & i_rB )
   {
     double Result = 0;
     for( unsigned i = 0; i < 3; ++i )
@@ -396,5 +429,34 @@ namespace ClientUtils
       Result += i_rA[i] * i_rB[i];
     }
     return Result;
+  }
+
+  double JitterVal(std::default_random_engine & i_rEngine, double i_Mean, double i_Variance, double i_Spike, int i_SpikeFrequency)
+  {
+    // Try a smaller amount of jitter around the mean with an occasional random chance of a spike thrown in.
+
+    if( i_SpikeFrequency > 0 )
+    {
+      // Calculate the probability of a spike, up to the value of Max
+      std::uniform_int_distribution<> spike_probability(0, i_SpikeFrequency);
+      if( spike_probability(i_rEngine) == i_SpikeFrequency )
+      {
+        return i_Spike;
+      }
+    }
+
+    // Otherwise return random values based on an exponential distribution
+    std::exponential_distribution< double > Jitter(10);
+
+    double JitterVal = 2.0;
+    while( JitterVal > 1.0 )
+    {
+      JitterVal = Jitter(i_rEngine);
+    }
+
+    JitterVal *= i_Variance;
+    JitterVal += i_Mean;
+
+    return JitterVal;
   }
 }

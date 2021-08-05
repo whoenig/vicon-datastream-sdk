@@ -13,8 +13,10 @@ include_directories(
 # Declare a cpp library
 add_library(ViconDataStreamSDK_CPP
   Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/CoreClient.cpp
+  Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/CoreClientTimingLog.cpp
   Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/ClientUtils.cpp
   Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/AxisMapping.cpp
+  Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/WirelessConfiguration.cpp
   Vicon/CrossMarket/DataStream/ViconCGStreamClientSDK/CGClient.cpp
   Vicon/CrossMarket/DataStream/ViconCGStreamClient/ViconCGStreamClient.cpp
   Vicon/CrossMarket/DataStream/ViconCGStreamClient/CGStreamReaderWriter.cpp
