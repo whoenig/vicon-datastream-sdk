@@ -23,7 +23,8 @@
 // SOFTWARE.
 //////////////////////////////////////////////////////////////////////////////////
 #include "RetimerUtils.h"
-#include "ClientUtils.h"
+
+#include <ViconDataStreamSDKCoreUtils/ClientUtils.h>
 
 #include <boost/math/constants/constants.hpp>
 

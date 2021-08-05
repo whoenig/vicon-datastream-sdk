@@ -24,11 +24,12 @@
 //////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include "Constants.h"
-#include "AxisMapping.h"
-#include "ClientUtils.h"
 #include "RetimingClient.h"
 #include "CoreClientTimingLog.h"
+
+#include <ViconDataStreamSDKCoreUtils/AxisMapping.h>
+#include <ViconDataStreamSDKCoreUtils/ClientUtils.h>
+#include <ViconDataStreamSDKCoreUtils/Constants.h>
 
 #include <memory>
 #include <array>
@@ -236,7 +237,7 @@ public:
                                           Unit::Enum   & o_rDeviceOutputUnit ) const;
 
   // Empty device output names are automatically assigned a name 'Unnamed Device Output N' where N is a 1 based device output index.
-  Result::Enum GetDeviceOutputName( const std::string  & i_rDeviceName,
+  Result::Enum GetDeviceOutputNameComponent( const std::string  & i_rDeviceName,
                                     const unsigned int   i_DeviceOutputIndex,
                                           std::string  & o_rDeviceOutputName,
                                           std::string  & o_rDeviceOutputComponentName,
@@ -292,28 +293,28 @@ public:
   // This set of functions return the first subsample only.
 
   Result::Enum GetForceVector( const unsigned int i_PlateID, double ( & o_rForceVector)[3] ) const;  
-  Result::Enum GetMomentVector( const unsigned int i_PlateID, double ( & o_rMomentVector)[3] ) const; 
+  Result::Enum GetMomentVector( const unsigned int i_PlateID, double ( & o_rMomentVector)[3] ) const;
   Result::Enum GetCentreOfPressure( const unsigned int i_PlateID, double ( & o_rLocation )[3] ) const;
-  Result::Enum GetGlobalForceVector( const unsigned int i_PlateID, double ( & o_rForceVector)[3] ) const;  
-  Result::Enum GetGlobalMomentVector( const unsigned int i_PlateID, double ( & o_rMomentVector)[3] ) const; 
+  Result::Enum GetGlobalForceVector( const unsigned int i_PlateID, double ( & o_rForceVector)[3] ) const;
+  Result::Enum GetGlobalMomentVector( const unsigned int i_PlateID, double ( & o_rMomentVector)[3] ) const;
   Result::Enum GetGlobalCentreOfPressure( const unsigned int i_PlateID, double ( & o_rLocation )[3] ) const;
 
   // Returns the number of subsamples available for the plate.
 
   Result::Enum GetForcePlateSubsamples( const unsigned int i_PlateID, unsigned int& o_rForcePlateSubsamples ) const;
 
-  Result::Enum GetForceVector( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rForceVector)[3] ) const;  
-  Result::Enum GetMomentVector( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rMomentVector)[3] ) const; 
-  Result::Enum GetCentreOfPressure( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rLocation )[3] ) const;
-  Result::Enum GetGlobalForceVector( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rForceVector)[3] ) const;  
-  Result::Enum GetGlobalMomentVector( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rMomentVector)[3] ) const; 
-  Result::Enum GetGlobalCentreOfPressure( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rLocation )[3] ) const;
+  Result::Enum GetForceVectorAtSample( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rForceVector)[3] ) const;  
+  Result::Enum GetMomentVectorAtSample( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rMomentVector)[3] ) const;
+  Result::Enum GetCentreOfPressureAtSample( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rLocation )[3] ) const;
+  Result::Enum GetGlobalForceVectorAtSample( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rForceVector)[3] ) const;
+  Result::Enum GetGlobalMomentVectorAtSample( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rMomentVector)[3] ) const;
+  Result::Enum GetGlobalCentreOfPressureAtSample( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rLocation )[3] ) const;
 
   // Get the raw analogue associated with the plate.
 
   Result::Enum GetNumberOfAnalogChannels( const unsigned int i_PlateID, unsigned int& o_rChannelCount ) const;
   Result::Enum GetAnalogChannelVoltage( const unsigned int i_PlateID, const unsigned int i_ZeroIndexedChannelIndex, double& o_rVoltage ) const;
-  Result::Enum GetAnalogChannelVoltage( const unsigned int i_PlateID, const unsigned int i_ZeroIndexedChannelIndex, const unsigned int i_Subsample, double& o_rVoltage ) const;
+  Result::Enum GetAnalogChannelVoltageAtSample( const unsigned int i_PlateID, const unsigned int i_ZeroIndexedChannelIndex, const unsigned int i_Subsample, double& o_rVoltage ) const;
 
   Result::Enum GetEyeTrackerCount( unsigned int & o_rCount ) const;
   Result::Enum GetEyeTrackerID( const unsigned int i_EyeTrackerIndex, unsigned int& o_rEyeTrackerID ) const;

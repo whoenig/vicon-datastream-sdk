@@ -37,8 +37,8 @@
 
 #include "RetimingCore.h"
 
-#include "Constants.h"
-#include "ClientUtils.h"
+#include <ViconDataStreamSDKCoreUtils/Constants.h>
+#include <ViconDataStreamSDKCoreUtils/ClientUtils.h>
 
 namespace ViconCGStreamClientSDK
 {
@@ -119,9 +119,6 @@ namespace ViconDataStreamSDK
 
       // Return the maximum prediction used by the system
       double MaximumPrediction() const;
-
-      // Set an estimate for (fixed) network latency
-      void SetNetworkLatency(double i_Latency);
 
       // Set a log file to write debug output about performance to
       bool SetDebugLogFile(const std::string & i_rLogFile);

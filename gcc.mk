@@ -40,7 +40,11 @@ endif
 CC_WARNINGS=-Wall -Wno-sign-compare -Wno-unknown-pragmas -Wno-parentheses -Winvalid-pch -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-function -Wno-deprecated-declarations
 
 # Define the c++ language standard
-ifeq ($(CXX_VERSION_8_0),1)
+ifeq ($(ARCH),Darwin)
+  # On MacOSX XCode lies and uses clang as gcc so the version number is incorrect,
+  # We should verify the clang version number or just use clang directly for MacOSX builds.
+  CXX_STANDARD=-std=c++17
+else ifeq ($(CXX_VERSION_8_0),1)
   # Use full c++17 support, note this may be overridden by the 'CppStandard14' project option
   CXX_STANDARD=-std=c++17
 else ifeq ($(CXX_VERSION_5_0),1)

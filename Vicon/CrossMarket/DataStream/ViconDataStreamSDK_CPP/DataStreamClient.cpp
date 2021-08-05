@@ -1133,7 +1133,7 @@ namespace CPP
     std::string                          _DeviceOutputName;
     std::string                          _DeviceOutputComponentName;
     ViconDataStreamSDK::Core::Unit::Enum _DeviceOutputUnit;
-    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetDeviceOutputName( DeviceName,
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetDeviceOutputNameComponent( DeviceName,
       DeviceOutputIndex,
       _DeviceOutputName,
       _DeviceOutputComponentName,
@@ -1155,7 +1155,7 @@ namespace CPP
     std::string                          _DeviceOutputName;
     std::string                          _DeviceOutputComponentName;
     ViconDataStreamSDK::Core::Unit::Enum _DeviceOutputUnit;
-    Output.Result =  Adapt( m_pClientImpl->m_pCoreClient->GetDeviceOutputName( DeviceName, 
+    Output.Result =  Adapt( m_pClientImpl->m_pCoreClient->GetDeviceOutputNameComponent( DeviceName, 
                                                                                DeviceOutputIndex, 
                                                                                _DeviceOutputName,
                                                                                _DeviceOutputComponentName,
@@ -1323,7 +1323,7 @@ namespace CPP
 
     if( Output.Result == Result::Success )
     {
-      Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetGlobalForceVector( ForcePlateID, Subsample, Output.ForceVector ) );
+      Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetGlobalForceVectorAtSample( ForcePlateID, Subsample, Output.ForceVector ) );
     }
     else
     {
@@ -1346,7 +1346,7 @@ namespace CPP
 
     if( Output.Result == Result::Success )
     {
-      Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetGlobalMomentVector( ForcePlateID, Subsample, Output.MomentVector ) );
+      Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetGlobalMomentVectorAtSample( ForcePlateID, Subsample, Output.MomentVector ) );
     }
     else
     {
@@ -1369,7 +1369,7 @@ namespace CPP
 
     if( Output.Result == Result::Success )
     {
-      Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetGlobalCentreOfPressure( ForcePlateID, Subsample, Output.CentreOfPressure ) );
+      Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetGlobalCentreOfPressureAtSample( ForcePlateID, Subsample, Output.CentreOfPressure ) );
     }
     else
     {

@@ -38,8 +38,7 @@
 #include <set>
 #include <numeric>
 
-#include "Constants.h"
-
+#include <ViconDataStreamSDKCoreUtils/Constants.h>
 
 class VCGStreamPostalService;
 
@@ -77,6 +76,7 @@ namespace ViconDataStreamSDK
       std::array< double, 3 > T_Stat;
       std::array< double, 4 > R_Stat;
 
+      bool bHasScale;
       std::array< double, 3 > Scale;
 
       std::vector< std::string > m_Children;

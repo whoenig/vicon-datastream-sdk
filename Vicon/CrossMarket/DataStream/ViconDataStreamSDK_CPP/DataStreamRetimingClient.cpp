@@ -116,6 +116,8 @@ namespace ViconDataStreamSDK
       Output_EnableLightweightSegmentData         RetimingClient::EnableLightweightSegmentData()
     {
       Output_EnableLightweightSegmentData Output;
+
+      // This call already explicitly turns normal segment data off
       Output.Result = Adapt( m_pClientImpl->m_pCoreClient->EnableLightweightSegmentData() );
       return Output;
     }
@@ -125,6 +127,9 @@ namespace ViconDataStreamSDK
     {
       Output_DisableLightweightSegmentData Output;
       Output.Result = Adapt( m_pClientImpl->m_pCoreClient->DisableLightweightSegmentData() );
+
+      // We don't supply a method to enable segment data in the retiming client, so this call needs to explicitly turn it back on
+      Output.Result = Adapt(m_pClientImpl->m_pCoreClient->EnableSegmentData());
       return Output;
     }
     

@@ -14,8 +14,8 @@ include_directories(
 add_library(ViconDataStreamSDK_CPP
   Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/CoreClient.cpp
   Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/CoreClientTimingLog.cpp
-  Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/ClientUtils.cpp
-  Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/AxisMapping.cpp
+  Vicon/CrossMarket/DataStream/ViconDataStreamSDKCoreUtils/ClientUtils.cpp
+  Vicon/CrossMarket/DataStream/ViconDataStreamSDKCoreUtils/AxisMapping.cpp
   Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/WirelessConfiguration.cpp
   Vicon/CrossMarket/DataStream/ViconCGStreamClientSDK/CGClient.cpp
   Vicon/CrossMarket/DataStream/ViconCGStreamClient/ViconCGStreamClient.cpp

@@ -32,9 +32,8 @@
 #include <thread>
 #pragma warning( pop )
 
-#include <chrono>
-
 #include <algorithm>
+#include <cmath>
 #include <chrono>
 #include <iomanip>
 #include <iostream>
@@ -47,7 +46,17 @@ using namespace ClientUtils;
 
 namespace ViconDataStreamSDK
 {
+  namespace
+  {
+    const unsigned int TickRateInHz = 120000;
 
+    unsigned int TickFromHz( double i_Hz, unsigned int i_TickRateInHz )
+    {
+      const double Seconds = 1.0 / i_Hz;
+      return std::lround( static_cast< double >( i_TickRateInHz ) * Seconds );
+    }
+  }
+  
   namespace Core
   {
     static unsigned int s_BufSize = 2;

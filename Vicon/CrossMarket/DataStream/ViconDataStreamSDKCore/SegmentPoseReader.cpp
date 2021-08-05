@@ -23,7 +23,8 @@
 // SOFTWARE.
 //////////////////////////////////////////////////////////////////////////////////
 #include "SegmentPoseReader.h"
-#include "ClientUtils.h"
+
+#include <ViconDataStreamSDKCoreUtils/ClientUtils.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
@@ -56,7 +57,8 @@ bool VSegmentPoseReader::Load(const std::string & i_rFile)
 
 bool VSegmentPoseReader::Read( std::istream & i_rStream )
 {
-  double CurrentFrameNumber = -1;
+  unsigned int CurrentFrameNumber = -1;
+  double CurrentFrameTime;
 
   std::map< std::string, std::shared_ptr< VSubjectPose > > FrameMap;
 
@@ -85,11 +87,13 @@ bool VSegmentPoseReader::Read( std::istream & i_rStream )
       {
         if (CurrentFrameNumber != -1)
         {
-          m_Data.push_back(FrameMap);
+          m_Data[ CurrentFrameNumber ] = FrameMap;
+          m_FrameToTime[ CurrentFrameTime ] = static_cast< unsigned int >( CurrentFrameNumber );
           FrameMap.clear();
         }
 
-        CurrentFrameNumber = pPose->FrameNumber;
+        CurrentFrameNumber = static_cast< unsigned int >( pPose->FrameNumber );
+        CurrentFrameTime = pPose->ReceiptTime;
       }
 
       FrameMap[ pPose->Name ] = pPose;
@@ -103,7 +107,7 @@ bool VSegmentPoseReader::Read( std::istream & i_rStream )
   // Add the last frame
   if (!FrameMap.empty())
   {
-    m_Data.push_back(FrameMap);
+    m_Data[ CurrentFrameNumber ] = FrameMap;
   }
 
   return true;
@@ -146,7 +150,8 @@ void VSegmentPoseReader::GenerateTestData(unsigned int i_NumFrames, double i_Fra
 
     std::map < std::string, std::shared_ptr< VSubjectPose > > FrameData;
     FrameData.insert( std::make_pair( pPose->Name, pPose ) );
-    m_Data.push_back( FrameData );
+    m_Data[ FrameNum ] = FrameData;
+    m_FrameToTime[ pPose->ReceiptTime ] = FrameNum;
   }
 }
 
@@ -264,9 +269,28 @@ std::shared_ptr< VSubjectPose > VSegmentPoseReader::ReadLine(const std::string &
   }
 }
 
+unsigned int VSegmentPoseReader::StartFrame() const
+{
+  if( !m_Data.empty() )
+  {
+    return m_Data.begin()->first;
+  }
+  return 0;
+}
+
+unsigned int VSegmentPoseReader::EndFrame() const
+{
+  if( !m_Data.empty() )
+  {
+    const auto & rEnd = m_Data.rbegin();
+    return rEnd->first;
+  }
+  return 0;
+}
+
 unsigned int VSegmentPoseReader::FrameCount() const
 {
-  return static_cast<unsigned int>(m_Data.size());
+  return EndFrame() - StartFrame();
 }
 
 unsigned int VSegmentPoseReader::SubjectCount() const
@@ -290,19 +314,48 @@ bool VSegmentPoseReader::SubjectName(unsigned int i_Index, std::string & i_rName
 std::shared_ptr< VSubjectPose > VSegmentPoseReader::PoseAt(unsigned int i_Frame, const std::string & i_rSubject) const
 {
   std::shared_ptr< VSubjectPose > pResult;
-  if (i_Frame > m_Data.size())
+  unsigned int Start = StartFrame();
+  unsigned int End  = EndFrame();
+
+  if (i_Frame < Start || i_Frame > End )
   {
     return pResult;
   }
 
-  const auto & rFrame = m_Data[i_Frame];
-  const auto rIt = rFrame.find(i_rSubject);
-  if (rIt != rFrame.end())
+  const auto & rFrameIt = m_Data.find( i_Frame );
+  if( rFrameIt != m_Data.end() )
+  { 
+    const auto & rFrame = rFrameIt->second;
+    const auto rIt = rFrame.find(i_rSubject);
+    if (rIt != rFrame.end())
+    {
+      return rIt->second;
+    }
+  }
+  return pResult;
+}
+
+bool VSegmentPoseReader::FrameIndexClosestToTime( double i_Time, unsigned int & o_rFrame ) const
+{
+  auto It = m_FrameToTime.lower_bound( i_Time );
+
+  // Return the last frame if i_Time is later than all samples
+  if (It == m_FrameToTime.end())
   {
-    return rIt->second;
+    o_rFrame = m_FrameToTime.rbegin()->second;
+    return true;
   }
 
-  return pResult;
+  if (It == m_FrameToTime.begin())
+  {
+    return false;
+  }
+  else
+  {
+    --It;
+    o_rFrame = It->second;
+    return true;
+  }
 }
 
 }

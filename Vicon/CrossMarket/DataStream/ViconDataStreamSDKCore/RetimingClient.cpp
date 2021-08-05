@@ -497,8 +497,15 @@ namespace ViconDataStreamSDK
         auto SegIt = pSubject->m_Segments.find(i_rSegmentName);
         if( SegIt != pSubject->m_Segments.end() )
         {
-          std::array< double, 3 > StaticScale = SegIt->second->Scale;
-          std::copy(StaticScale.begin(), StaticScale .end(), o_rThreeVector);
+          if( SegIt->second->bHasScale )
+          { 
+            std::array< double, 3 > StaticScale = SegIt->second->Scale;
+            std::copy(StaticScale.begin(), StaticScale .end(), o_rThreeVector);
+          }
+          else
+          {
+            GetResult = Result::NotPresent;
+          }
         }
       }
       return GetResult;
@@ -942,10 +949,11 @@ namespace ViconDataStreamSDK
                 if( m_rClient.GetSegmentStaticScale(SubjectName, SegmentName, Scale) == Result::Success )
                 {
                   std::copy(Scale, Scale + 3, pSegmentPoseData->Scale.begin());
+                  pSegmentPoseData->bHasScale = true;
                 }
                 else
                 {
-                  pSegmentPoseData->Scale = { 1.0, 1.0, 1.0 };
+                  pSegmentPoseData->bHasScale = false;
                 }
 
                 pSegmentPoseData->bOccluded = bOccluded;

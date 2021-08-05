@@ -25,7 +25,7 @@
 #pragma once
 
 #include "IDataStreamClientBase.h"
-#include <ViconDataStreamSDKCore/Constants.h>
+#include <ViconDataStreamSDKCoreUtils/Constants.h>
 
 // This function is provided to insulate us from changes to ViconDataStreamSDK::Core::Axis::Enum 
 static ViconDataStreamSDK::Core::Direction::Enum Adapt(const ViconDataStreamSDK::CPP::Direction::Enum i_Direction)

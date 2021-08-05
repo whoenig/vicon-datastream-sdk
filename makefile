@@ -14,15 +14,15 @@ else
 CONFIG=Debug
 endif
 
-.PHONY: all StreamCommon ViconCGStream ViconCGStreamClient ViconCGStreamClientSDK ViconDataStreamSDKCore ViconDataStreamSDK_C ViconDataStreamSDK_CPP ViconDataStreamSDK_CPPRetimerTest ViconDataStreamSDK_CPPTest ViconDataStreamSDK_CTest
+.PHONY: all StreamCommon ViconCGStream ViconCGStreamClient ViconCGStreamClientSDK ViconDataStreamSDKCore ViconDataStreamSDKCoreUtils ViconDataStreamSDK_C ViconDataStreamSDK_CPP ViconDataStreamSDK_CPPRetimerTest ViconDataStreamSDK_CPPTest ViconDataStreamSDK_CTest
 
 all: ViconDataStreamSDK_C ViconDataStreamSDK_CPP ViconDataStreamSDK_CPPRetimerTest ViconDataStreamSDK_CPPTest ViconDataStreamSDK_CTest
 	@echo Whole tree succeeded
-ViconDataStreamSDK_C: StreamCommon ViconCGStream ViconCGStreamClient ViconCGStreamClientSDK ViconDataStreamSDK_CPP ViconDataStreamSDKCore
-ViconDataStreamSDK_CPP: StreamCommon ViconCGStream ViconCGStreamClient ViconCGStreamClientSDK ViconDataStreamSDKCore
-ViconDataStreamSDK_CPPRetimerTest: StreamCommon ViconCGStream ViconCGStreamClient ViconCGStreamClientSDK ViconDataStreamSDK_CPP ViconDataStreamSDKCore
-ViconDataStreamSDK_CPPTest: StreamCommon ViconCGStream ViconCGStreamClient ViconCGStreamClientSDK ViconDataStreamSDK_CPP ViconDataStreamSDKCore
-ViconDataStreamSDK_CTest: StreamCommon ViconCGStream ViconCGStreamClient ViconCGStreamClientSDK ViconDataStreamSDK_C ViconDataStreamSDK_CPP ViconDataStreamSDKCore
+ViconDataStreamSDK_C: StreamCommon ViconCGStream ViconCGStreamClient ViconCGStreamClientSDK ViconDataStreamSDK_CPP ViconDataStreamSDKCore ViconDataStreamSDKCoreUtils
+ViconDataStreamSDK_CPP: StreamCommon ViconCGStream ViconCGStreamClient ViconCGStreamClientSDK ViconDataStreamSDKCore ViconDataStreamSDKCoreUtils
+ViconDataStreamSDK_CPPRetimerTest: StreamCommon ViconCGStream ViconCGStreamClient ViconCGStreamClientSDK ViconDataStreamSDK_CPP ViconDataStreamSDKCore ViconDataStreamSDKCoreUtils
+ViconDataStreamSDK_CPPTest: StreamCommon ViconCGStream ViconCGStreamClient ViconCGStreamClientSDK ViconDataStreamSDK_CPP ViconDataStreamSDKCore ViconDataStreamSDKCoreUtils
+ViconDataStreamSDK_CTest: StreamCommon ViconCGStream ViconCGStreamClient ViconCGStreamClientSDK ViconDataStreamSDK_C ViconDataStreamSDK_CPP ViconDataStreamSDKCore ViconDataStreamSDKCoreUtils
 
 StreamCommon:
 	@echo \[1\;31mBuilding StreamCommon\[0m
@@ -43,6 +43,10 @@ ViconCGStreamClientSDK:
 ViconDataStreamSDKCore:
 	@echo \[1\;31mBuilding ViconDataStreamSDKCore\[0m
 	@$(MAKE) CONFIG=$(CONFIG) -C Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore
+
+ViconDataStreamSDKCoreUtils:
+	@echo \[1\;31mBuilding ViconDataStreamSDKCoreUtils\[0m
+	@$(MAKE) CONFIG=$(CONFIG) -C Vicon/CrossMarket/DataStream/ViconDataStreamSDKCoreUtils
 
 ViconDataStreamSDK_C:
 	@echo \[1\;31mBuilding ViconDataStreamSDK_C\[0m
@@ -76,6 +80,7 @@ clean:
 	rm -f bin/$(CONFIG)/ViconCGStreamClient
 	rm -f bin/$(CONFIG)/ViconCGStreamClientSDK
 	rm -f bin/$(CONFIG)/ViconDataStreamSDKCore
+	rm -f bin/$(CONFIG)/ViconDataStreamSDKCoreUtils
 	rm -f bin/$(CONFIG)/ViconDataStreamSDK_C
 	rm -f bin/$(CONFIG)/ViconDataStreamSDK_CPP
 	rm -f bin/$(CONFIG)/ViconDataStreamSDK_CPPRetimerTest

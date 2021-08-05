@@ -22,7 +22,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //////////////////////////////////////////////////////////////////////////////////
+#pragma once
+
 #include <ViconDataStreamSDKCore/RetimingCore.h>
+
+#include <iostream>
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
 
 namespace ViconDataStreamSDK
 {
@@ -37,19 +45,22 @@ namespace ViconDataStreamSDK
       bool Read( std::istream & i_rStream );
       void GenerateTestData(unsigned int i_NumFrames, double i_FrameRate, double i_TransmissionLatency, double i_TransmissionJitter, double i_TransmissionSpike, int i_TransmissionSpikeFrequency);
 
+      unsigned int StartFrame() const;
+      unsigned int EndFrame() const;
       unsigned int FrameCount() const;
       unsigned int SubjectCount() const;
 
       bool SubjectName(unsigned int i_Index, std::string & i_rName) const;
 
       std::shared_ptr< VSubjectPose > PoseAt(unsigned int i_Frame, const std::string & i_rSubject) const;
-
+      bool FrameIndexClosestToTime( double i_Time, unsigned int & o_rFrame ) const;
     private:
 
       std::shared_ptr< VSubjectPose > ReadLine(const std::string & i_rLine, const std::vector< std::string > & i_rHeaderItems ) const;
 
       std::vector< std::string > m_Subjects;
-      std::vector< std::map< std::string, std::shared_ptr< VSubjectPose > > > m_Data;
+      std::map< unsigned int, std::map< std::string, std::shared_ptr< VSubjectPose > > > m_Data;
+      std::map< double, unsigned int > m_FrameToTime;
     };
   }
 }

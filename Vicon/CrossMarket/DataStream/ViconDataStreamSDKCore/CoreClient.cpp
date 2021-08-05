@@ -23,8 +23,9 @@
 // SOFTWARE.
 //////////////////////////////////////////////////////////////////////////////////
 #include "CoreClient.h"
-#include "ClientUtils.h"
 #include "WirelessConfiguration.h"
+
+#include <ViconDataStreamSDKCoreUtils/ClientUtils.h>
 
 #include <functional>
 
@@ -3041,7 +3042,7 @@ Result::Enum VClient::GetCentreOfPressure( const unsigned int i_PlateID,
   return GetForcePlateVector( i_PlateID, i_ForcePlateSubsamples, m_LatestFrame.m_CentresOfPressure, o_rLocation );
 }
 
-Result::Enum VClient::GetForceVector( const unsigned int i_PlateID, 
+Result::Enum VClient::GetForceVectorAtSample( const unsigned int i_PlateID,
                                       const unsigned int i_Subsample, 
                                       double ( & o_rForceVector)[3] ) const
 {
@@ -3060,7 +3061,7 @@ Result::Enum VClient::GetForceVector( const unsigned int i_PlateID,
   return Result;
 }
 
-Result::Enum VClient::GetMomentVector( const unsigned int i_PlateID, 
+Result::Enum VClient::GetMomentVectorAtSample( const unsigned int i_PlateID,
                                        const unsigned int i_Subsample, 
                                        double ( & o_rMomentVector )[3] ) const
 {
@@ -3079,7 +3080,7 @@ Result::Enum VClient::GetMomentVector( const unsigned int i_PlateID,
   return Result;
 }
 
-Result::Enum VClient::GetCentreOfPressure( const unsigned int i_PlateID, 
+Result::Enum VClient::GetCentreOfPressureAtSample( const unsigned int i_PlateID,
                                            const unsigned int i_Subsample, 
                                            double ( & o_rLocation )[3] ) const
 {
@@ -3098,7 +3099,7 @@ Result::Enum VClient::GetCentreOfPressure( const unsigned int i_PlateID,
   return Result;
 }
 
-Result::Enum VClient::GetGlobalForceVector( const unsigned int i_PlateID, 
+Result::Enum VClient::GetGlobalForceVectorAtSample( const unsigned int i_PlateID,
                                             const unsigned int i_Subsample, 
                                             double ( & o_rForceVector)[3] ) const
 {
@@ -3137,7 +3138,7 @@ Result::Enum VClient::GetGlobalForceVector( const unsigned int i_PlateID,
   return Result;
 }
 
-Result::Enum VClient::GetGlobalMomentVector( const unsigned int i_PlateID, 
+Result::Enum VClient::GetGlobalMomentVectorAtSample( const unsigned int i_PlateID,
                                              const unsigned int i_Subsample, 
                                              double ( & o_rMomentVector )[3] ) const
 {
@@ -3171,7 +3172,7 @@ Result::Enum VClient::GetGlobalMomentVector( const unsigned int i_PlateID,
   return Result;
 }
 
-Result::Enum VClient::GetGlobalCentreOfPressure( const unsigned int i_PlateID, 
+Result::Enum VClient::GetGlobalCentreOfPressureAtSample( const unsigned int i_PlateID,
                                                  const unsigned int i_Subsample, 
                                                  double ( & o_rLocation )[3] ) const
 {
@@ -3218,32 +3219,32 @@ Result::Enum VClient::GetForcePlateSubsamples( const unsigned int i_PlateID, uns
 
 Result::Enum VClient::GetForceVector( const unsigned int i_PlateID, double ( & o_rForceVector)[3] ) const
 {
-  return GetForceVector( i_PlateID, 0, o_rForceVector );
+  return GetForceVectorAtSample( i_PlateID, 0, o_rForceVector );
 }
 
 Result::Enum VClient::GetMomentVector( const unsigned int i_PlateID, double ( & o_rMomentVector)[3] ) const
 {
-  return GetMomentVector( i_PlateID, 0, o_rMomentVector );
+  return GetMomentVectorAtSample( i_PlateID, 0, o_rMomentVector );
 }
 
 Result::Enum VClient::GetCentreOfPressure( const unsigned int i_PlateID, double ( & o_rLocation )[3] ) const
 {
-  return GetCentreOfPressure( i_PlateID, 0, o_rLocation );
+  return GetCentreOfPressureAtSample( i_PlateID, 0, o_rLocation );
 }
 
 Result::Enum VClient::GetGlobalForceVector( const unsigned int i_PlateID, double ( & o_rForceVector)[3] ) const
 {
-  return GetGlobalForceVector( i_PlateID, 0, o_rForceVector );
+  return GetGlobalForceVectorAtSample( i_PlateID, 0, o_rForceVector );
 }
 
 Result::Enum VClient::GetGlobalMomentVector( const unsigned int i_PlateID, double ( & o_rMomentVector)[3] ) const
 {
-  return GetGlobalMomentVector( i_PlateID, 0, o_rMomentVector );
+  return GetGlobalMomentVectorAtSample( i_PlateID, 0, o_rMomentVector );
 }
 
 Result::Enum VClient::GetGlobalCentreOfPressure( const unsigned int i_PlateID, double ( & o_rLocation )[3] ) const
 {
-  return GetGlobalCentreOfPressure( i_PlateID, 0, o_rLocation );
+  return GetGlobalCentreOfPressureAtSample( i_PlateID, 0, o_rLocation );
 }
 
 // Comment explaining about analog components
@@ -3281,10 +3282,10 @@ Result::Enum VClient::GetAnalogChannelVoltage( const unsigned int i_PlateID,
                                                const unsigned int i_ChannelIndex, 
                                                double & o_rVoltage) const
 { 
-  return GetAnalogChannelVoltage( i_PlateID, i_ChannelIndex, 0, o_rVoltage );
+  return GetAnalogChannelVoltageAtSample( i_PlateID, i_ChannelIndex, 0, o_rVoltage );
 }
 
-Result::Enum VClient::GetAnalogChannelVoltage( const unsigned int i_PlateID, 
+Result::Enum VClient::GetAnalogChannelVoltageAtSample( const unsigned int i_PlateID, 
                                                const unsigned int i_ChannelIndex, 
                                                const unsigned int i_Subsample,
                                                double & o_rVoltage) const
@@ -3820,10 +3821,10 @@ Result::Enum VClient::GetDeviceOutputName( const std::string  & i_rDeviceName,
 {
   // For backward compatibility here, we return the component name as the output name
   std::string UnneededOutputName;
-  return GetDeviceOutputName( i_rDeviceName, i_DeviceOutputIndex, UnneededOutputName, o_rDeviceOutputName, o_rDeviceOutputUnit );
+  return GetDeviceOutputNameComponent( i_rDeviceName, i_DeviceOutputIndex, UnneededOutputName, o_rDeviceOutputName, o_rDeviceOutputUnit );
 }
 
-Result::Enum VClient::GetDeviceOutputName( const std::string  & i_rDeviceName,
+Result::Enum VClient::GetDeviceOutputNameComponent( const std::string  & i_rDeviceName,
                                            const unsigned int   i_DeviceOutputIndex,
                                                  std::string  & o_rDeviceOutputName,
                                                  std::string  & o_rComponentName,

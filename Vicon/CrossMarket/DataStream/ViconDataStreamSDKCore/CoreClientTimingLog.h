@@ -24,10 +24,12 @@
 //////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include "Constants.h"
-#include "AxisMapping.h"
-#include "ClientUtils.h"
 #include "RetimingClient.h"
+
+#include <ViconDataStreamSDKCoreUtils/Constants.h>
+#include <ViconDataStreamSDKCoreUtils/AxisMapping.h>
+#include <ViconDataStreamSDKCoreUtils/ClientUtils.h>
+
 
 #include <memory>
 #include <array>
