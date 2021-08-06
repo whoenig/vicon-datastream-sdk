@@ -4,6 +4,8 @@ project(vicon-datastream-sdk)
 set (CMAKE_CXX_STANDARD 11)
 
 find_package(Boost 1.5 COMPONENTS system thread REQUIRED)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
 
 include_directories(
   Vicon/CrossMarket/DataStream
@@ -28,9 +30,10 @@ add_library(ViconDataStreamSDK_CPP
 )
 
 target_link_libraries(ViconDataStreamSDK_CPP
-  Boost::system
-  Boost::thread
-  pthread
+  PRIVATE 
+    Boost::system
+    Boost::thread
+    Threads::Threads
 )
 
 # Declare an executable
