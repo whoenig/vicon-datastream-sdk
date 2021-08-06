@@ -31,6 +31,7 @@
 
 #include "StringFactory.h"
 #include "CoreAdapters.h"
+namespace ph = std::placeholders;
 
 namespace ViconDataStreamSDK
 {
@@ -44,7 +45,7 @@ namespace ViconDataStreamSDK
     public:
       RetimingClientImpl()
         : m_pCoreClient(new ViconDataStreamSDK::Core::VClient())
-        , m_pCoreRetimingClient(new ViconDataStreamSDK::Core::VRetimingClient(*m_pCoreClient))
+        , m_pCoreRetimingClient(new ViconDataStreamSDK::Core::VRetimingClient(m_pCoreClient))
         , m_pStringFactory(new VStringFactory())
       {
       }
@@ -72,7 +73,8 @@ namespace ViconDataStreamSDK
       Output_GetVersion Output;
       m_pClientImpl->m_pCoreClient->GetVersion(Output.Major,
         Output.Minor,
-        Output.Point);
+        Output.Point,
+        Output.Revision );
 
       return Output;
     }
@@ -82,9 +84,9 @@ namespace ViconDataStreamSDK
     {
 
       std::shared_ptr< ViconCGStreamClientSDK::ICGClient > pClient(ViconCGStreamClientSDK::ICGClient::CreateCGClient(),
-        boost::bind(&ViconCGStreamClientSDK::ICGClient::Destroy, _1));
+        std::bind(&ViconCGStreamClientSDK::ICGClient::Destroy, ph::_1));
       Output_Connect Output;
-      Output.Result = Adapt(m_pClientImpl->m_pCoreRetimingClient->Connect(pClient, HostName));
+      Output.Result = Adapt(m_pClientImpl->m_pCoreRetimingClient->Connect(pClient, HostName, m_pClientImpl->m_pCoreClient->IsLightweightSegmentDataEnabled()));
 
       if (Output.Result == Result::Success && FrameRate > 0)
       {
@@ -107,6 +109,35 @@ namespace ViconDataStreamSDK
     {
       Output_IsConnected Output;
       Output.Connected = m_pClientImpl->m_pCoreClient->IsConnected();
+      return Output;
+    }
+
+    CLASS_DECLSPEC
+      Output_EnableLightweightSegmentData         RetimingClient::EnableLightweightSegmentData()
+    {
+      Output_EnableLightweightSegmentData Output;
+
+      // This call already explicitly turns normal segment data off
+      Output.Result = Adapt( m_pClientImpl->m_pCoreClient->EnableLightweightSegmentData() );
+      return Output;
+    }
+    
+    CLASS_DECLSPEC
+      Output_DisableLightweightSegmentData         RetimingClient::DisableLightweightSegmentData()
+    {
+      Output_DisableLightweightSegmentData Output;
+      Output.Result = Adapt( m_pClientImpl->m_pCoreClient->DisableLightweightSegmentData() );
+
+      // We don't supply a method to enable segment data in the retiming client, so this call needs to explicitly turn it back on
+      Output.Result = Adapt(m_pClientImpl->m_pCoreClient->EnableSegmentData());
+      return Output;
+    }
+    
+    CLASS_DECLSPEC
+      Output_IsLightweightSegmentDataEnabled         RetimingClient::IsLightweightSegmentDataEnabled() const
+    {
+      Output_IsLightweightSegmentDataEnabled Output;
+      Output.Enabled = m_pClientImpl->m_pCoreClient->IsLightweightSegmentDataEnabled();
       return Output;
     }
 
@@ -181,12 +212,6 @@ namespace ViconDataStreamSDK
       std::string SegmentName;
 
       Output.Result = Adapt(m_pClientImpl->m_pCoreRetimingClient->GetSubjectRootSegmentName(SubjectName, SegmentName));
-
-      if (Output.Result != Result::Success)
-      {
-        std::cout << "Get Root Segment Name failed " << Output.Result << std::endl;
-      }
-
       Output.SegmentName.Set(SegmentName.c_str(), *m_pClientImpl->m_pStringFactory.get());
       return Output;
     }
@@ -306,6 +331,16 @@ namespace ViconDataStreamSDK
       Output.Result = Adapt(m_pClientImpl->m_pCoreRetimingClient->GetSegmentStaticRotationEulerXYZ(SubjectName,
         SegmentName,
         Output.Rotation));
+
+      return Output;
+    }
+
+    Output_GetSegmentStaticScale RetimingClient::GetSegmentStaticScale(const String & SubjectName, const String & SegmentName) const
+    {
+      Output_GetSegmentStaticScale Output;
+      Output.Result = Adapt(m_pClientImpl->m_pCoreRetimingClient->GetSegmentStaticScale(SubjectName,
+        SegmentName,
+        Output.Scale ));
 
       return Output;
     }
@@ -454,5 +489,42 @@ namespace ViconDataStreamSDK
     {
       return m_pClientImpl->m_pCoreRetimingClient->MaximumPrediction();
     }
+
+    CLASS_DECLSPEC
+    bool RetimingClient::SetDebugLogFile(const String & LogFile)
+    {
+      return m_pClientImpl->m_pCoreRetimingClient->SetDebugLogFile( LogFile );
+    }
+
+    CLASS_DECLSPEC
+    bool RetimingClient::SetOutputFile(const String & LogFile)
+    {
+      return m_pClientImpl->m_pCoreRetimingClient->SetOutputFile(LogFile);
+    }
+
+    CLASS_DECLSPEC
+    Output_ClearSubjectFilter RetimingClient::ClearSubjectFilter()
+    {
+      Output_ClearSubjectFilter Output;
+      Output.Result = Adapt( m_pClientImpl->m_pCoreClient->ClearSubjectFilter() );
+      return Output;
+    }
+
+    CLASS_DECLSPEC
+    Output_AddToSubjectFilter RetimingClient::AddToSubjectFilter(const String& SubjectName)
+    {
+      Output_AddToSubjectFilter Output;
+      Output.Result = Adapt( m_pClientImpl->m_pCoreClient->AddToSubjectFilter( SubjectName ) );
+      return Output;
+    }
+
+    CLASS_DECLSPEC
+    Output_SetTimingLogFile RetimingClient::SetTimingLogFile(const String & ClientLog, const String & StreamLog)
+    {
+      Output_SetTimingLogFile Output;
+      Output.Result = Adapt( m_pClientImpl->m_pCoreClient->SetTimingLog(ClientLog, StreamLog ) );
+      return Output;
+    }
+
   }
   }

@@ -73,6 +73,9 @@ const ViconCGStreamType::Enum StopMulticastSender = 100006;
 /// See ViconCGStream::VFilter.
 const ViconCGStreamType::Enum Filter = 100007;
 
+/// See ViconCGStream::VRequestNextFrame.
+const ViconCGStreamType::Enum RequestNextFrame = 100008;
+
 /// See ViconCGStream::VStreamInfo.
 const ViconCGStreamType::Enum StreamInfo = 1;
 
@@ -103,6 +106,9 @@ const ViconCGStreamType::Enum LocalSegments = 8;
 /// See ViconCGStream::VLocalSegments.
 const ViconCGStreamType::Enum GlobalSegments = 9; 
 
+/// See ViconCGStream::VLightweightSegments.
+const ViconCGStreamType::Enum LightweightSegments = 901;
+
 /// See ViconCGStream::VForceFrame.
 const ViconCGStreamType::Enum ForceFrame = 10; 
 
@@ -118,6 +124,9 @@ const ViconCGStreamType::Enum VoltageFrame = 13;
 /// See ViconCGStream::VCameraInfo.
 const ViconCGStreamType::Enum CameraInfo = 14; 
 
+/// See ViconCGStream::VCameraSensorInfo.
+const ViconCGStreamType::Enum CameraSensorInfo = 1401;
+
 /// See ViconCGStream::VCameraInfo2.
 const ViconCGStreamType::Enum CameraTimingInfo = 65001; 
 
@@ -129,6 +138,9 @@ const ViconCGStreamType::Enum Centroids = 16;
 
 /// See ViconCGStream::VGreyScaleBlobs.
 const ViconCGStreamType::Enum GreyscaleBlobs = 17;
+
+/// See ViconCGStream::VGreyScaleSubsampledBlobs.
+const ViconCGStreamType::Enum GreyscaleSubsampledBlobs = 1701;
 
 /// See ViconCGStream::VEdgePairs.
 const ViconCGStreamType::Enum EdgePairs = 18;
@@ -159,6 +171,9 @@ const ViconCGStreamType::Enum CameraCalibrationHealth = 27;
 
 /// See ViconCGStream::VSubjectTopology
 const ViconCGStreamType::Enum SubjectTopology = 28;
+
+/// See ViconCGStream::VSubjectScale
+const ViconCGStreamType::Enum SubjectScale = 28001;
 
 /// See ViconCGStream:VCameraWand2d.
 const ViconCGStreamType::Enum CameraWand2d = 30;
@@ -195,5 +210,8 @@ const ViconCGStreamType::Enum ObjectQuality = 40;
 
 /// See ViconCGStream::VObjectQuality.
 const ViconCGStreamType::Enum CentroidWeights = 41;
+
+/// See ViconCGStream::VPing
+const ViconCGStreamType::Enum Ping = 42;
 //-------------------------------------------------------------------------------------------------
 };

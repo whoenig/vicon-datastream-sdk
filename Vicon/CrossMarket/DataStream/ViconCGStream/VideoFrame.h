@@ -55,7 +55,28 @@ public:
   ViconCGStreamType::UInt16 m_Height;
   
   // Video frame format
-  enum EFormat { ENoVideo = 0, EMono8, EBayerRG8, EBayerGB8, EBayerGR8, EBayerBG8, ERGB888, EBGR888 };
+  enum EFormat {
+    ENoVideo = 0,
+    EMono8,
+    EBayerRG8,
+    EBayerGB8,
+    EBayerGR8,
+    EBayerBG8,
+    ERGB888,
+    EBGR888,
+    ER5G6B5,
+    ER8G8B8u8,
+    EB8G8R8u8,
+    EU8Y8V8Y8,
+    EY8U8Y8V8,
+    EU10Y10V10Y10,
+    EBayerGB7,
+    EBayerGB6,
+    ELuminance7,
+    ELuminance6
+  };
+
+
   ViconCGStreamType::UInt32 m_Format;
 
   /// Video data. 

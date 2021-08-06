@@ -27,8 +27,9 @@
 
 #include "Constants.h"
 
-#include <boost/array.hpp>
+#include <array>
 #include <vector>
+#include <random>
 
 namespace ClientUtils
 {
@@ -36,6 +37,10 @@ namespace ClientUtils
   void Clear( bool & o_rValue );
 
   void Clear( unsigned int & o_rValue );
+
+  void Clear( unsigned short & o_rValue );
+
+  void Clear( unsigned char & o_rValue );
 
   void Clear( double & o_rValue );
 
@@ -88,31 +93,37 @@ namespace ClientUtils
   void MatrixToHelical( const double i_rM[9], double (&o_rAA)[3]);
 
   void MatrixToEulerXYZ( const double i_M[9], double (&o_rE)[3]);
+  
+  void HelicalToMatrix( const float i_rAA[3], double( &o_rM )[9] );
+
 
   // Insanely simplistic operators for basic vector operations on 
   // boost arrays. Arrays of length 9 are assumed to be 3x3 matrices.
   // Arrays of length 3 are assumed to be 3x1 vectors.
   // Only the handful of operations required by Client and AxisMapping have been provided.
 
-  boost::array< double, 3 > operator*( const boost::array< double, 9 > & i_rM, const boost::array< double, 3 > & i_rX );
+  std::array< double, 3 > operator*( const std::array< double, 9 > & i_rM, const std::array< double, 3 > & i_rX );
 
-  boost::array< double, 3 > & operator/=( boost::array< double, 3 > & i_rX, double i_Val );
+  std::array< double, 3 > & operator/=( std::array< double, 3 > & i_rX, double i_Val );
 
-  boost::array< double, 3 > & operator*=( boost::array< double, 3 > & i_rX, double i_Val );
+  std::array< double, 3 > & operator*=( std::array< double, 3 > & i_rX, double i_Val );
 
-  boost::array< double, 3 > operator+( const boost::array< double, 3 > & i_rX, double i_Val );
+  std::array< double, 3 > operator+( const std::array< double, 3 > & i_rX, double i_Val );
 
-  boost::array< double, 3 > operator+( const boost::array< double, 3 > & i_rX, const boost::array< double, 3 > & i_rY );
+  std::array< double, 3 > operator+( const std::array< double, 3 > & i_rX, const std::array< double, 3 > & i_rY );
 
-  boost::array< double, 3 > operator-( const boost::array< double, 3 > & i_rX, const boost::array< double, 3 > & i_rY );
+  std::array< double, 3 > operator-( const std::array< double, 3 > & i_rX, const std::array< double, 3 > & i_rY );
     
-  boost::array< double, 9 > operator*( const boost::array< double, 9 > & i_rM, const boost::array< double, 9 > & i_rN );
+  std::array< double, 9 > operator*( const std::array< double, 9 > & i_rM, const std::array< double, 9 > & i_rN );
 
-  boost::array< double, 9 > Transpose( const boost::array< double, 9 > & i_rM );
+  std::array< double, 9 > Transpose( const std::array< double, 9 > & i_rM );
 
-  boost::array< double, 16 > Transpose( const boost::array< double, 16 > & i_rM );
+  std::array< double, 16 > Transpose( const std::array< double, 16 > & i_rM );
 
-  boost::array< double, 3 > CrossProduct( boost::array< double, 3 > & i_rA, boost::array< double, 3 > & i_rB );
+  std::array< double, 3 > CrossProduct( std::array< double, 3 > & i_rA, std::array< double, 3 > & i_rB );
 
-  double DotProduct( boost::array< double, 3 > & i_rA, boost::array< double, 3 > & i_rB );
+  double DotProduct( std::array< double, 3 > & i_rA, std::array< double, 3 > & i_rB );
+
+  double JitterVal(std::default_random_engine & i_rEngine, double i_Mean, double i_Variance, double i_Spike, int i_SpikeFrequency);
+
 }

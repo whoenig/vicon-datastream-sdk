@@ -24,18 +24,23 @@
 //////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include "Constants.h"
-#include "AxisMapping.h"
-#include "ClientUtils.h"
 #include "RetimingClient.h"
+#include "CoreClientTimingLog.h"
+
+#include <ViconDataStreamSDKCoreUtils/AxisMapping.h>
+#include <ViconDataStreamSDKCoreUtils/ClientUtils.h>
+#include <ViconDataStreamSDKCoreUtils/Constants.h>
+
 #include <memory>
-#include <boost/array.hpp>
+#include <array>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <ViconCGStreamClientSDK/ICGClient.h>
 #include <ViconCGStreamClientSDK/CGClient.h>
 #include <ViconCGStreamClientSDK/ICGFrameState.h>
 
+class VCGStreamPostalService;
+class VWirelessConfiguration;
 
 namespace ViconDataStreamSDK
 {
@@ -54,7 +59,8 @@ public:
   // Get the version of the Vicon Data Stream SDK 
   void GetVersion( unsigned int & o_rMajor, 
                    unsigned int & o_rMinor, 
-                   unsigned int & o_rPoint ) const;
+                   unsigned int & o_rPoint,
+                   unsigned int & o_rRevision ) const;
 
   // Connect client to the Vicon Data Stream
   Result::Enum Connect(       std::shared_ptr< ViconCGStreamClientSDK::ICGClient > i_pClient, 
@@ -96,7 +102,6 @@ public:
 
 
   // Latency reporting
-  Result::Enum GetNetworkLatency(double & o_rLatency);
   Result::Enum GetLatencyTotal( double & o_rLatency ) const;
   Result::Enum GetLatencySampleCount( unsigned int & o_rSampleCount ) const;
   Result::Enum GetLatencySampleName( const unsigned int i_SampleIndex, std::string & o_rSampleName ) const;
@@ -111,6 +116,7 @@ public:
   Result::Enum GetFrameRateValue( const std::string & i_rFrameRateName, double & o_rFrameRateValue ) const;
 
   Result::Enum SetSegmentDataEnabled( const bool i_i_bEnabled );
+  Result::Enum SetLightweightSegmentDataEnabled( const bool i_i_bEnabled );
   Result::Enum SetMarkerDataEnabled( const bool i_bEnabled );
   Result::Enum SetUnlabeledMarkerDataEnabled( const bool i_bEnabled );
   Result::Enum SetMarkerRayDataEnabled( const bool i_bEnabled );
@@ -122,6 +128,7 @@ public:
   Result::Enum SetVideoDataEnabled( const bool i_bEnabled );
 
   Result::Enum EnableSegmentData()         { return SetSegmentDataEnabled( true ); }
+  Result::Enum EnableLightweightSegmentData() { return SetLightweightSegmentDataEnabled( true ); }
   Result::Enum EnableMarkerData()          { return SetMarkerDataEnabled( true ); }
   Result::Enum EnableUnlabeledMarkerData() { return SetUnlabeledMarkerDataEnabled( true ); }
   Result::Enum EnableMarkerRayData()       { return SetMarkerRayDataEnabled( true ); }
@@ -133,6 +140,7 @@ public:
   Result::Enum EnableVideoData()           { return SetVideoDataEnabled( true ); }
 
   Result::Enum DisableSegmentData()         { return SetSegmentDataEnabled( false ); }
+  Result::Enum DisableLightweightSegmentData() { return SetLightweightSegmentDataEnabled( false ); }
   Result::Enum DisableMarkerData()          { return SetMarkerDataEnabled( false ); }
   Result::Enum DisableUnlabeledMarkerData() { return SetUnlabeledMarkerDataEnabled( false ); }
   Result::Enum DisableMarkerRayData()       { return SetMarkerRayDataEnabled( false ); }
@@ -144,6 +152,7 @@ public:
   Result::Enum DisableVideoData()           { return SetVideoDataEnabled( false ); }
 
   bool IsSegmentDataEnabled() const;
+  bool IsLightweightSegmentDataEnabled() const;
   bool IsMarkerDataEnabled() const;
   bool IsUnlabeledMarkerDataEnabled() const;
   bool IsMarkerRayDataEnabled() const;
@@ -177,6 +186,7 @@ public:
   Result::Enum GetSegmentStaticRotationMatrix( const std::string & i_rSubjectName, const std::string & i_rSegmentName, double (& o_rRotation)[9] ) const;
   Result::Enum GetSegmentStaticRotationQuaternion(const std::string& i_rSubjectName, const std::string& i_rSegmentName, double (&o_rFourVector)[4] ) const;
   Result::Enum GetSegmentStaticRotationEulerXYZ(const std::string& i_rSubjectName, const std::string& i_rSegmentName, double (&o_rThreeVector)[3] ) const;
+  Result::Enum GetSegmentStaticScale(const std::string& i_rSubjectName, const std::string& i_rSegmentName, double(&o_rThreeVector)[3]) const;
 
   Result::Enum GetSegmentGlobalTranslation(const std::string& i_rSubjectName, const std::string& i_rSegmentName, double (&o_rThreeVector)[3], bool& o_rbOccludedFlag) const;
   Result::Enum GetSegmentGlobalRotationHelical(const std::string& i_rSubjectName, const std::string& i_rSegmentName, double (&o_rThreeVector)[3], bool& o_rbOccludedFlag) const;
@@ -200,11 +210,13 @@ public:
 
   Result::Enum GetUnlabeledMarkerCount( unsigned int & o_rMarkerCount ) const;
   Result::Enum GetUnlabeledMarkerGlobalTranslation( const unsigned int   i_MarkerIndex,
-                                                          double      (& o_rTranslation)[3] ) const;
+                                                          double      (& o_rTranslation)[3],
+                                                          unsigned int & o_rTrajID  ) const;
 
   Result::Enum GetLabeledMarkerCount( unsigned int & o_rMarkerCount ) const;
   Result::Enum GetLabeledMarkerGlobalTranslation( const unsigned int   i_MarkerIndex,
-                                                        double      (& o_rTranslation)[3] ) const;
+                                                        double( &o_rTranslation )[3],
+                                                        unsigned int & o_rTrajID ) const;
 
   Result::Enum GetDeviceCount( unsigned int            & o_rDeviceCount ) const;
 
@@ -218,30 +230,59 @@ public:
                                            unsigned int & o_rDeviceOutputCount ) const;
 
   // Empty device output names are automatically assigned a name 'Unnamed Device Output N' where N is a 1 based device output index.
-
+  // NB The output parameter has been renamed as it was a misnomer and actually returned the output component name, not the output name
   Result::Enum GetDeviceOutputName( const std::string  & i_rDeviceName,
                                     const unsigned int   i_DeviceOutputIndex,
+                                          std::string  & o_rOutputComponentName,
+                                          Unit::Enum   & o_rDeviceOutputUnit ) const;
+
+  // Empty device output names are automatically assigned a name 'Unnamed Device Output N' where N is a 1 based device output index.
+  Result::Enum GetDeviceOutputNameComponent( const std::string  & i_rDeviceName,
+                                    const unsigned int   i_DeviceOutputIndex,
                                           std::string  & o_rDeviceOutputName,
+                                          std::string  & o_rDeviceOutputComponentName,
                                           Unit::Enum   & o_rDeviceOutputUnit ) const;
 
   // Get the first subsample for the device output.
-
+  // NB The input parameter has been renamed as it was a misnomer and actually took the output component name, not the output name
   Result::Enum GetDeviceOutputValue( const std::string & i_rDeviceName,
-                                     const std::string & i_rDeviceOutputName,
+                                     const std::string & i_rDeviceOutputComponentName,
                                            double      & o_rValue,
                                            bool        & o_rbOccluded ) const;
   
   // Get the number of subsamples for this device output.
-
-  Result::Enum GetDeviceOutputSubsamples( const std::string  & i_rDeviceName, 
-                                          const std::string  & i_rDeviceOutputName, 
+  // NB The input parameter has been renamed as it was a misnomer and actually took the output component name, not the output name
+  Result::Enum GetDeviceOutputSubsamples( const std::string  & i_rDeviceName,
+                                          const std::string  & i_rDeviceOutputComponentName,
                                                 unsigned int & o_rDeviceOutputSubsamples,
                                                 bool         & o_rbOccluded ) const;
 
   // Get a specific subsample.
+  // NB The input parameter has been renamed as it was a misnomer and actually took the output component name, not the output name
+  Result::Enum GetDeviceOutputValue( const std::string  & i_rDeviceName,
+                                     const std::string  & i_rDeviceOutputComponentName,
+                                           unsigned int   i_Subsample,
+                                           double       & o_rValue,
+                                           bool         & o_rbOccluded ) const;
 
+  // Get the first subsample for the device output.
+  Result::Enum GetDeviceOutputValue( const std::string & i_rDeviceName,
+                                     const std::string & i_rDeviceOutputName,
+                                     const std::string & i_rDeviceOutputComponentName,
+                                           double      & o_rValue,
+                                           bool        & o_rbOccluded ) const;
+
+  // Get the number of subsamples for this device output.
+  Result::Enum GetDeviceOutputSubsamples( const std::string  & i_rDeviceName,
+                                          const std::string  & i_rDeviceOutputName,
+                                          const std::string  & i_rDeviceOutputComponentName,
+                                                unsigned int & o_rDeviceOutputSubsamples,
+                                                bool         & o_rbOccluded ) const;
+
+  // Get a specific subsample.
   Result::Enum GetDeviceOutputValue( const std::string  & i_rDeviceName,
                                      const std::string  & i_rDeviceOutputName,
+                                     const std::string  & i_rDeviceOutputComponentName,
                                            unsigned int   i_Subsample,
                                            double       & o_rValue,
                                            bool         & o_rbOccluded ) const;
@@ -252,28 +293,28 @@ public:
   // This set of functions return the first subsample only.
 
   Result::Enum GetForceVector( const unsigned int i_PlateID, double ( & o_rForceVector)[3] ) const;  
-  Result::Enum GetMomentVector( const unsigned int i_PlateID, double ( & o_rMomentVector)[3] ) const; 
+  Result::Enum GetMomentVector( const unsigned int i_PlateID, double ( & o_rMomentVector)[3] ) const;
   Result::Enum GetCentreOfPressure( const unsigned int i_PlateID, double ( & o_rLocation )[3] ) const;
-  Result::Enum GetGlobalForceVector( const unsigned int i_PlateID, double ( & o_rForceVector)[3] ) const;  
-  Result::Enum GetGlobalMomentVector( const unsigned int i_PlateID, double ( & o_rMomentVector)[3] ) const; 
+  Result::Enum GetGlobalForceVector( const unsigned int i_PlateID, double ( & o_rForceVector)[3] ) const;
+  Result::Enum GetGlobalMomentVector( const unsigned int i_PlateID, double ( & o_rMomentVector)[3] ) const;
   Result::Enum GetGlobalCentreOfPressure( const unsigned int i_PlateID, double ( & o_rLocation )[3] ) const;
 
   // Returns the number of subsamples available for the plate.
 
   Result::Enum GetForcePlateSubsamples( const unsigned int i_PlateID, unsigned int& o_rForcePlateSubsamples ) const;
 
-  Result::Enum GetForceVector( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rForceVector)[3] ) const;  
-  Result::Enum GetMomentVector( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rMomentVector)[3] ) const; 
-  Result::Enum GetCentreOfPressure( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rLocation )[3] ) const;
-  Result::Enum GetGlobalForceVector( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rForceVector)[3] ) const;  
-  Result::Enum GetGlobalMomentVector( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rMomentVector)[3] ) const; 
-  Result::Enum GetGlobalCentreOfPressure( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rLocation )[3] ) const;
+  Result::Enum GetForceVectorAtSample( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rForceVector)[3] ) const;  
+  Result::Enum GetMomentVectorAtSample( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rMomentVector)[3] ) const;
+  Result::Enum GetCentreOfPressureAtSample( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rLocation )[3] ) const;
+  Result::Enum GetGlobalForceVectorAtSample( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rForceVector)[3] ) const;
+  Result::Enum GetGlobalMomentVectorAtSample( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rMomentVector)[3] ) const;
+  Result::Enum GetGlobalCentreOfPressureAtSample( const unsigned int i_PlateID, const unsigned int i_Subsample, double ( & o_rLocation )[3] ) const;
 
   // Get the raw analogue associated with the plate.
 
   Result::Enum GetNumberOfAnalogChannels( const unsigned int i_PlateID, unsigned int& o_rChannelCount ) const;
   Result::Enum GetAnalogChannelVoltage( const unsigned int i_PlateID, const unsigned int i_ZeroIndexedChannelIndex, double& o_rVoltage ) const;
-  Result::Enum GetAnalogChannelVoltage( const unsigned int i_PlateID, const unsigned int i_ZeroIndexedChannelIndex, const unsigned int i_Subsample, double& o_rVoltage ) const;
+  Result::Enum GetAnalogChannelVoltageAtSample( const unsigned int i_PlateID, const unsigned int i_ZeroIndexedChannelIndex, const unsigned int i_Subsample, double& o_rVoltage ) const;
 
   Result::Enum GetEyeTrackerCount( unsigned int & o_rCount ) const;
   Result::Enum GetEyeTrackerID( const unsigned int i_EyeTrackerIndex, unsigned int& o_rEyeTrackerID ) const;
@@ -286,6 +327,9 @@ public:
   Result::Enum GetCameraUserID( const std::string & i_rCameraName, unsigned int & o_rCameraID ) const;
   Result::Enum GetCameraType( const std::string & i_rCameraName, std::string & o_rCameraType ) const;
   Result::Enum GetCameraDisplayName( const std::string & i_rCameraName, std::string & o_rCameraDisplayName ) const;
+
+  Result::Enum GetCameraSensorMode(const std::string & i_rCameraName, std::string & o_rMode) const;
+  Result::Enum GetCameraWindowSize(const std::string & i_rCameraName, unsigned int & o_rWindowOffsetX, unsigned int & o_rWindowOffsetY, unsigned int & o_rWindowWidth, unsigned int & o_rWindowHeight) const;
 
   Result::Enum GetCameraResolution( const std::string & i_rCameraName, unsigned int & o_rResolutionX, unsigned int & o_rResolutionY ) const;
   Result::Enum GetIsVideoCamera( const std::string & i_rCameraName, bool & o_rIsVideoCamera ) const;
@@ -301,6 +345,11 @@ public:
                                   double & o_rWeight ) const;
 
   Result::Enum GetGreyscaleBlobCount( const std::string & i_rCameraName, unsigned int & o_rCount ) const;
+  Result::Enum GetGreyscaleBlobSubsampleInfo( const std::string & i_rCameraName,
+                                              unsigned short & o_rTwiceOffsetX,
+                                              unsigned short & o_rTwiceOffsetY,
+                                              unsigned char & o_rSensorPixelsPerImagePixelX,
+                                              unsigned char & o_rSensorPixelsPerImagePixelY ) const;
   Result::Enum GetGreyscaleBlob( const std::string & i_rCameraName,
                                  const unsigned int i_BlobIndex,
                                  std::vector< unsigned int > & o_rLineXPositions,
@@ -314,10 +363,21 @@ public:
                                 const std::vector< unsigned int > & i_rCameraIdsForBlobs,
                                 const std::vector< unsigned int > & i_rCameraIdsForVideo );
 
+  Result::Enum ClearSubjectFilter();
+  Result::Enum AddToSubjectFilter(const std::string & i_rSubjectName);
+  
   ViconCGStreamClientSDK::ICGFrameState& LatestFrame();
   ViconCGStreamClientSDK::ICGFrameState& CachedFrame();
 
+  Result::Enum SetTimingLog(const std::string & i_rClientLog, const std::string & i_rCGStreamLog );
+
+  Result::Enum ConfigureWireless( std::string& o_rError );
+
+
 private:
+  // Connect client to the Vicon Data Stream across multiple adapters.
+  Result::Enum Connect(std::shared_ptr< ViconCGStreamClientSDK::ICGClient > i_pClient, const std::vector< std::string >& i_rHostNames);
+
   Result::Enum GetSubjectAndMarkerID(const std::string& i_rSubjectName, const std::string& i_rMarkerName, unsigned int& o_rSubjectID, unsigned int& o_rMarkerID) const;
   Result::Enum GetSubjectAndSegmentID(const std::string& i_rSubjectName, const std::string& i_rSegmentName, unsigned int& o_rSubjectID, unsigned int& o_rSegmentID) const;
   Result::Enum GetDeviceID( const std::string & i_rDeviceName, unsigned int & o_rDeviceID ) const;
@@ -325,9 +385,11 @@ private:
 
   const ViconCGStream::VSubjectInfo     * GetSubjectInfo( const std::string  i_rSubjectName, Result::Enum & o_rResult ) const;
   const ViconCGStream::VSubjectTopology * GetSubjectTopology( const unsigned int i_SubjectID ) const;
+  const ViconCGStream::VSubjectScale    * GetSubjectScale(const unsigned int i_SubjectID) const;
   const ViconCGStream::VObjectQuality   * GetObjectQuality( const unsigned int i_SubjectID ) const;
   const ViconCGStream::VDeviceInfo      * GetDevice( const std::string & i_rDeviceName, Result::Enum & o_rResult ) const;
   const ViconCGStream::VCameraInfo      * GetCamera( const std::string & i_rCameraName, Result::Enum & o_rResult ) const;
+  const ViconCGStream::VCameraSensorInfo * GetCameraSensorInfo( const unsigned int i_CameraID, Result::Enum & o_rResult ) const;
   const ViconCGStream::VCentroids       * GetCentroidSet( const unsigned int i_CameraID, Result::Enum & o_rResult ) const;
   const ViconCGStream::VCentroidWeights * GetCentroidWeightSet( const unsigned int i_CameraID, Result::Enum & o_rResult ) const;
   const ViconCGStream::VGreyscaleBlobs  * GetGreyscaleBlobs( const unsigned int i_CameraID, Result::Enum & o_rResult ) const;
@@ -335,6 +397,15 @@ private:
 
   Result::Enum GetMarkerID( const ViconCGStream::VSubjectInfo & i_rSubjectInfo, const std::string& i_rMarkerName, unsigned int& o_rMarkerID ) const;
   Result::Enum GetSegmentID( const ViconCGStream::VSubjectInfo & i_rSubjectInfo, const std::string& i_rSegmentName, unsigned int& o_rSegmentID ) const;
+
+  Result::Enum CalculateGlobalsFromLocals();
+  Result::Enum CalculateSegmentGlobalFromLocal( const std::string & i_rSubjectName,
+                                                const std::string & i_rSegmentName,
+                                                const std::array< double, 3 > i_rParentTransformation,
+                                                const std::array< double, 9 > i_rParentRotation,
+                                                const ViconCGStream::VLightweightSegments & o_rLightweightSegments,
+                                                      ViconCGStream::VGlobalSegments & o_rGlobalSegments,
+                                                      ViconCGStream::VLocalSegments & o_rLocalSegments );
 
   bool IsForcePlateCoreChannel(const ViconCGStream::VChannelInfo& rChannel) const;
   bool IsForcePlateForceChannel(const ViconCGStream::VChannelInfo& rChannel) const;
@@ -348,26 +419,24 @@ private:
   template < typename T > Result::Enum GetForcePlateVector( const unsigned int i_PlateID,
                                                             const unsigned int i_ForcePlateSubsamples,
                                                             const std::vector< T > & i_rFrameVector,
-                                                            boost::array< double, 3 > & o_rForcePlateVector ) const;
-  Result::Enum GetForceVector( const unsigned int i_PlateID, const unsigned int i_ForcePlateSubsamples, boost::array< double, 3 > & o_rForceVector ) const;  
-  Result::Enum GetMomentVector( const unsigned int i_PlateID, const unsigned int i_ForcePlateSubsamples, boost::array< double, 3 > & o_rMomentVector ) const; 
-  Result::Enum GetCentreOfPressure( const unsigned int i_PlateID, const unsigned int i_ForcePlateSubsamples, boost::array< double, 3 > & o_rLocation ) const;
+                                                            std::array< double, 3 > & o_rForcePlateVector ) const;
+  Result::Enum GetForceVector( const unsigned int i_PlateID, const unsigned int i_ForcePlateSubsamples, std::array< double, 3 > & o_rForceVector ) const;  
+  Result::Enum GetMomentVector( const unsigned int i_PlateID, const unsigned int i_ForcePlateSubsamples, std::array< double, 3 > & o_rMomentVector ) const; 
+  Result::Enum GetCentreOfPressure( const unsigned int i_PlateID, const unsigned int i_ForcePlateSubsamples, std::array< double, 3 > & o_rLocation ) const;
 
   bool InitGet( Result::Enum & o_rResult ) const;
   template < typename T > bool InitGet( Result::Enum & o_rResult, T & o_rOutput ) const;
   template < typename T1, typename T2 > bool InitGet( Result::Enum & o_rResult, T1 & o_rOutput1, T2 & o_rOutput2  ) const;
   template < typename T1, typename T2, typename T3 > bool InitGet( Result::Enum & o_rResult, T1 & o_rOutput1, T2 & o_rOutput2, T3 & o_rOutput3  ) const;
+  template < typename T1, typename T2, typename T3, typename T4 > bool InitGet( Result::Enum & o_rResult, T1 & o_rOutput1, T2 & o_rOutput2, T3 & o_rOutput3, T4 & o_rOutput4 ) const;
 
   bool IsEyeTrackerDevice(unsigned int i_DeviceID) const;
 
   bool HasData() const;
 
   void FetchNextFrame();
-  void PreFetchThreadBody();
 
-  void BeginPreFetchThread();
-  void EndPreFetchThread();
-
+  void CopyAndTransformT( const float i_Translation[3], double( &io_Translation )[3] ) const;
   void CopyAndTransformT( const double i_Translation[ 3 ], double ( & io_Translation )[ 3 ] ) const;
   void CopyAndTransformR( const double i_Rotation[ 9 ], double ( & io_Rotation )[ 9 ] ) const;
 
@@ -377,10 +446,8 @@ private:
   // reference the client
   std::shared_ptr< ViconCGStreamClientSDK::ICGClient > m_pClient;
   std::string                                          m_ServerName;
-  unsigned short                                       m_ServerPort;
 
-  std::shared_ptr< boost::thread > m_pPreFetchThread;
-  bool m_bContinuePreFetch;
+  bool m_bPreFetch;
 
   ViconCGStreamClientSDK::ICGFrameState m_LatestFrame;
   ViconCGStreamClientSDK::ICGFrameState m_CachedFrame;
@@ -390,6 +457,7 @@ private:
 
   // What data is being requested
   bool m_bSegmentDataEnabled;
+  bool m_bLightweightSegmentDataEnabled;
   bool m_bMarkerDataEnabled;
   bool m_bUnlabeledMarkerDataEnabled;
   bool m_bMarkerRayDataEnabled;
@@ -398,18 +466,27 @@ private:
   bool m_bGreyscaleDataEnabled;
   bool m_bDebugDataEnabled;
   bool m_bCameraWand2dDataEnabled;
-  bool m_bFrameRateInfoDataEnabled;
   bool m_bVideoDataEnabled;
+
+  // Literally, if subject scale is enabled
+  // It might be requested, but not supported
+  bool m_bSubjectScaleEnabled;
 
   // Axis mapping object
   std::shared_ptr< VAxisMapping > m_pAxisMapping;
 
+  std::shared_ptr< VWirelessConfiguration > m_pWirelessConfiguration;
+
   // Current data filter
   ViconCGStream::VFilter m_Filter;
 
-  std::shared_ptr< VRetimingClient > m_pRetimingClient;
-
   unsigned int m_BufferSize;
+
+  // Timing log for this client
+  std::shared_ptr< VClientTimingLog > m_pTimingLog;
+
+  // Filename for stream client timing log; to allow it to be set before the client is instantiated.
+  std::string m_ClientLogFile;
 };
 
 /* Needs VC12 :(
@@ -445,5 +522,14 @@ bool ViconDataStreamSDK::Core::VClient::InitGet( Result::Enum & o_rResult, T1 & 
   return InitGet( o_rResult );
 }
 
+template < typename T1, typename T2, typename T3, typename T4 >
+bool ViconDataStreamSDK::Core::VClient::InitGet(Result::Enum & o_rResult, T1 & o_rOutput1, T2 & o_rOutput2, T3 & o_rOutput3, T4 & o_rOutput4 ) const
+{
+  ClientUtils::Clear(o_rOutput1);
+  ClientUtils::Clear(o_rOutput2);
+  ClientUtils::Clear(o_rOutput3);
+  ClientUtils::Clear(o_rOutput4);
+  return InitGet(o_rResult);
+}
 } // End of namespace Core
 } // End of namespace ViconDataStreamSDK

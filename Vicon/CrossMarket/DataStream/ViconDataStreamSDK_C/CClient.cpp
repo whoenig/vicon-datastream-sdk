@@ -50,15 +50,11 @@ void Client_Destroy(CClient* client)
 void Client_GetVersion(CClient* client, COutput_GetVersion* outptr)
 {
   const Output_GetVersion& outp = ((Client*) client)->GetVersion();
-  /*COutput_GetVersion c_outp = {outp.Major,outp.Minor,outp.Point};
-  return c_outp;*/
-  outptr->Major=outp.Major; outptr->Minor=outp.Minor; outptr->Point=outp.Point; 
+  outptr->Major = outp.Major; outptr->Minor = outp.Minor; outptr->Point = outp.Point; outptr->Revision = outp.Revision;
 }
 
 CEnum Client_Connect(CClient* client, CString HostName )
 {
-  //COutput_Connect outp = {((Client*) client)->Connect(String(HostName)).Result};
-  //return outp;
   return ((Client*) client)->Connect(String(HostName)).Result;
 }
 
@@ -74,9 +70,6 @@ CEnum Client_Disconnect(CClient* client)
 
 CBool Client_IsConnected(CClient* client)
 {
-  //COutput_IsConnected outp = { ((Client*) client)->IsConnected().Connected};
-  //return outp;
-  //*((CBool*)outptr) = ((Client*) client)->IsConnected().Connected;
   return ((Client*) client)->IsConnected().Connected;
 }
 
@@ -94,6 +87,11 @@ CEnum Client_StopTransmittingMulticast(CClient* client)
 CEnum Client_EnableSegmentData(CClient* client)
 {
   return ((Client*) client)->EnableSegmentData().Result;
+}
+
+CEnum Client_EnableLightweightSegmentData( CClient* client )
+{
+  return ( ( Client* )client )->EnableLightweightSegmentData().Result;
 }
 
 CEnum Client_EnableMarkerData(CClient* client)
@@ -115,6 +113,11 @@ CEnum Client_DisableSegmentData(CClient* client)
   return ((Client*) client)->DisableSegmentData().Result;
 }
 
+CEnum Client_DisableLightweightSegmentData( CClient* client )
+{
+  return ( ( Client* )client )->DisableLightweightSegmentData().Result;
+}
+
 CEnum Client_DisableMarkerData(CClient* client)
 {
   return ((Client*) client)->DisableMarkerData().Result;
@@ -133,6 +136,11 @@ CEnum Client_DisableDeviceData(CClient* client)
 CBool Client_IsSegmentDataEnabled(CClient* client)
 {
   return ((Client*) client)->IsSegmentDataEnabled().Enabled;
+}
+
+CBool Client_IsLightweightSegmentDataEnabled( CClient* client )
+{
+  return ( ( Client* )client )->IsLightweightSegmentDataEnabled().Enabled;
 }
 
 CBool Client_IsMarkerDataEnabled(CClient* client)
@@ -168,8 +176,7 @@ CEnum Client_SetAxisMapping(CClient* client, CEnum XAxis, CEnum YAxis, CEnum ZAx
 void Client_GetAxisMapping(CClient* client, COutput_GetAxisMapping* outptr)
 {
   const Output_GetAxisMapping& outp = ((Client*) client)->GetAxisMapping();
-  /*COutput_GetAxisMapping c_outp = {outp.XAxis,outp.YAxis,outp.ZAxis};
-  return c_outp;*/
+
   outptr->XAxis = outp.XAxis;
   outptr->YAxis = outp.YAxis;
   outptr->ZAxis = outp.ZAxis;
@@ -183,8 +190,6 @@ CEnum Client_GetFrame(CClient* client)
 void Client_GetFrameNumber(CClient* client, COutput_GetFrameNumber* outptr)
 {
   const Output_GetFrameNumber& outp = ((Client*) client)->GetFrameNumber();
-  /*COutput_GetFrameNumber c_outp = {outp.Result, outp.FrameNumber};
-  return c_outp;*/
   outptr->Result = outp.Result;
   outptr->FrameNumber = outp.FrameNumber;
 }
@@ -192,10 +197,6 @@ void Client_GetFrameNumber(CClient* client, COutput_GetFrameNumber* outptr)
 void Client_GetTimecode(CClient* client, COutput_GetTimecode* outptr)
 {
   const Output_GetTimecode& outp = ((Client*) client)->GetTimecode();
-  /*COutput_GetTimecode c_outp = {outp.Result,outp.Hours,outp.Minutes,outp.Seconds,
-                 outp.Frames, outp.SubFrame, outp.FieldFlag, outp.Standard,
-                 outp.SubFramesPerFrame, outp.UserBits};
-  return c_outp;*/
   outptr->Result=outp.Result; outptr->Hours=outp.Hours;
   outptr->Minutes=outp.Minutes; outptr->Seconds=outp.Seconds;
   outptr->Frames=outp.Frames; outptr->SubFrame=outp.SubFrame;
@@ -206,8 +207,6 @@ void Client_GetTimecode(CClient* client, COutput_GetTimecode* outptr)
 void Client_GetFrameRate(CClient* client, COutput_GetFrameRate* outptr)
 {
   const Output_GetFrameRate& outp = ((Client*) client)->GetFrameRate(); 
-  /*COutput_GetFrameRate c_outp = {outp.Result,outp.FrameRateHz};
-  return c_outp;*/
   outptr->Result = outp.Result;
   outptr->FrameRateHz = outp.FrameRateHz;
 }
@@ -215,34 +214,24 @@ void Client_GetFrameRate(CClient* client, COutput_GetFrameRate* outptr)
 void Client_GetLatencySampleCount(CClient* client, COutput_GetLatencySampleCount* outptr)
 {
   const Output_GetLatencySampleCount& outp = ((Client*) client)->GetLatencySampleCount();
-  /*COutput_GetLatencySampleCount c_outp = {outp.Result,outp.Count};
-  return c_outp;*/
   outptr->Result = outp.Result;
   outptr->Count = outp.Count;
 }
 CEnum  Client_GetLatencySampleName(CClient* client, unsigned int LatencySampleIndex, int sizeOfBuffer, char* outstr )
 {
   const Output_GetLatencySampleName& outp = ((Client*) client)->GetLatencySampleName(LatencySampleIndex);
-  /*COutput_GetLatencySampleName c_outp = {outp.Result,std::string(outp.Name).c_str()};
-  return c_outp;*/
-  /*outptr->Result = outp.Result;
-  outptr->Name = std::string(outp.Name).c_str();*/
   snprintf(outstr, sizeOfBuffer, "%s",  std::string(outp.Name).c_str());
   return outp.Result;
 }
 void Client_GetLatencySampleValue(CClient* client, CString LatencySampleName, COutput_GetLatencySampleValue* outptr )
 {
   const Output_GetLatencySampleValue& outp = ((Client*) client)->GetLatencySampleValue(String(LatencySampleName));
-  /*COutput_GetLatencySampleValue c_outp = {outp.Result,outp.Value};
-  return c_outp;*/
   outptr->Result = outp.Result;
   outptr->Value = outp.Value;
 }
 void  Client_GetLatencyTotal(CClient* client, COutput_GetLatencyTotal* outptr)
 {
   const Output_GetLatencyTotal& outp = ((Client*) client)->GetLatencyTotal();
-  /*COutput_GetLatencyTotal c_outp = {outp.Result,outp.Total};
-  return c_outp;*/
   outptr->Result = outp.Result;
   outptr->Total = outp.Total;
 }
@@ -250,8 +239,6 @@ void  Client_GetLatencyTotal(CClient* client, COutput_GetLatencyTotal* outptr)
 void Client_GetSubjectCount(CClient* client, COutput_GetSubjectCount* outptr)
 {
   const Output_GetSubjectCount& outp = ((Client*) client)->GetSubjectCount();
-  /*COutput_GetSubjectCount c_outp = {outp.Result,outp.SubjectCount};
-  return c_outp;*/
   outptr->Result = outp.Result;
   outptr->SubjectCount = outp.SubjectCount;
 }
@@ -259,13 +246,6 @@ void Client_GetSubjectCount(CClient* client, COutput_GetSubjectCount* outptr)
 CEnum Client_GetSubjectName(CClient* client, unsigned int SubjectIndex, int sizeOfBuffer, char* outstr )
 {
   const Output_GetSubjectName& outp = ((Client*) client)->GetSubjectName(SubjectIndex);
-  /*COutput_GetSubjectName c_outp = {outp.Result, std::string(outp.SubjectName).c_str()};
-  return c_outp;*/
-  /*outptr->Result = outp.Result; 
-  outptr->SubjectName = std::string(outp.SubjectName).c_str();*/
-
-  /*static char dummy[] = "dummy";
-  outptr->SubjectName = dummy;*/
   snprintf(outstr, sizeOfBuffer, "%s", std::string(outp.SubjectName).c_str());
   return outp.Result;
 }
@@ -273,10 +253,6 @@ CEnum Client_GetSubjectName(CClient* client, unsigned int SubjectIndex, int size
 CEnum Client_GetSubjectRootSegmentName(CClient* client, CString SubjectName, int sizeOfBuffer, char* outstr )
 {
   const Output_GetSubjectRootSegmentName& outp = ((Client*) client)->GetSubjectRootSegmentName(String(SubjectName));
-  /*COutput_GetSubjectRootSegmentName c_outp = {outp.Result, std::string(outp.SegmentName).c_str()};
-  return c_outp;*/
-  /*outptr->Result = outp.Result;
-  outptr->SegmentName = std::string(outp.SegmentName).c_str();*/
   snprintf(outstr, sizeOfBuffer, "%s", std::string(outp.SegmentName).c_str()); 
   return outp.Result;
 }
@@ -284,8 +260,6 @@ CEnum Client_GetSubjectRootSegmentName(CClient* client, CString SubjectName, int
 void Client_GetSegmentCount( CClient* client, CString SubjectName, COutput_GetSegmentCount* outptr )
 {
   const Output_GetSegmentCount& outp = ((Client*) client)->GetSegmentCount(String(SubjectName));
-  /*COutput_GetSegmentCount c_outp = {outp.Result,outp.SegmentCount};
-  return c_outp;*/
   outptr->Result = outp.Result;
   outptr->SegmentCount = outp.SegmentCount;
 }
@@ -294,10 +268,6 @@ CEnum Client_GetSegmentName(CClient* client, CString SubjectName,
                 unsigned int   SegmentIndex, int sizeOfBuffer, char* outstr )
 {
   const Output_GetSegmentName& outp = ((Client*) client)->GetSegmentName(String(SubjectName),SegmentIndex);
-  /*COutput_GetSegmentName c_outp = {outp.Result, std::string(outp.SegmentName).c_str()};
-  return c_outp;  */
-  /*outptr->Result = outp.Result;
-  outptr->SegmentName = std::string(outp.SegmentName).c_str();*/
   snprintf(outstr, sizeOfBuffer, "%s", std::string(outp.SegmentName).c_str());
   return outp.Result;
 }
@@ -307,8 +277,6 @@ void Client_GetSegmentChildCount(CClient* client, CString SubjectName,
 {
   const Output_GetSegmentChildCount& outp = ((Client*) client)->GetSegmentChildCount(String(SubjectName),
                               String(SegmentName));
-  /*COutput_GetSegmentChildCount c_outp = {outp.Result,outp.SegmentCount};
-  return c_outp;*/
   outptr->Result = outp.Result;
   outptr->SegmentCount = outp.SegmentCount;
 }
@@ -320,10 +288,6 @@ CEnum Client_GetSegmentChildName(CClient* client, CString SubjectName,
 {
   const Output_GetSegmentChildName& outp = ((Client*) client)->GetSegmentChildName(String(SubjectName),
                           String(SegmentName), SegmentIndex);
-  /*COutput_GetSegmentChildName c_outp = {outp.Result, std::string(outp.SegmentName).c_str()};
-  return c_outp;*/
-  /*outptr->Result = outp.Result;
-  outptr->SegmentName = std::string(outp.SegmentName).c_str();*/
   snprintf(outstr, sizeOfBuffer, "%s", std::string(outp.SegmentName).c_str());
   return outp.Result;
 }
@@ -333,10 +297,6 @@ CEnum Client_GetSegmentParentName(CClient* client, CString SubjectName,
 {
   const Output_GetSegmentParentName& outp = ((Client*) client)->GetSegmentParentName(String(SubjectName),
                               String(SegmentName));
-  /*COutput_GetSegmentParentName c_outp = {outp.Result,std::string(outp.SegmentName).c_str()};
-  return c_outp;*/
-  /*outptr->Result = outp.Result;
-  outptr->SegmentName = std::string(outp.SegmentName).c_str();*/
   snprintf(outstr, sizeOfBuffer, "%s", std::string(outp.SegmentName).c_str());
   return outp.Result;
 }
@@ -346,9 +306,6 @@ void Client_GetSegmentStaticTranslation(CClient* client, CString SubjectName,
 {
   const Output_GetSegmentStaticTranslation& outp = ((Client*) client)->GetSegmentStaticTranslation(String(SubjectName),
                                   String(SegmentName));
-  /*double* ptr = outp.Translation;
-  COutput_GetSegmentStaticTranslation c_outp = {outp.Result, *ptr++,*ptr++,*ptr};
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->Translation,outp.Translation,sizeof(outptr->Translation));
 }
@@ -358,9 +315,6 @@ void Client_GetSegmentStaticRotationHelical(CClient* client, CString  SubjectNam
 {
   const Output_GetSegmentStaticRotationHelical& outp = ((Client*) client)->GetSegmentStaticRotationHelical(
                           String(SubjectName), String(SegmentName));
-  /*double* ptr = outp.Rotation;
-  COutput_GetSegmentStaticRotationHelical c_outp = {outp.Result, *ptr++,*ptr++,*ptr};
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->Rotation,outp.Rotation,sizeof(outptr->Rotation));
 }
@@ -370,14 +324,6 @@ void Client_GetSegmentStaticRotationMatrix(CClient* client, CString  SubjectName
 {
   const Output_GetSegmentStaticRotationMatrix& outp = ((Client*) client)->GetSegmentStaticRotationMatrix(
                           String(SubjectName), String(SegmentName));
-  /*double* ptr = outp.Rotation;
-  COutput_GetSegmentStaticRotationMatrix c_outp = {outp.Result,*ptr++,*ptr++,*ptr++,
-                                  *ptr++,*ptr++,*ptr++
-                                  *ptr++,*ptr++,*ptr};*/
-  /*COutput_GetSegmentStaticRotationMatrix c_outp;
-  c_outp.Result = outp.Result;
-  std::memcpy(c_outp.Rotation,outp.Rotation,sizeof(c_outp.Rotation));
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->Rotation,outp.Rotation,sizeof(outptr->Rotation));
 }
@@ -387,9 +333,6 @@ void Client_GetSegmentStaticRotationQuaternion(CClient* client, CString  Subject
 {
   const Output_GetSegmentStaticRotationQuaternion& outp = ((Client*) client)->GetSegmentStaticRotationQuaternion(
                              String(SubjectName), String(SegmentName));
-  /*double* ptr = outp.Rotation;
-  COutput_GetSegmentStaticRotationQuaternion c_outp = {outp.Result,*ptr++,*ptr++,*ptr++,*ptr};
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->Rotation,outp.Rotation,sizeof(outptr->Rotation));
 }
@@ -399,21 +342,23 @@ void Client_GetSegmentStaticRotationEulerXYZ(CClient* client, CString  SubjectNa
 {
   const Output_GetSegmentStaticRotationEulerXYZ& outp = ((Client*) client)->GetSegmentStaticRotationEulerXYZ(
                             String(SubjectName), String(SegmentName));
-  /*double* ptr = outp.Rotation;
-  COutput_GetSegmentStaticRotationEulerXYZ c_outp = {outp.Result,*ptr++,*ptr++,*ptr};
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->Rotation,outp.Rotation,sizeof(outptr->Rotation));
 }
 
+void Client_GetSegmentStaticScale(CClient* client, CString  SubjectName,
+  CString  SegmentName, COutput_GetSegmentStaticScale* outptr)
+{
+  const Output_GetSegmentStaticScale& outp = ( ( Client* )client )->GetSegmentStaticScale(
+    String(SubjectName), String(SegmentName));
+  outptr->Result = outp.Result;
+  std::memcpy(outptr->Scale, outp.Scale, sizeof(outptr->Scale));
+}
 void Client_GetSegmentGlobalTranslation(CClient* client, CString  SubjectName,
                                         CString  SegmentName, COutput_GetSegmentGlobalTranslation* outptr )
 {
   const Output_GetSegmentGlobalTranslation& outp = ((Client*) client)->GetSegmentGlobalTranslation(
                           String(SubjectName), String(SegmentName));
-  /*double* ptr = outp.Translation;
-  COutput_GetSegmentGlobalTranslation c_outp = {outp.Result,*ptr++,*ptr++,*ptr,outp.Occluded};
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->Translation,outp.Translation,sizeof(outptr->Translation));
   outptr->Occluded = outp.Occluded;
@@ -424,9 +369,6 @@ void Client_GetSegmentGlobalRotationHelical(CClient* client, CString  SubjectNam
 {
   const Output_GetSegmentGlobalRotationHelical& outp = ((Client*) client)->GetSegmentGlobalRotationHelical(
                            String(SubjectName), String(SegmentName));
-  /*double* ptr = outp.Rotation;
-  COutput_GetSegmentGlobalRotationHelical c_outp = {outp.Result,*ptr++,*ptr++,*ptr,outp.Occluded};
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->Rotation,outp.Rotation,sizeof(outptr->Rotation));
   outptr->Occluded = outp.Occluded;
@@ -437,11 +379,6 @@ void Client_GetSegmentGlobalRotationMatrix(CClient* client, CString  SubjectName
 {
   const Output_GetSegmentGlobalRotationMatrix& outp = ((Client*) client)->GetSegmentGlobalRotationMatrix(
                           String(SubjectName), String(SegmentName));
-  /*COutput_GetSegmentGlobalRotationMatrix c_outp;
-  c_outp.Result = outp.Result;
-  std::memcpy(c_outp.Rotation, outp.Rotation, sizeof(c_outp.Rotation));
-  c_outp.Occluded = outp.Occluded;
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->Rotation,outp.Rotation,sizeof(outptr->Rotation));
   outptr->Occluded = outp.Occluded;
@@ -452,14 +389,8 @@ void Client_GetSegmentGlobalRotationQuaternion(CClient* client, CString  Subject
 {
   const Output_GetSegmentGlobalRotationQuaternion& outp = ((Client*) client)->GetSegmentGlobalRotationQuaternion(
                              String(SubjectName), String(SegmentName));
-  /*double* ptr = outp.Rotation;
-  COutput_GetSegmentGlobalRotationQuaternion c_outp = {outp.Result,*ptr++,*ptr++,*ptr++,*ptr,outp.Occluded};
-  return c_outp;*/
   outptr->Result = outp.Result;
-  //outp.Rotation[0]=1.0; outp.Rotation[1]=2.0;outp.Rotation[2]=3.0;outp.Rotation[3]=4.0;
   std::memcpy(outptr->Rotation,outp.Rotation,sizeof(outptr->Rotation));
-  //double* from = outp.Rotation, *to = outptr->Rotation;
-  //*to++=*from++;*to++=*from++;*to++=*from++;*to=*from;
   outptr->Occluded = outp.Occluded;
 }
 
@@ -469,9 +400,7 @@ void Client_GetSegmentGlobalRotationEulerXYZ(CClient* client, CString  SubjectNa
 {
   const Output_GetSegmentGlobalRotationEulerXYZ& outp = ((Client*) client)->GetSegmentGlobalRotationEulerXYZ(
                             String(SubjectName), String(SegmentName));
-  /*double* ptr = outp.Rotation;
-  COutput_GetSegmentGlobalRotationEulerXYZ c_outp = {outp.Result,*ptr++,*ptr++,*ptr,outp.Occluded};
-  return c_outp;*/
+
   outptr->Result = outp.Result;
   std::memcpy(outptr->Rotation,outp.Rotation,sizeof(outptr->Rotation));
   outptr->Occluded = outp.Occluded;
@@ -482,9 +411,6 @@ void Client_GetSegmentLocalTranslation(CClient* client, CString  SubjectName,
 {
   const Output_GetSegmentLocalTranslation& outp = ((Client*) client)->GetSegmentLocalTranslation(
                          String(SubjectName), String(SegmentName));
-  /*double* ptr = outp.Translation;
-  COutput_GetSegmentLocalTranslation c_outp = {outp.Result,*ptr++,*ptr++,*ptr,outp.Occluded};
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->Translation,outp.Translation,sizeof(outptr->Translation));
   outptr->Occluded = outp.Occluded;
@@ -495,9 +421,6 @@ void Client_GetSegmentLocalRotationHelical(CClient* client, CString  SubjectName
 {
   const Output_GetSegmentLocalRotationHelical& outp = ((Client*) client)->GetSegmentLocalRotationHelical(
                            String(SubjectName), String(SegmentName));
-  /*double* ptr = outp.Rotation;
-  COutput_GetSegmentLocalRotationHelical c_outp = {outp.Result,*ptr++,*ptr++,*ptr,outp.Occluded};
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->Rotation,outp.Rotation,sizeof(outptr->Rotation));
   outptr->Occluded = outp.Occluded;
@@ -508,11 +431,6 @@ void Client_GetSegmentLocalRotationMatrix(CClient* client, CString  SubjectName,
 {
   const Output_GetSegmentLocalRotationMatrix& outp = ((Client*) client)->GetSegmentLocalRotationMatrix(
                           String(SubjectName), String(SegmentName));
-  /*COutput_GetSegmentLocalRotationMatrix c_outp;
-  c_outp.Result = outp.Result;
-  std::memcpy(c_outp.Rotation,outp.Rotation,sizeof(c_outp.Rotation));
-  c_outp.Occluded = outp.Occluded;
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->Rotation,outp.Rotation,sizeof(outptr->Rotation));
   outptr->Occluded = outp.Occluded;
@@ -523,9 +441,6 @@ void Client_GetSegmentLocalRotationQuaternion(CClient* client, CString  SubjectN
 {
   const Output_GetSegmentLocalRotationQuaternion& outp = ((Client*) client)->GetSegmentLocalRotationQuaternion(
                              String(SubjectName), String(SegmentName));
-  /*double* ptr = outp.Rotation;
-  COutput_GetSegmentLocalRotationQuaternion c_outp = {outp.Result,*ptr++,*ptr++,*ptr++,*ptr,outp.Occluded};
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->Rotation,outp.Rotation,sizeof(outptr->Rotation));
   outptr->Occluded = outp.Occluded;
@@ -536,9 +451,6 @@ void Client_GetSegmentLocalRotationEulerXYZ(CClient* client, CString  SubjectNam
 {
   const Output_GetSegmentLocalRotationEulerXYZ& outp = ((Client*) client)->GetSegmentLocalRotationEulerXYZ(
                            String(SubjectName), String(SegmentName));
-  /*double* ptr = outp.Rotation;
-  COutput_GetSegmentLocalRotationEulerXYZ c_outp = {outp.Result,*ptr++,*ptr++,*ptr,outp.Occluded};
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->Rotation,outp.Rotation,sizeof(outptr->Rotation));
   outptr->Occluded = outp.Occluded;
@@ -547,8 +459,6 @@ void Client_GetSegmentLocalRotationEulerXYZ(CClient* client, CString  SubjectNam
 void Client_GetMarkerCount(CClient* client, CString SubjectName, COutput_GetMarkerCount* outptr )
 {
   const Output_GetMarkerCount& outp = ((Client*) client)->GetMarkerCount(String(SubjectName));
-  /*COutput_GetMarkerCount c_outp = {outp.Result,outp.MarkerCount};
-  return c_outp;*/
   outptr->Result = outp.Result;
   outptr->MarkerCount = outp.MarkerCount;
 }
@@ -557,10 +467,6 @@ CEnum Client_GetMarkerName(CClient* client, CString  SubjectName,
                             unsigned int  MarkerIndex, int sizeOfBuffer, char* outstr )
 {
   const Output_GetMarkerName& outp = ((Client*) client)->GetMarkerName(String(SubjectName),MarkerIndex);
-  /*COutput_GetMarkerName c_outp = {outp.Result, std::string(outp.MarkerName).c_str()};
-  return c_outp;*/
-  /*outptr->Result = outp.Result;
-  outptr->MarkerName = std::string(outp.MarkerName).c_str();*/
   snprintf(outstr, sizeOfBuffer, "%s", std::string(outp.MarkerName).c_str());
   return outp.Result;
 }
@@ -570,10 +476,6 @@ CEnum Client_GetMarkerParentName(CClient* client, CString  SubjectName,
 {
   const Output_GetMarkerParentName& outp = ((Client*) client)->GetMarkerParentName(
                             String(SubjectName), String(MarkerName));
-  /*COutput_GetMarkerParentName c_outp = {outp.Result,std::string(outp.SegmentName).c_str()};
-  return c_outp;*/
-  /*outptr->Result = outp.Result;
-  outptr->SegmentName = std::string(outp.SegmentName).c_str();*/
   snprintf(outstr, sizeOfBuffer, "%s", std::string(outp.SegmentName).c_str());
   return outp.Result;
 }
@@ -583,9 +485,6 @@ void Client_GetMarkerGlobalTranslation(CClient* client, CString  SubjectName,
 {
   const Output_GetMarkerGlobalTranslation& outp = ((Client*) client)->GetMarkerGlobalTranslation(
                          String(SubjectName), String(MarkerName));
-  /*double* ptr = outp.Translation;
-  COutput_GetMarkerGlobalTranslation c_outp = {outp.Result,*ptr++,*ptr++,*ptr,outp.Occluded};
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->Translation,outp.Translation,sizeof(outptr->Translation));
   outptr->Occluded = outp.Occluded;
@@ -594,8 +493,6 @@ void Client_GetMarkerGlobalTranslation(CClient* client, CString  SubjectName,
 void Client_GetUnlabeledMarkerCount(CClient* client, COutput_GetUnlabeledMarkerCount* outptr)
 {
   const Output_GetUnlabeledMarkerCount& outp = ((Client*) client)->GetUnlabeledMarkerCount();
-  /*COutput_GetUnlabeledMarkerCount c_outp = {outp.Result, outp.MarkerCount};
-  return c_outp;*/
   outptr->Result = outp.Result;
   outptr->MarkerCount = outp.MarkerCount;
 }
@@ -604,18 +501,14 @@ void Client_GetUnlabeledMarkerGlobalTranslation(CClient* client, unsigned int Ma
                          COutput_GetUnlabeledMarkerGlobalTranslation* outptr)
 {
   const Output_GetUnlabeledMarkerGlobalTranslation& outp = ((Client*) client)->GetUnlabeledMarkerGlobalTranslation(MarkerIndex);
-  /*double* ptr = outp.Translation;
-  COutput_GetUnlabeledMarkerGlobalTranslation c_outp = {outp.Result,*ptr++,*ptr++,*ptr};
-  return c_outp;*/
   outptr->Result = outp.Result;
+  outptr->MarkerID = outp.MarkerID;
   std::memcpy(outptr->Translation,outp.Translation,sizeof(outptr->Translation));
 }
 
 void Client_GetDeviceCount(CClient* client, COutput_GetDeviceCount* outptr)
 {
   const Output_GetDeviceCount& outp = ((Client*) client)->GetDeviceCount();
-  /*COutput_GetDeviceCount c_outp = {outp.Result, outp.DeviceCount};
-  return c_outp;*/
   outptr->Result = outp.Result;
   outptr->DeviceCount = outp.DeviceCount;
 }
@@ -624,11 +517,6 @@ CEnum  Client_GetDeviceName(CClient* client, unsigned int DeviceIndex,
               int sizeOfBuffer, char* outstr, CEnum* DeviceType )
 {
   const Output_GetDeviceName& outp = ((Client*) client)->GetDeviceName(DeviceIndex);
-  /*COutput_GetDeviceName c_outp = {outp.Result,std::string(outp.DeviceName).c_str(),outp.DeviceType};
-  return c_outp;*/
-  /*outptr->Result = outp.Result;
-  outptr->DeviceName = std::string(outp.DeviceName).c_str();
-  outptr->DeviceType = outp.DeviceType;*/
   snprintf(outstr, sizeOfBuffer, "%s", std::string(outp.DeviceName).c_str());
   *DeviceType = outp.DeviceType;
   return outp.Result;
@@ -637,8 +525,6 @@ CEnum  Client_GetDeviceName(CClient* client, unsigned int DeviceIndex,
 void Client_GetDeviceOutputCount(CClient* client, CString DeviceName, COutput_GetDeviceOutputCount* outptr )
 {
   const Output_GetDeviceOutputCount& outp = ((Client*) client)->GetDeviceOutputCount(String(DeviceName));
-  /*COutput_GetDeviceOutputCount c_outp = {outp.Result,outp.DeviceOutputCount};
-  return c_outp;*/
   outptr->Result = outp.Result;
   outptr->DeviceOutputCount = outp.DeviceOutputCount;
 }
@@ -648,12 +534,18 @@ CEnum Client_GetDeviceOutputName(CClient* client, CString   DeviceName,
 {
   const Output_GetDeviceOutputName& outp = ((Client*) client)->GetDeviceOutputName(String(DeviceName),
                                DeviceOutputIndex);
-  /*COutput_GetDeviceOutputName c_outp = {outp.Result,std::string(outp.DeviceOutputName).c_str(),outp.DeviceOutputUnit};
-  return c_outp;*/
-  /*outptr->Result = outp.Result;
-  outptr->DeviceOutputName = std::string(outp.DeviceOutputName).c_str();
-  outptr->DeviceOutputUnit = outp.DeviceOutputUnit;*/
   snprintf(outstr, sizeOfBuffer, "%s",  std::string(outp.DeviceOutputName).c_str());
+  *DeviceOutputUnit = outp.DeviceOutputUnit;
+  return outp.Result;
+}
+
+CEnum Client_GetDeviceOutputComponentName( CClient* client, CString   DeviceName,
+  unsigned int   DeviceOutputIndex, int sizeOfOutputBuffer, char* OutputOutstr, int sizeOfComponentBuffer, char* ComponentOutstr, CEnum* DeviceOutputUnit )
+{
+  const Output_GetDeviceOutputComponentName& outp = ( ( Client* )client )->GetDeviceOutputComponentName( String( DeviceName ),
+    DeviceOutputIndex );
+  snprintf( OutputOutstr, sizeOfOutputBuffer, "%s", std::string( outp.DeviceOutputName ).c_str() );
+  snprintf( ComponentOutstr, sizeOfComponentBuffer, "%s", std::string( outp.DeviceOutputComponentName ).c_str() );
   *DeviceOutputUnit = outp.DeviceOutputUnit;
   return outp.Result;
 }
@@ -663,8 +555,6 @@ void Client_GetDeviceOutputValue(CClient* client, CString  DeviceName,
 {
   const Output_GetDeviceOutputValue& outp = ((Client*) client)->GetDeviceOutputValue(String(DeviceName),
                               String(DeviceOutputName));
-  /*COutput_GetDeviceOutputValue c_outp = {outp.Result,outp.Value,outp.Occluded};
-  return c_outp;*/
   outptr->Result = outp.Result;
   outptr->Value = outp.Value;
   outptr->Occluded = outp.Occluded;
@@ -675,8 +565,6 @@ void Client_GetDeviceOutputSubsamples(CClient* client, CString  DeviceName,
 {
   const Output_GetDeviceOutputSubsamples& outp = ((Client*) client)->GetDeviceOutputSubsamples(
                         String(DeviceName), String(DeviceOutputName));
-  /*COutput_GetDeviceOutputSubsamples c_outp = {outp.Result,outp.DeviceOutputSubsamples,outp.Occluded};
-  return c_outp;*/
   outptr->Result = outp.Result;
   outptr->DeviceOutputSubsamples = outp.DeviceOutputSubsamples;
   outptr->Occluded = outp.Occluded;
@@ -689,8 +577,40 @@ void Client_GetDeviceOutputValueForSubsample(CClient* client, CString  DeviceNam
 {
   const Output_GetDeviceOutputValue& outp = ((Client*) client)->GetDeviceOutputValue(
                       String(DeviceName), String(DeviceOutputName),Subsample);
-  /*COutput_GetDeviceOutputValue c_outp = {outp.Result,outp.Value,outp.Occluded};
-  return c_outp;*/
+  outptr->Result = outp.Result;
+  outptr->Value = outp.Value;
+  outptr->Occluded = outp.Occluded;
+
+}
+
+void Client_GetDeviceOutputComponentValue( CClient* client, CString  DeviceName,
+  CString  DeviceOutputName, CString  DeviceOutputComponentName, COutput_GetDeviceOutputValue* outptr )
+{
+  const Output_GetDeviceOutputValue& outp = ( ( Client* )client )->GetDeviceOutputValue( String( DeviceName ),
+    String( DeviceOutputName ), String( DeviceOutputComponentName ) );
+  outptr->Result = outp.Result;
+  outptr->Value = outp.Value;
+  outptr->Occluded = outp.Occluded;
+}
+
+void Client_GetDeviceOutputComponentSubsamples( CClient* client, CString  DeviceName,
+  CString  DeviceOutputName, CString  DeviceOutputComponentName, COutput_GetDeviceOutputSubsamples* outptr )
+{
+  const Output_GetDeviceOutputSubsamples& outp = ( ( Client* )client )->GetDeviceOutputSubsamples(
+    String( DeviceName ), String( DeviceOutputName ), String( DeviceOutputComponentName ) );
+  outptr->Result = outp.Result;
+  outptr->DeviceOutputSubsamples = outp.DeviceOutputSubsamples;
+  outptr->Occluded = outp.Occluded;
+}
+
+void Client_GetDeviceOutputComponentValueForSubsample( CClient* client, CString  DeviceName,
+  CString  DeviceOutputName,
+  CString  DeviceOutputComponentName,
+  unsigned int Subsample,
+  COutput_GetDeviceOutputValue* outptr )
+{
+  const Output_GetDeviceOutputValue& outp = ( ( Client* )client )->GetDeviceOutputValue(
+    String( DeviceName ), String( DeviceOutputName ), String( DeviceOutputComponentName ), Subsample );
   outptr->Result = outp.Result;
   outptr->Value = outp.Value;
   outptr->Occluded = outp.Occluded;
@@ -700,8 +620,6 @@ void Client_GetDeviceOutputValueForSubsample(CClient* client, CString  DeviceNam
 void Client_GetForcePlateCount(CClient* client, COutput_GetForcePlateCount* outptr)
 {
   const Output_GetForcePlateCount& outp = ((Client*) client)->GetForcePlateCount();
-  /*COutput_GetForcePlateCount c_outp = {outp.Result,outp.ForcePlateCount};
-  return c_outp;*/
   outptr->Result = outp.Result;
   outptr->ForcePlateCount = outp.ForcePlateCount;
 }
@@ -709,9 +627,6 @@ void Client_GetForcePlateCount(CClient* client, COutput_GetForcePlateCount* outp
 void Client_GetGlobalForceVector(CClient* client,  unsigned int ForcePlateIndex, COutput_GetGlobalForceVector* outptr )
 {
   const Output_GetGlobalForceVector& outp = ((Client*) client)->GetGlobalForceVector(ForcePlateIndex);
-  /*double* ptr = outp.ForceVector;
-  COutput_GetGlobalForceVector c_outp = {outp.Result,*ptr++,*ptr++,*ptr};
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->ForceVector,outp.ForceVector,sizeof(outptr->ForceVector));
 }
@@ -719,9 +634,6 @@ void Client_GetGlobalForceVector(CClient* client,  unsigned int ForcePlateIndex,
 void Client_GetGlobalMomentVector(CClient* client,  unsigned int ForcePlateIndex, COutput_GetGlobalMomentVector* outptr )
 {
   const Output_GetGlobalMomentVector& outp = ((Client*) client)->GetGlobalMomentVector(ForcePlateIndex);
-  /*double* ptr = outp.MomentVector;
-  COutput_GetGlobalMomentVector c_outp = {outp.Result,*ptr++,*ptr++,*ptr};
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->MomentVector,outp.MomentVector,sizeof(outptr->MomentVector));
 }
@@ -729,9 +641,6 @@ void Client_GetGlobalMomentVector(CClient* client,  unsigned int ForcePlateIndex
 void Client_GetGlobalCentreOfPressure(CClient* client,  unsigned int ForcePlateIndex, COutput_GetGlobalCentreOfPressure* outptr )
 {
   const Output_GetGlobalCentreOfPressure& outp = ((Client*) client)->GetGlobalCentreOfPressure(ForcePlateIndex);
-  /*double* ptr = outp.CentreOfPressure;
-  COutput_GetGlobalCentreOfPressure c_outp = {outp.Result,*ptr++,*ptr++,*ptr};
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->CentreOfPressure,outp.CentreOfPressure,sizeof(outptr->CentreOfPressure));
 }
@@ -739,8 +648,6 @@ void Client_GetGlobalCentreOfPressure(CClient* client,  unsigned int ForcePlateI
 void Client_GetForcePlateSubsamples(CClient* client,  unsigned int ForcePlateIndex, COutput_GetForcePlateSubsamples* outptr )
 {
   const Output_GetForcePlateSubsamples& outp = ((Client*) client)->GetForcePlateSubsamples(ForcePlateIndex);
-  /*COutput_GetForcePlateSubsamples c_outp = {outp.Result, outp.ForcePlateSubsamples};
-  return c_outp;*/
   outptr->Result = outp.Result;
   outptr->ForcePlateSubsamples = outp.ForcePlateSubsamples;
 }
@@ -749,9 +656,6 @@ void Client_GetGlobalForceVectorForSubsample(CClient* client, unsigned int Force
                       COutput_GetGlobalForceVector* outptr)
 {
   const Output_GetGlobalForceVector& outp = ((Client*) client)->GetGlobalForceVector(ForcePlateIndex,Subsample);
-  /*double* ptr = outp.ForceVector;
-  COutput_GetGlobalForceVector c_outp = {outp.Result,*ptr++,*ptr++,*ptr};
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->ForceVector,outp.ForceVector,sizeof(outptr->ForceVector));
 }
@@ -760,9 +664,6 @@ void Client_GetGlobalMomentVectorForSubsample(CClient* client, unsigned int Forc
                         COutput_GetGlobalMomentVector* outptr)
 {
   const Output_GetGlobalMomentVector& outp = ((Client*) client)->GetGlobalMomentVector(ForcePlateIndex,Subsample);
-  /*double* ptr = outp.MomentVector;
-  COutput_GetGlobalMomentVector c_outp = {outp.Result,*ptr++,*ptr++,*ptr};
-  return c_outp;*/ 
   outptr->Result = outp.Result;
   std::memcpy(outptr->MomentVector,outp.MomentVector,sizeof(outptr->MomentVector));
 }
@@ -771,9 +672,6 @@ void Client_GetGlobalCentreOfPressureForSubsample(CClient* client,  unsigned int
                           COutput_GetGlobalCentreOfPressure* outptr)
 {
   const Output_GetGlobalCentreOfPressure& outp = ((Client*) client)->GetGlobalCentreOfPressure(ForcePlateIndex,Subsample);
-  /*double* ptr = outp.CentreOfPressure;
-  COutput_GetGlobalCentreOfPressure c_outp = {outp.Result,*ptr++,*ptr++,*ptr};
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->CentreOfPressure,outp.CentreOfPressure,sizeof(outptr->CentreOfPressure));
 }
@@ -781,8 +679,6 @@ void Client_GetGlobalCentreOfPressureForSubsample(CClient* client,  unsigned int
 void Client_GetEyeTrackerCount(CClient* client, COutput_GetEyeTrackerCount* outptr)
 {
   const Output_GetEyeTrackerCount& outp = ((Client*) client)->GetEyeTrackerCount();
-  /*COutput_GetEyeTrackerCount c_outp = {outp.Result,outp.EyeTrackerCount};
-  return c_outp;*/
   outptr->Result = outp.Result;
   outptr->EyeTrackerCount = outp.EyeTrackerCount;
 }
@@ -791,9 +687,6 @@ void Client_GetEyeTrackerGlobalPosition(CClient* client,  unsigned int EyeTracke
                     COutput_GetEyeTrackerGlobalPosition* outptr)
 {
   const Output_GetEyeTrackerGlobalPosition& outp = ((Client*) client)->GetEyeTrackerGlobalPosition(EyeTrackerIndex);
-  /*double* ptr = outp.Position;
-  COutput_GetEyeTrackerGlobalPosition c_outp = {outp.Result,*ptr++,*ptr++,*ptr,outp.Occluded};
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->Position,outp.Position,sizeof(outptr->Position));
   outptr->Occluded = outp.Occluded;
@@ -803,9 +696,6 @@ void Client_GetEyeTrackerGlobalGazeVector(CClient* client,  unsigned int EyeTrac
                       COutput_GetEyeTrackerGlobalGazeVector* outptr)
 {
   const Output_GetEyeTrackerGlobalGazeVector& outp = ((Client*) client)->GetEyeTrackerGlobalGazeVector(EyeTrackerIndex);
-  /*double* ptr = outp.GazeVector;
-  COutput_GetEyeTrackerGlobalGazeVector c_outp = {outp.Result,*ptr++,*ptr++,*ptr,outp.Occluded};
-  return c_outp;*/
   outptr->Result = outp.Result;
   std::memcpy(outptr->GazeVector,outp.GazeVector,sizeof(outptr->GazeVector));
   outptr->Occluded = outp.Occluded;
@@ -866,10 +756,21 @@ CBool Client_IsGreyscaleDataEnabled( CClient* client )
   return false;
 }
 
+CBool Client_IsVideoDataEnabled( CClient* client )
+{
+  return false;
+}
+
 CBool Client_IsDebugDataEnabled( CClient* client )
 {
   return ( (Client*)client )->IsDebugDataEnabled().Enabled;
 }
+
+void Client_SetBufferSize( CClient* client, unsigned int bufferSize )
+{
+  ( (Client*)client )->DisableDebugData();
+}
+
 
 void Client_GetServerOrientation( CClient* client, COutput_GetServerOrientation* outptr )
 {
@@ -939,6 +840,7 @@ void Client_GetLabeledMarkerGlobalTranslation( CClient* client, unsigned int Mar
 {
   Output_GetLabeledMarkerGlobalTranslation outpt = ((Client*) client)->GetLabeledMarkerGlobalTranslation( MarkerIndex );
   outptr->Result = outpt.Result;
+  outptr->MarkerID = outpt.MarkerID;
   std::memcpy( outptr->Translation, outpt.Translation, sizeof( outptr->Translation ) );
 }
 
@@ -1020,6 +922,32 @@ void Client_GetCentroidWeight( CClient* client, CString i_rCameraName, unsigned 
   outptr->Result = outpt.Result;
   outptr->Weight = outpt.Weight;
 }
+
+CEnum Client_ClearSubjectFilter(CClient* client)
+{
+  Output_ClearSubjectFilter outpt = ( ( Client* )client )->ClearSubjectFilter();
+  return outpt.Result;
+}
+
+CEnum Client_AddToSubjectFilter(CClient* client, CString i_rSubjectName)
+{
+  Output_AddToSubjectFilter outpt = ( (Client*)client )->AddToSubjectFilter( i_rSubjectName );
+  return outpt.Result;
+}
+
+CEnum Client_SetTimingLogFile(CClient* client, CString i_rClientLog, CString i_rStreamLog)
+{
+  Output_SetTimingLogFile outpt = ( ( Client* )client )->SetTimingLogFile(( String )i_rClientLog, ( String )i_rStreamLog );
+  return outpt.Result;
+}
+
+CEnum Client_ConfigureWireless( CClient* client, int sizeOfBuffer, char* outstrError )
+{
+  Output_ConfigureWireless outpt = ( (Client*)client )->ConfigureWireless();
+  snprintf( outstrError, sizeOfBuffer, "%s", std::string( outpt.Error ).c_str() );
+  return outpt.Result;
+}
+
 
 /*
 void Client_GetGreyscaleBlobCount( CClient* client, CString i_rCameraName, COutput_GetGreyscaleBlobCount* outptr )

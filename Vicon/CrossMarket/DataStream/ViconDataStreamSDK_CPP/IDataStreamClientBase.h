@@ -295,7 +295,10 @@ namespace Result
     HapticAlreadySet, ///< Haptic feedback is already set.
     EarlyDataRequested, ///< Re-timed data requested is from before the first time sample we still have
     LateDataRequested, ///< Re-timed data requested is too far into the future to be predicted
-    InvalidOperation ///< The method called is not valid in the current mode of operation
+    InvalidOperation, ///< The method called is not valid in the current mode of operation
+    NotSupported, ///< The SDK version or operating system does not support this function.
+    ConfigurationFailed, ///< The operating system configuration changed failed.
+    NotPresent ///< The requested data type is not present in the stream.
   };
 }
 
@@ -309,6 +312,8 @@ namespace Result
     unsigned int Minor;
     /// Point version number of the SDK.
     unsigned int Point;
+    /// Revision version number of the SDK
+    unsigned int Revision;
   };
 
   class Output_SimpleResult
@@ -324,6 +329,7 @@ namespace Result
   class Output_StartTransmittingMulticast : public Output_SimpleResult {};
   class Output_StopTransmittingMulticast  : public Output_SimpleResult {};
   class Output_EnableSegmentData          : public Output_SimpleResult {};
+  class Output_EnableLightweightSegmentData          : public Output_SimpleResult {};
   class Output_EnableMarkerData           : public Output_SimpleResult {};
   class Output_EnableUnlabeledMarkerData  : public Output_SimpleResult {};
   class Output_EnableMarkerRayData        : public Output_SimpleResult {};
@@ -332,6 +338,7 @@ namespace Result
   class Output_EnableGreyscaleData        : public Output_SimpleResult {};
   class Output_EnableDebugData            : public Output_SimpleResult {};
   class Output_DisableSegmentData         : public Output_SimpleResult {};
+  class Output_DisableLightweightSegmentData : public Output_SimpleResult {};
   class Output_DisableMarkerData          : public Output_SimpleResult {};
   class Output_DisableUnlabeledMarkerData : public Output_SimpleResult {};
   class Output_DisableMarkerRayData       : public Output_SimpleResult {};
@@ -346,6 +353,9 @@ namespace Result
   class Output_UpdateFrame                : public Output_SimpleResult {};
   class Output_WaitForFrame               : public Output_SimpleResult {};
   class Output_SetCameraFilter            : public Output_SimpleResult {};
+  class Output_ClearSubjectFilter         : public Output_SimpleResult {};
+  class Output_AddToSubjectFilter         : public Output_SimpleResult {};
+  class Output_SetTimingLogFile           : public Output_SimpleResult {};
 
   class Output_EnabledFlag
   {
@@ -355,6 +365,7 @@ namespace Result
 
   // Output objects that only return an enabled flag
   class Output_IsSegmentDataEnabled         : public Output_EnabledFlag {};
+  class Output_IsLightweightSegmentDataEnabled : public Output_EnabledFlag {};
   class Output_IsMarkerDataEnabled          : public Output_EnabledFlag {};
   class Output_IsUnlabeledMarkerDataEnabled : public Output_EnabledFlag {};
   class Output_IsMarkerRayDataEnabled       : public Output_EnabledFlag {};
@@ -561,6 +572,13 @@ namespace Result
     double       Rotation[ 3 ];
   };
 
+  class Output_GetSegmentStaticScale
+  {
+  public:
+    Result::Enum Result;
+    double       Scale[3];
+  };
+
   class Output_GetSegmentGlobalTranslation
   {
   public:
@@ -704,6 +722,7 @@ namespace Result
   public:
     Result::Enum Result;
     double       Translation[ 3 ];
+    unsigned int MarkerID;
   };
 
   class Output_GetLabeledMarkerCount
@@ -718,6 +737,7 @@ namespace Result
   public:
     Result::Enum Result;
     double       Translation[ 3 ];
+    unsigned int MarkerID;
   };
 
   class Output_GetDeviceCount
@@ -750,6 +770,15 @@ namespace Result
     Unit::Enum   DeviceOutputUnit;
   };
 
+  class Output_GetDeviceOutputComponentName
+  {
+  public:
+    Result::Enum Result;
+    String       DeviceOutputName;
+    String       DeviceOutputComponentName;
+    Unit::Enum   DeviceOutputUnit;
+  };
+  
   class Output_GetDeviceOutputValue
   {
   public:
@@ -881,6 +910,23 @@ namespace Result
     bool IsVideoCamera;
   };
 
+  class Output_GetCameraSensorMode
+  {
+  public:
+    Result::Enum Result;
+    String SensorMode;
+  };
+
+  class Output_GetCameraWindowSize
+  {
+  public:
+    Result::Enum Result;
+    unsigned int WindowStartX;
+    unsigned int WindowStartY;
+    unsigned int WindowWidth;
+    unsigned int WindowHeight;
+  };
+
   class Output_GetCentroidCount
   {
   public:
@@ -911,6 +957,17 @@ namespace Result
     unsigned int BlobCount;
   };
 
+  class Output_GetGreyscaleBlobSubsampleInfo
+  {
+  public:
+    Result::Enum Result;
+    unsigned short TwiceOffsetX;
+    unsigned short TwiceOffsetY;
+    unsigned char  SensorPixelsPerImagePixelX;
+    unsigned char  SensorPixelsPerImagePixelY;
+  };
+
+
   class Output_GetGreyscaleBlob
   {
   public:
@@ -919,6 +976,14 @@ namespace Result
     std::vector< unsigned int > BlobLinePositionsY;
     std::vector< std::vector< unsigned char > > BlobLinePixelValues;
   };
+
+  class Output_ConfigureWireless
+  {
+  public:
+    Result::Enum Result;
+    String Error;
+  };
+
 
   ///  Vicon DataStream SDK client.
   ///  The core client class for C++.
@@ -974,7 +1039,135 @@ namespace Result
     ///         connected to the stream, otherwise false.
     virtual Output_IsConnected IsConnected() const = 0;
 
-   
+    /// Enable a lightweight transmission protocol for kinematic segment data in the Vicon DataStream. 
+    /// This will reduce the network bandwidth required to transmit segment data to approximately a quarter of that required by the 
+    /// previous method, at the expense of a small amount of precision.
+    /// Use the existing methods such as GetSegmentGlobalTranslation() and GetSegmentGlobalRotationMatrix() as usual to obtain the segment data.
+    /// Calling this method will automatically disable all other configurable output types. These may be re-enabled after the call if required.
+    ///
+    /// Call this function on startup, after connecting to the server, and before trying to read local or global segment data.
+    ///
+    /// See Also: IsSegmentDataEnabled(), DisableSegmentData(), EnableMarkerData(), EnableUnlabeledMarkerData(), EnableDeviceData(), GetSegmentCount(), GetSegmentName(), GetSegmentGlobalTranslation(), GetSegmentGlobalRotationEulerXYZ(), GetSegmentLocalTranslation(), GetSegmentLocalRotationEulerXYZ()
+    ///
+    ///
+    /// C example
+    ///      
+    ///      CClient * pClient = Client_Create();
+    ///      Client_Connect( pClient, "localhost" );
+    ///      Client_EnableLightweightSegmentData();
+    ///      Client_Destroy( pClient );
+    ///      
+    /// C++ example
+    ///      
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.Connect( "localhost" );
+    ///      Output_EnableLightweightSegmentData Output = MyClient.EnableLightweightSegmentData();
+    ///      
+    /// MATLAB example
+    ///      
+    ///      MyClient = Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      Output_EnableLightweightSegmentData Output = MyClient.EnableLightweightSegmentData();
+    ///      
+    /// .NET example
+    ///      
+    ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      Output_EnableLightweightSegmentData Output = MyClient.EnableLightweightSegmentData();
+    /// -----
+    /// \return An Output_EnableSegmentData class containing the result of the operation.
+    ///         - The Result will be:
+    ///           + Success
+    ///           + NotConnected
+    virtual Output_EnableLightweightSegmentData         EnableLightweightSegmentData() = 0;
+
+    /// Disable the lightweight output mode for kinematic segment data in the Vicon DataStream.
+    /// Calling this mode does not automatically enable any other data types
+    ///
+    /// See Also: IsSegmentDataEnabled(), EnableSegmentData(), EnableMarkerData(), EnableUnlabeledMarkerData(), EnableDeviceData(), GetSegmentCount(), GetSegmentName(), GetSegmentGlobalTranslation(), GetSegmentGlobalRotationEulerXYZ(), GetSegmentLocalTranslation(), GetSegmentLocalRotationEulerXYZ()
+    ///
+    ///
+    ///
+    /// C example
+    ///      
+    ///      CClient * pClient = Client_Create();
+    ///      Client_Connect( pClient, "localhost" );
+    ///      Client_DisableLightweightSegmentData();
+    ///      Client_Destroy( pClient );
+    ///      
+    /// C++ example
+    ///      
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.Connect( "localhost" );
+    ///      Output_DisableLightweightSegmentData Output = MyClient.DisableLightweightSegmentData();
+    ///      
+    /// MATLAB example
+    ///      
+    ///      MyClient = Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      Output = MyClient.DisableLightweightSegmentData ();
+    ///      
+    /// .NET example
+    ///      
+    ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      Output_DisableLightweightSegmentData Output = MyClient.DisableLightweightSegmentData ();
+    /// -----
+    /// \return An Output_DisableLightweightSegmentData class containing the result of the operation.
+    ///         - The Result will be:
+    ///           + Success
+    ///           + NotConnected
+    virtual Output_DisableLightweightSegmentData         DisableLightweightSegmentData() = 0;
+
+    /// Return whether the lightweight transport mode for kinematic segment data is enabled in the Vicon DataStream.
+    ///
+    /// See Also: EnableSegmentData(), DisableSegmentData(), IsMarkerDataEnabled(), IsUnlabeledMarkerDataEnabled(), IsDeviceDataEnabled()
+    ///
+    ///
+    /// C example
+    ///      
+    ///      CClient * pClient = Client_Create();
+    ///      Client_Connect( pClient, "localhost" );
+    ///      CBool Output = Client_IsLightweightSegmentDataEnabled( pClient )
+    ///      // Output == 0
+    ///      Client_EnabledSegmentData( pClient );
+    ///      CBool Output = Client_IsLightweightSegmentDataEnabled( pClient )
+    ///      // Output == 1
+    ///      Client_Destroy( pClient );
+    ///      
+    /// C++ example
+    ///      
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.Connect( "localhost" );
+    ///      Output_IsLightweightSegmentDataEnabled Output = MyClient.IsLightweightSegmentDataEnabled();
+    ///      // Output.Enabled == false
+    ///      MyClient.EnableSegmentData();
+    ///      Output_IsLightweightSegmentDataEnabled Output = MyClient.IsLightweightSegmentDataEnabled();
+    ///      // Output.Enabled == true
+    ///      
+    /// MATLAB example
+    ///      
+    ///      MyClient = Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      Output = MyClient.IsLightweightSegmentDataEnabled(); % Output.Enabled == false
+    ///      MyClient.EnableSegmentData();
+    ///      Output = MyClient.IsLightweightSegmentDataEnabled(); % Output.Enabled == true
+    ///      
+    /// .NET example
+    ///      
+    ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      Output_IsLightweightSegmentDataEnabled Output = MyClient.IsLightweightSegmentDataEnabled();
+    ///      // Output.Enabled == false
+    ///      MyClient.EnableSegmentData();
+    ///      Output_IsLightweightSegmentDataEnabled Output = MyClient.IsLightweightSegmentDataEnabled();
+    ///      // Output.Enabled == true
+    /// -----
+    /// \return An Output_IsLightweightSegmentDataEnabled class containing the result of the operation.
+    ///         - The Result will be:
+    ///           + Whether the data is enabled
+    virtual Output_IsLightweightSegmentDataEnabled         IsLightweightSegmentDataEnabled() const = 0;
+
     /// Remaps the 3D axis.
     /// Vicon Data uses a right-handed coordinate system, with +X forward, +Y left, and +Z up. 
     /// Other systems use different coordinate systems. The SDK can transform its data into any valid right-handed coordinate system by re-mapping each axis. 
@@ -1601,6 +1794,11 @@ namespace Result
     ///           + InvalidSubjectName
     ///           + InvalidSegmentName
     virtual Output_GetSegmentStaticRotationEulerXYZ GetSegmentStaticRotationEulerXYZ( const String & SubjectName, const String & SegmentName ) const = 0;
+
+
+    ///@private
+    virtual Output_GetSegmentStaticScale GetSegmentStaticScale(const String & SubjectName, const String & SegmentName) const = 0;
+
     /// Return the translation of a subject segment in global coordinates.
     /// The translation is of the form ( x, y, z ) where x, y and z are in millimeters with respect to the global origin.
     ///
@@ -1941,6 +2139,19 @@ namespace Result
     ///           + InvalidSegmentName
     ///         - Occluded will be True if the segment was absent at this frame. In this case the rotation will be [0,0,0].
     virtual Output_GetSegmentLocalRotationEulerXYZ GetSegmentLocalRotationEulerXYZ( const String & SubjectName, const String & SegmentName ) const = 0;
+
+    /// Clear the subject filter. This will result in all subjects being sent.
+    /// @private
+    virtual Output_ClearSubjectFilter ClearSubjectFilter() = 0;
+
+    /// Add a subject name to the subject filter. Only subjects present in the subject filter will be sent - if no filtered subjects are
+    /// present, they will all be sent.
+    /// @private
+    virtual Output_AddToSubjectFilter AddToSubjectFilter( const String& SubjectName ) = 0;
+
+    /// Output timing information to a log file
+    /// @private
+    virtual Output_SetTimingLogFile SetTimingLogFile(const String & ClientLog, const String & StreamLog ) = 0;
 
   };
 } // End of namespace CPP

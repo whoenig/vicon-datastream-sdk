@@ -31,14 +31,17 @@
 #include <vector>
 #include <map>
 #include <set>
+#include <array>
 
 namespace ViconCGStreamIO
 {
 //-------------------------------------------------------------------------------------------------
 
 /// Disable: 'this' : used in base member initializer list
+#ifdef WIN32
 #pragma warning( push )
 #pragma warning( disable : 4355 )
+#endif
 
 /** \class VBuffer
 **/
@@ -63,6 +66,13 @@ public:
   bool Read( T ( & o_pValues )[ N ] ) const
   {
     return VBufferDetail< VIsPod< T >::Answer >::Read( m_BufferImpl, o_pValues, N );
+  }
+
+  /// Read array.
+  template< typename T, size_t N >
+  bool Read( std::array< T, N > & o_rValue ) const
+  {
+    return VBufferDetail< VIsPod< T >::Answer >::Read( m_BufferImpl, o_rValue.data(), N );
   }
   
   /// Read vector.
@@ -140,6 +150,13 @@ public:
   void Write( const T ( & i_pValues )[ N ] )
   {
     VBufferDetail< VIsPod< T >::Answer >::Write( m_BufferImpl, i_pValues, N );
+  }
+
+  /// Write array.
+  template< typename T, size_t N >
+  void Write( const std::array< T, N > & i_rValues )
+  {
+    VBufferDetail< VIsPod< T >::Answer >::Write( m_BufferImpl, i_rValues.data(), N );
   }
   
   /// Write vector.
@@ -243,7 +260,9 @@ private:
   ViconCGStreamIO::VBufferImpl m_BufferImpl;
 };
 
+#ifdef WIN32
 #pragma warning( pop )
+#endif
 //-------------------------------------------------------------------------------------------------
 };
 

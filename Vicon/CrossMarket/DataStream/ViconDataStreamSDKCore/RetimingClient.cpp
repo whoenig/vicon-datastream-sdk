@@ -24,30 +24,34 @@
 //////////////////////////////////////////////////////////////////////////////////
 #include "RetimingClient.h"
 #include "CoreClient.h"
-
 #include "RetimerUtils.h"
 
+#ifdef WIN32
 #pragma warning ( push )
 #pragma warning ( disable : 4265 )
+#endif
+
 #include <thread>
+
+#ifdef WIN32
 #pragma warning ( pop )
-#include <chrono>
+#endif
 
 #include <algorithm>
-#include <chrono>
+#include <iostream>
 
 using namespace ClientUtils;
-
-
 
 namespace ViconDataStreamSDK
 {
 
   namespace Core
   {
+
+    
     Result::Enum Adapt(const VSubjectPose::EResult & i_rResult)
     {
-      switch (i_rResult)
+      switch( i_rResult )
       {
       case VSubjectPose::ESuccess: return Result::Success;
       case VSubjectPose::ENoData: return Result::NoFrame;
@@ -60,17 +64,14 @@ namespace ViconDataStreamSDK
       return Result::Unknown;
     }
 
-    static unsigned int s_BufSize = 3;
-
-    VRetimingClient::VRetimingClient(VClient & i_rClient)
-      : m_rClient(i_rClient)
+    VRetimingClient::VRetimingClient(std::shared_ptr<VClient> i_rClient)
+      : m_pClient(i_rClient)
       , m_bInputStopped(false)
       , m_bOutputStopped(false)
       , m_OutputLatency(0.0)
-      , m_MaxPredictionTime(100)
-      , m_NetworkLatency( 0.3 )
     {
-
+      // Store a relative start time for our timestamps
+      m_Epoch = hrc::now();
     }
 
     VRetimingClient::~VRetimingClient()
@@ -81,21 +82,33 @@ namespace ViconDataStreamSDK
     // Connect client to the Vicon Data Stream
     Result::Enum VRetimingClient::Connect(
       std::shared_ptr< ViconCGStreamClientSDK::ICGClient > i_pClient,
-      const std::string & i_rHostName)
+      const std::string & i_rHostName,
+      bool i_bLightweight)
     {
 
-      Result::Enum Result = m_rClient.Connect(i_pClient, i_rHostName);
+      // We can afford to buffer a little, as it doesn't matter if frames come in at once.
+      m_pClient->SetBufferSize(10);
 
-      if (Result == Result::Success)
+      Result::Enum Result = m_pClient->Connect(i_pClient, i_rHostName);
+
+      if( Result == Result::Success )
       {
         // Ensure that segments are enabled
-        m_rClient.EnableSegmentData();
+        if( i_bLightweight )
+        {
+          // Use lightweight mode
+          m_pClient->EnableLightweightSegmentData();
+        }
+        else
+        {
+          m_pClient->EnableSegmentData();
+        }
 
         // We need to work in server push mode
-        m_rClient.SetStreamMode(StreamMode::ServerPush);
+        m_pClient->SetStreamMode(StreamMode::ServerPush);
 
         // Start frame acquisition thread
-        m_pInputThread.reset(new boost::thread(boost::bind(&VRetimingClient::InputThread, this)));
+        m_pInputThread.reset(new boost::thread(std::bind(&VRetimingClient::InputThread, this)));
       }
 
       return Result;
@@ -110,14 +123,14 @@ namespace ViconDataStreamSDK
       // Stop input thread
       StopInput();
 
-      return m_rClient.Disconnect();
+      return m_pClient->Disconnect();
     }
 
 
     Result::Enum VRetimingClient::StartOutput(double i_FrameRate)
     {
       // Can't start if our input thread isn't running
-      if (!m_pInputThread)
+      if( !m_pInputThread )
       {
         return Result::NotConnected;
       }
@@ -127,9 +140,9 @@ namespace ViconDataStreamSDK
       // Run for a bit first
       unsigned int FrameCount = 0;
       unsigned int RunInPeriod = 20;
-      while (FrameCount < RunInPeriod)
+      while( FrameCount < RunInPeriod )
       {
-        m_rClient.GetFrame();
+        m_pClient->GetFrame();
         ++FrameCount;
       }
 
@@ -137,22 +150,21 @@ namespace ViconDataStreamSDK
       double FrameRate = 0;
 
       // Set output rate to input rate if none specified
-      if (i_FrameRate <= 0)
+      if( i_FrameRate >= 0 )
       {
         FrameRate = i_FrameRate;
       }
       else
       {
-        m_rClient.GetFrameRate(FrameRate);
+        m_pClient->GetFrameRate(FrameRate);
       }
 
 
       boost::recursive_mutex::scoped_lock Lock(m_FrameRateMutex);
       m_FrameRate = FrameRate;
-      m_OutputFrameNumber = 0;
 
       // start thread
-      m_pOutputThread.reset(new boost::thread(boost::bind(&VRetimingClient::OutputThread, this)));
+      m_pOutputThread.reset(new boost::thread(std::bind(&VRetimingClient::OutputThread, this)));
 
       return Result::Success;
 
@@ -161,7 +173,7 @@ namespace ViconDataStreamSDK
     Result::Enum VRetimingClient::StopOutput()
     {
       // stop thread
-      if (m_pOutputThread)
+      if( m_pOutputThread )
       {
         m_bOutputStopped = true;
         m_pOutputThread->join();
@@ -178,7 +190,7 @@ namespace ViconDataStreamSDK
       m_bInputStopped = true;
 
       // Wait for it to stop
-      if (m_pInputThread)
+      if( m_pInputThread )
       {
         m_pInputThread->join();
         m_pInputThread.reset();
@@ -195,50 +207,29 @@ namespace ViconDataStreamSDK
     {
       o_rResult = Result::Success;
 
-      if (!m_rClient.IsConnected())
+      unsigned int SubjectCount = 0;
+      if( !m_pClient->IsConnected() )
       {
         o_rResult = Result::NotConnected;
       }
-      else if (m_Data.empty())
+      else if( m_Retimer.GetSubjectCount(SubjectCount) == VSubjectPose::ENoData )
       {
         o_rResult = Result::NoFrame;
       }
 
-      return (o_rResult == Result::Success);
+      return ( o_rResult == Result::Success );
     }
 
     Result::Enum VRetimingClient::GetSubjectCount(unsigned int & o_rSubjectCount) const
     {
       boost::recursive_mutex::scoped_lock Lock(m_DataMutex);
-      
-      Result::Enum GetResult = Result::Success;
-      if ( InitGet( GetResult, o_rSubjectCount ) )
-      {
-        o_rSubjectCount = static_cast<unsigned int>(m_Data.size());
-      }
-
-      return GetResult;
+      return Adapt(m_Retimer.GetSubjectCount(o_rSubjectCount));
     }
 
     Result::Enum VRetimingClient::GetSubjectName(const unsigned int i_SubjectIndex, std::string& o_rSubjectName) const
     {
       boost::recursive_mutex::scoped_lock Lock(m_DataMutex);
-      
-      Result::Enum GetResult = Result::Success;
-      if (!InitGet(GetResult, o_rSubjectName))
-      {
-        return GetResult;
-      }
-
-      if (i_SubjectIndex >= m_Data.size())
-      {
-        return Result::InvalidIndex;
-      }
-
-      auto rPair = m_Data.begin();
-      std::advance(rPair, i_SubjectIndex);
-      o_rSubjectName = rPair->first;
-      return Result::Success;
+      return Adapt(m_Retimer.GetSubjectName(i_SubjectIndex, o_rSubjectName));
     }
 
     Result::Enum VRetimingClient::GetSubjectRootSegmentName(const std::string & i_rSubjectName, std::string & o_rSegmentName) const
@@ -247,7 +238,7 @@ namespace ViconDataStreamSDK
       Clear(o_rSegmentName);
 
       std::shared_ptr< const VSubjectPose > pSubject;
-      Result::Enum Result = GetSubject(i_rSubjectName, pSubject );
+      Result::Enum Result = Adapt(m_Retimer.GetSubjectStatic(i_rSubjectName, pSubject));
 
       if( Result == Result::Success )
       {
@@ -263,11 +254,11 @@ namespace ViconDataStreamSDK
       Clear(o_rSegmentCount);
 
       std::shared_ptr< const VSubjectPose > pSubject;
-      Result::Enum Result = GetSubject(i_rSubjectName, pSubject);
+      Result::Enum Result = Adapt(m_Retimer.GetSubjectStatic(i_rSubjectName, pSubject));
 
       if( Result == Result::Success )
       {
-        o_rSegmentCount = static_cast< unsigned int >( pSubject->m_Segments.size() );
+        o_rSegmentCount = static_cast< unsigned int >( pSubject->m_SegmentNames.size() );
       }
 
       return Result;
@@ -279,15 +270,13 @@ namespace ViconDataStreamSDK
       Clear(o_rSegmentName);
 
       std::shared_ptr< const VSubjectPose > pSubject;
-      Result::Enum Result = GetSubject(i_rSubjectName, pSubject);
+      Result::Enum Result = Adapt(m_Retimer.GetSubjectStatic(i_rSubjectName, pSubject));
 
       if( Result == Result::Success )
       {
-        if( i_SegmentIndex < pSubject->m_Segments.size() )
+        if( i_SegmentIndex < pSubject->m_SegmentNames.size() )
         {
-          auto rPair = pSubject->m_Segments.begin();
-          std::advance(rPair, i_SegmentIndex);
-          o_rSegmentName = rPair->first;
+          o_rSegmentName = pSubject->m_SegmentNames[ i_SegmentIndex ];
         }
         else
         {
@@ -304,7 +293,7 @@ namespace ViconDataStreamSDK
       Clear(o_rSegmentCount);
 
       std::shared_ptr< const VSubjectPose > pSubject;
-      Result::Enum Result = GetSubject(i_rSubjectName, pSubject);
+      Result::Enum Result = Adapt(m_Retimer.GetSubjectStatic(i_rSubjectName, pSubject));
 
       if( Result == Result::Success )
       {
@@ -328,7 +317,7 @@ namespace ViconDataStreamSDK
       Clear(o_rSegmentName);
 
       std::shared_ptr< const VSubjectPose > pSubject;
-      Result::Enum Result = GetSubject(i_rSubjectName, pSubject);
+      Result::Enum Result = Adapt(m_Retimer.GetSubjectStatic(i_rSubjectName, pSubject));
 
       if( Result == Result::Success )
       {
@@ -359,7 +348,7 @@ namespace ViconDataStreamSDK
       Clear(o_rSegmentName);
 
       std::shared_ptr< const VSubjectPose > pSubject;
-      Result::Enum Result = GetSubject(i_rSubjectName, pSubject);
+      Result::Enum Result = Adapt(m_Retimer.GetSubjectStatic(i_rSubjectName, pSubject));
 
       if( Result == Result::Success )
       {
@@ -388,7 +377,7 @@ namespace ViconDataStreamSDK
       }
 
       std::shared_ptr< const VSubjectPose > pSubject;
-      GetResult = GetSubject(i_rSubjectName, pSubject);
+      GetResult = Adapt(m_Retimer.GetSubjectStatic(i_rSubjectName, pSubject));
 
       if( GetResult == Result::Success )
       {
@@ -432,7 +421,7 @@ namespace ViconDataStreamSDK
       }
 
       std::shared_ptr< const VSubjectPose > pSubject;
-      GetResult = GetSubject(i_rSubjectName, pSubject);
+      GetResult = Adapt(m_Retimer.GetSubjectStatic(i_rSubjectName, pSubject));
 
       if( GetResult == Result::Success )
       {
@@ -440,7 +429,7 @@ namespace ViconDataStreamSDK
         auto SegIt = pSubject->m_Segments.find(i_rSegmentName);
         if( SegIt != pSubject->m_Segments.end() )
         {
-          boost::array< double, 9 > StaticRotation = ClientUtils::ToRotationMatrix(SegIt->second->R_Stat);
+          std::array< double, 9 > StaticRotation = ClientUtils::ToRotationMatrix(SegIt->second->R_Stat);
           std::copy(StaticRotation.begin(), StaticRotation.end(), o_rRotation);
         }
       }
@@ -458,7 +447,7 @@ namespace ViconDataStreamSDK
       }
 
       std::shared_ptr< const VSubjectPose > pSubject;
-      GetResult = GetSubject(i_rSubjectName, pSubject);
+      GetResult = Adapt(m_Retimer.GetSubjectStatic(i_rSubjectName, pSubject));
 
       if( GetResult == Result::Success )
       {
@@ -484,7 +473,7 @@ namespace ViconDataStreamSDK
       double RotationArray[9];
       const Result::Enum _Result = GetSegmentStaticRotationMatrix(i_rSubjectName, i_rSegmentName, RotationArray);
 
-      if( Result::Success == _Result)
+      if( Result::Success == _Result )
       {
         MatrixToEulerXYZ(RotationArray, o_rThreeVector);
       }
@@ -492,25 +481,57 @@ namespace ViconDataStreamSDK
       return _Result;
     }
 
-
-    Result::Enum VRetimingClient::GetSegmentGlobalTranslation(const std::string& i_rSubjectName, const std::string& i_rSegmentName, double(&o_rThreeVector)[3], bool& o_rbOccluded) const
+    Result::Enum VRetimingClient::GetSegmentStaticScale(const std::string& i_rSubjectName, const std::string& i_rSegmentName, double(&o_rThreeVector)[3]) const
     {
       boost::recursive_mutex::scoped_lock Lock(m_DataMutex);
-      
+
       Result::Enum GetResult = Result::Success;
-      if (!InitGet(GetResult, o_rThreeVector, o_rbOccluded))
+      if( !InitGet(GetResult, o_rThreeVector) )
       {
         return GetResult;
       }
 
       std::shared_ptr< const VSubjectPose > pSubject;
-      GetResult = GetSubject(i_rSubjectName, pSubject );
+      GetResult = Adapt( m_Retimer.GetSubjectStatic(i_rSubjectName, pSubject) );
 
-      if (GetResult == Result::Success)
+      if( GetResult == Result::Success )
       {
         // Get the segment
         auto SegIt = pSubject->m_Segments.find(i_rSegmentName);
-        if (SegIt != pSubject->m_Segments.end() )
+        if( SegIt != pSubject->m_Segments.end() )
+        {
+          if( SegIt->second->bHasScale )
+          { 
+            std::array< double, 3 > StaticScale = SegIt->second->Scale;
+            std::copy(StaticScale.begin(), StaticScale .end(), o_rThreeVector);
+          }
+          else
+          {
+            GetResult = Result::NotPresent;
+          }
+        }
+      }
+      return GetResult;
+    }
+
+    Result::Enum VRetimingClient::GetSegmentGlobalTranslation(const std::string& i_rSubjectName, const std::string& i_rSegmentName, double(&o_rThreeVector)[3], bool& o_rbOccluded) const
+    {
+      boost::recursive_mutex::scoped_lock Lock(m_DataMutex);
+
+      Result::Enum GetResult = Result::Success;
+      if( !InitGet(GetResult, o_rThreeVector, o_rbOccluded) )
+      {
+        return GetResult;
+      }
+
+      std::shared_ptr< const VSubjectPose > pSubject;
+      GetResult = Adapt(m_Retimer.GetSubject(i_rSubjectName, pSubject));
+
+      if( GetResult == Result::Success )
+      {
+        // Get the segment
+        auto SegIt = pSubject->m_Segments.find(i_rSegmentName);
+        if( SegIt != pSubject->m_Segments.end() )
         {
           std::copy(SegIt->second->T.begin(), SegIt->second->T.end(), o_rThreeVector);
           o_rbOccluded = SegIt->second->bOccluded;
@@ -531,7 +552,7 @@ namespace ViconDataStreamSDK
       double RotationArray[9];
       const Result::Enum _Result = GetSegmentGlobalRotationMatrix(i_rSubjectName, i_rSegmentName, RotationArray, o_rbOccluded);
 
-      if (Result::Success == _Result && !o_rbOccluded)
+      if( Result::Success == _Result && !o_rbOccluded )
       {
         MatrixToHelical(RotationArray, o_rThreeVector);
       }
@@ -542,23 +563,23 @@ namespace ViconDataStreamSDK
     Result::Enum VRetimingClient::GetSegmentGlobalRotationMatrix(const std::string & i_rSubjectName, const std::string & i_rSegmentName, double(&o_rRotation)[9], bool & o_rbOccluded) const
     {
       boost::recursive_mutex::scoped_lock Lock(m_DataMutex);
-      
+
       Result::Enum GetResult = Result::Success;
-      if (!InitGet(GetResult, o_rRotation, o_rbOccluded))
+      if( !InitGet(GetResult, o_rRotation, o_rbOccluded) )
       {
         return GetResult;
       }
 
       std::shared_ptr< const VSubjectPose > pSubject;
-      GetResult = GetSubject(i_rSubjectName, pSubject);
+      GetResult = Adapt(m_Retimer.GetSubject(i_rSubjectName, pSubject));
 
-      if (GetResult == Result::Success)
+      if( GetResult == Result::Success )
       {
         // Get the segment
         auto SegIt = pSubject->m_Segments.find(i_rSegmentName);
-        if (SegIt != pSubject->m_Segments.end())
+        if( SegIt != pSubject->m_Segments.end() )
         {
-          boost::array< double, 9 > GlobalRotation = ClientUtils::ToRotationMatrix(SegIt->second->R);
+          std::array< double, 9 > GlobalRotation = ClientUtils::ToRotationMatrix(SegIt->second->R);
           std::copy(GlobalRotation.begin(), GlobalRotation.end(), o_rRotation);
           o_rbOccluded = SegIt->second->bOccluded;
         }
@@ -569,21 +590,21 @@ namespace ViconDataStreamSDK
     Result::Enum VRetimingClient::GetSegmentGlobalRotationQuaternion(const std::string& i_rSubjectName, const std::string& i_rSegmentName, double(&o_rFourVector)[4], bool& o_rbOccluded) const
     {
       boost::recursive_mutex::scoped_lock Lock(m_DataMutex);
-      
+
       Result::Enum GetResult = Result::Success;
-      if (!InitGet(GetResult, o_rFourVector, o_rbOccluded))
+      if( !InitGet(GetResult, o_rFourVector, o_rbOccluded) )
       {
         return GetResult;
       }
 
       std::shared_ptr< const VSubjectPose > pSubject;
-      GetResult = GetSubject(i_rSubjectName, pSubject);
+      GetResult = Adapt(m_Retimer.GetSubject(i_rSubjectName, pSubject));
 
-      if (GetResult == Result::Success)
+      if( GetResult == Result::Success )
       {
         // Get the segment
         auto SegIt = pSubject->m_Segments.find(i_rSegmentName);
-        if (SegIt != pSubject->m_Segments.end())
+        if( SegIt != pSubject->m_Segments.end() )
         {
           std::copy(SegIt->second->R.begin(), SegIt->second->R.end(), o_rFourVector);
           o_rbOccluded = SegIt->second->bOccluded;
@@ -604,7 +625,7 @@ namespace ViconDataStreamSDK
       double RotationArray[9];
       const Result::Enum _Result = GetSegmentGlobalRotationMatrix(i_rSubjectName, i_rSegmentName, RotationArray, o_rbOccluded);
 
-      if (Result::Success == _Result && !o_rbOccluded)
+      if( Result::Success == _Result && !o_rbOccluded )
       {
         MatrixToEulerXYZ(RotationArray, o_rThreeVector);
       }
@@ -615,19 +636,19 @@ namespace ViconDataStreamSDK
     Result::Enum VRetimingClient::GetSegmentLocalTranslation(const std::string& i_rSubjectName, const std::string& i_rSegmentName, double(&o_rThreeVector)[3], bool& o_rbOccluded) const
     {
       Result::Enum GetResult = Result::Success;
-      if (!InitGet(GetResult, o_rThreeVector, o_rbOccluded))
+      if( !InitGet(GetResult, o_rThreeVector, o_rbOccluded) )
       {
         return GetResult;
       }
 
       std::shared_ptr< const VSubjectPose > pSubject;
-      GetResult = GetSubject(i_rSubjectName, pSubject);
+      GetResult = Adapt(m_Retimer.GetSubject(i_rSubjectName, pSubject));
 
-      if (GetResult == Result::Success)
+      if( GetResult == Result::Success )
       {
         // Get the segment
         auto SegIt = pSubject->m_Segments.find(i_rSegmentName);
-        if (SegIt != pSubject->m_Segments.end())
+        if( SegIt != pSubject->m_Segments.end() )
         {
           std::copy(SegIt->second->T_Rel.begin(), SegIt->second->T_Rel.end(), o_rThreeVector);
           o_rbOccluded = SegIt->second->bOccluded;
@@ -647,7 +668,7 @@ namespace ViconDataStreamSDK
       double RotationArray[9];
       const Result::Enum _Result = GetSegmentLocalRotationMatrix(i_rSubjectName, i_rSegmentName, RotationArray, o_rbOccluded);
 
-      if (Result::Success == _Result && !o_rbOccluded)
+      if( Result::Success == _Result && !o_rbOccluded )
       {
         MatrixToHelical(RotationArray, o_rThreeVector);
       }
@@ -658,21 +679,21 @@ namespace ViconDataStreamSDK
     Result::Enum VRetimingClient::GetSegmentLocalRotationMatrix(const std::string & i_rSubjectName, const std::string & i_rSegmentName, double(&o_rRotation)[9], bool & o_rbOccluded) const
     {
       Result::Enum GetResult = Result::Success;
-      if (!InitGet(GetResult, o_rRotation, o_rbOccluded))
+      if( !InitGet(GetResult, o_rRotation, o_rbOccluded) )
       {
         return GetResult;
       }
 
       std::shared_ptr< const VSubjectPose > pSubject;
-      GetResult = GetSubject(i_rSubjectName, pSubject);
+      GetResult = Adapt(m_Retimer.GetSubject(i_rSubjectName, pSubject));
 
-      if (GetResult == Result::Success)
+      if( GetResult == Result::Success )
       {
         // Get the segment
         auto SegIt = pSubject->m_Segments.find(i_rSegmentName);
-        if (SegIt != pSubject->m_Segments.end())
+        if( SegIt != pSubject->m_Segments.end() )
         {
-          boost::array< double, 9 > LocalRotation = ClientUtils::ToRotationMatrix(SegIt->second->R_Rel);
+          std::array< double, 9 > LocalRotation = ClientUtils::ToRotationMatrix(SegIt->second->R_Rel);
           std::copy(LocalRotation.begin(), LocalRotation.end(), o_rRotation);
           o_rbOccluded = SegIt->second->bOccluded;
         }
@@ -683,19 +704,19 @@ namespace ViconDataStreamSDK
     Result::Enum VRetimingClient::GetSegmentLocalRotationQuaternion(const std::string& i_rSubjectName, const std::string& i_rSegmentName, double(&o_rFourVector)[4], bool& o_rbOccluded) const
     {
       Result::Enum GetResult = Result::Success;
-      if (!InitGet(GetResult, o_rFourVector, o_rbOccluded))
+      if( !InitGet(GetResult, o_rFourVector, o_rbOccluded) )
       {
         return GetResult;
       }
 
       std::shared_ptr< const VSubjectPose > pSubject;
-      GetResult = GetSubject(i_rSubjectName, pSubject);
+      GetResult = Adapt(m_Retimer.GetSubject(i_rSubjectName, pSubject));
 
-      if (GetResult == Result::Success)
+      if( GetResult == Result::Success )
       {
         // Get the segment
         auto SegIt = pSubject->m_Segments.find(i_rSegmentName);
-        if (SegIt != pSubject->m_Segments.end())
+        if( SegIt != pSubject->m_Segments.end() )
         {
           std::copy(SegIt->second->R_Rel.begin(), SegIt->second->R_Rel.end(), o_rFourVector);
           o_rbOccluded = SegIt->second->bOccluded;
@@ -715,7 +736,7 @@ namespace ViconDataStreamSDK
       double RotationArray[9];
       const Result::Enum _Result = GetSegmentLocalRotationMatrix(i_rSubjectName, i_rSegmentName, RotationArray, o_rbOccluded);
 
-      if (Result::Success == _Result && !o_rbOccluded)
+      if( Result::Success == _Result && !o_rbOccluded )
       {
         MatrixToEulerXYZ(RotationArray, o_rThreeVector);
       }
@@ -723,53 +744,13 @@ namespace ViconDataStreamSDK
       return _Result;
     }
 
-    Result::Enum VRetimingClient::GetSubject(const std::string & i_rSubjectName, std::shared_ptr< const VSubjectPose > & o_rpSubject ) const
-    {
-      boost::recursive_mutex::scoped_lock Lock(m_DataMutex);
-      
-      Result::Enum OutputResult = Result::InvalidSubjectName;
-
-      auto DataIt = m_LatestOutputPoses.find(i_rSubjectName);
-      if (DataIt != m_LatestOutputPoses.end())
-      {
-        o_rpSubject = DataIt->second;
-        if (!DataIt->second)
-        {
-          OutputResult = Result::NoFrame;
-        }
-        else
-        {
-          switch (DataIt->second->Result)
-          {
-          case Core::VSubjectPose::ESuccess:
-            OutputResult = Result::Success;
-            break;
-          default:
-          case Core::VSubjectPose::ENoData:
-            OutputResult = Result::NoFrame;
-            break;
-          case Core::VSubjectPose::EUnknownSubject:
-            OutputResult = Result::InvalidSubjectName;
-            break;
-          case Core::VSubjectPose::EEarly:
-            OutputResult = Result::EarlyDataRequested;
-            break;
-          case Core::VSubjectPose::ELate:
-            OutputResult = Result::LateDataRequested;
-            break;
-          }
-        }
-      }
-
-      return OutputResult;
-    }
 
 
     Result::Enum VRetimingClient::WaitForFrame() const
     {
-      boost::recursive_mutex::scoped_lock Lock(m_DataMutex);
+      boost::mutex::scoped_lock Lock(m_OutputMutex);
 
-      if (!IsRunning())
+      if( !IsRunning() )
       {
         return Result::NoFrame;
       }
@@ -792,175 +773,143 @@ namespace ViconDataStreamSDK
 
     void VRetimingClient::SetMaximumPrediction(double i_MaxPrediction)
     {
-      boost::recursive_mutex::scoped_lock Lock(m_DataMutex);
-      m_MaxPredictionTime = i_MaxPrediction;
+      m_Retimer.SetMaximumPrediction(i_MaxPrediction);
     }
 
     double VRetimingClient::MaximumPrediction() const
     {
-      boost::recursive_mutex::scoped_lock Lock(m_DataMutex);
-      return m_MaxPredictionTime;
+      return m_Retimer.MaximumPrediction();
     }
 
-    void VRetimingClient::AddData(const std::string & i_rObjectName, std::shared_ptr< VSubjectPose > i_pData)
+    bool VRetimingClient::SetDebugLogFile(const std::string & i_rLogFile)
     {
-      boost::recursive_mutex::scoped_lock Lock(m_DataMutex);
-
-      // DSSDK-210. Don't add occluded data, as we will be able to interpolate from good data
-      // as long as gaps are not too long. If an object becomes occluded for a significant time,
-      // Predict will return ELate when the data becomes too stale.
-      bool bOccluded = false;
-      // For multi-segment subjects, don't add if any segments are occluded.
-      for (const auto & rSegment : i_pData->m_Segments)
-      {
-        if (rSegment.second->bOccluded)
-        {
-          bOccluded = true;
-          //break;
-        }
-      }
-      
-      if (bOccluded)
-      {
-        return;
-      }
-
-      auto & rData = m_Data[i_rObjectName];
-
-      // Stamp the receipt time as current time now less the system latency
-      i_pData->ReceiptTime = static_cast< double >(m_Timer.elapsed().wall) / 1000000.0 - i_pData->Latency;
-      rData.push_back(i_pData);
-
-      while (rData.size() > s_BufSize)
-      {
-        rData.pop_front();
-      }
+      return m_Retimer.SetDebugLogFile(i_rLogFile);
     }
 
+    bool VRetimingClient::SetOutputFile(const std::string & i_rLogFile)
+    {
+      return m_Retimer.SetOutputFile(i_rLogFile);
+    }
 
     Result::Enum VRetimingClient::UpdateFrame(double i_rOffset)
     {
-      //const auto Before = m_Timer.elapsed().wall;
-      if (IsRunning())
+      if( IsRunning() )
       {
         return Result::InvalidOperation;
       }
 
-      boost::recursive_mutex::scoped_lock Lock(m_DataMutex);
-
-      m_LatestOutputPoses.clear();
-
-      Result::Enum Result = Result::Success;
-
-      for (const auto & Pair : m_Data)
-      {
-        std::shared_ptr< const VSubjectPose > pPose;
-        const auto & rData = Pair.second;
-        if (rData.size() >= 2)
-        {
-          double Now = static_cast< double >(m_Timer.elapsed().wall) / 1000000.0;
-          double PTime = Now + i_rOffset;
-          pPose = Predict(rData.front(), rData.back(), PTime);
-          if (pPose->Result != VSubjectPose::ESuccess)
-          {
-            Result = Adapt( pPose->Result );
-          }
-        }
-
-        m_LatestOutputPoses[Pair.first] = pPose;
-      }
-
-      //const auto After = m_Timer.elapsed().wall;
-      //std::cout << "Update Frame took " << (After - Before) << " ns" << std::endl;;
-      return Result;
+      const double Now = std::chrono::duration< double, std::milli >(hrc::now() - m_Epoch).count();
+      double PTime = Now + i_rOffset;
+      return Adapt(m_Retimer.UpdateFrameAtTime( PTime ));
     }
 
     void VRetimingClient::InputThread()
     {
-
-      while (!m_bInputStopped)
+      while( !m_bInputStopped )
       {
-        if (m_rClient.IsConnected())
+        if( m_pClient->IsConnected() )
         {
+
           // Get a frame
-          while (m_rClient.GetFrame() != Result::Success && m_rClient.IsConnected())
+          while( m_pClient->GetFrame() != Result::Success && m_pClient->IsConnected() )
           {
             // Sleep a little so that we don't lumber the CPU with a busy poll
 #ifdef WIN32
-            //Sleep(200);
+            Sleep(200);
 #else
-            sleep( 1 );
+            sleep(1);
 #endif
           }
 
-          double Latency = 0;
-          Latency += m_NetworkLatency; 
-
-          double SystemLatency;
-          if (m_rClient.GetLatencyTotal(SystemLatency) == Result::Success)
+          // Get the system latencies as individual components for debugging
+          std::map< std::string, double > Latencies;
+          unsigned int LatencySampleCount;
+          if( m_pClient->GetLatencySampleCount(LatencySampleCount) == Result::Success )
           {
-            Latency += SystemLatency * 1000.0;
+            for( unsigned int SampleIndex = 0; SampleIndex < LatencySampleCount; ++SampleIndex )
+            {
+              std::string SampleName;
+              if( m_pClient->GetLatencySampleName(SampleIndex, SampleName) == Result::Success )
+              {
+                double SampleValue = 0;
+                if( m_pClient->GetLatencySampleValue(SampleName, SampleValue) == Result::Success )
+                {
+                  Latencies[SampleName] = SampleValue;
+                }
+              }
+            }
           }
 
           unsigned int FrameNumber;
           double FrameRateHz;
-          Result::Enum FrameNumberResult = m_rClient.GetFrameNumber(FrameNumber);
-          Result::Enum FrameRateResult = m_rClient.GetFrameRate(FrameRateHz);
+          Result::Enum FrameNumberResult = m_pClient->GetFrameNumber(FrameNumber);
+          Result::Enum FrameRateResult = m_pClient->GetFrameRate(FrameRateHz);
 
-          if (FrameNumberResult == Result::Success && FrameRateResult == Result::Success)
+          if( FrameNumberResult == Result::Success && FrameRateResult == Result::Success )
           {
             // Get a lock here so that we add all subjects from one frame together.
             boost::recursive_mutex::scoped_lock Lock(m_DataMutex);
 
-            double FrameReceiptTime = (1.0 / FrameRateHz) * static_cast<double>(FrameNumber);
+            double FrameReceiptTime = ( 1.0 / FrameRateHz ) * static_cast< double >( FrameNumber );
+
+            // Capture the receipt time now
+            double WallReceiptTime = std::chrono::duration< double, std::milli >(hrc::now() - m_Epoch).count(); 
+            std::vector < std::shared_ptr< VSubjectPose > > PoseDataItems;
 
             // Count the number of subjects
             unsigned int SubjectCount;
-            m_rClient.GetSubjectCount(SubjectCount);
-            for (unsigned int SubjectIndex = 0; SubjectIndex < SubjectCount; ++SubjectIndex)
+            m_pClient->GetSubjectCount(SubjectCount);
+            for( unsigned int SubjectIndex = 0; SubjectIndex < SubjectCount; ++SubjectIndex )
             {
 
-              std::shared_ptr< VSubjectPose > pPoseData( new VSubjectPose() );
+              std::shared_ptr< VSubjectPose > pPoseData(new VSubjectPose());
 
+              pPoseData->FrameNumber = FrameNumber;
               pPoseData->FrameTime = FrameReceiptTime;
-              pPoseData->Latency = Latency;
+              pPoseData->ReceiptTime = WallReceiptTime;
+              pPoseData->Latencies = Latencies;
+              pPoseData->Result = VSubjectPose::ESuccess;
+              pPoseData->FrameRate = FrameRateHz;
 
               // Get the subject name
               std::string SubjectName;
-              m_rClient.GetSubjectName(SubjectIndex, SubjectName);
+              m_pClient->GetSubjectName(SubjectIndex, SubjectName);
 
               // Get the root segment
               std::string RootSegment;
-              m_rClient.GetSubjectRootSegmentName(SubjectName, RootSegment);
+              m_pClient->GetSubjectRootSegmentName(SubjectName, RootSegment);
 
+              pPoseData->Name = SubjectName;
               pPoseData->RootSegment = RootSegment;
 
               // Count the number of segments
               unsigned int SegmentCount;
-              m_rClient.GetSegmentCount(SubjectName, SegmentCount);
-              for (unsigned int SegmentIndex = 0; SegmentIndex < SegmentCount; ++SegmentIndex)
+              m_pClient->GetSegmentCount(SubjectName, SegmentCount);
+              for( unsigned int SegmentIndex = 0; SegmentIndex < SegmentCount; ++SegmentIndex )
               {
                 std::string SegmentName;
-                m_rClient.GetSegmentName(SubjectName, SegmentIndex, SegmentName);
+                m_pClient->GetSegmentName(SubjectName, SegmentIndex, SegmentName);
 
-                std::shared_ptr< VSegmentPose > pSegmentPoseData( new VSegmentPose() );
+                pPoseData->m_SegmentNames.push_back( SegmentName );
+
+                std::shared_ptr< VSegmentPose > pSegmentPoseData(new VSegmentPose());
                 pSegmentPoseData->Name = SegmentName;
 
                 // Get our parent name (if we have one)
                 std::string ParentName;
-                if (m_rClient.GetSegmentParentName(SubjectName, SegmentName, ParentName) == Result::Success)
+                if( m_pClient->GetSegmentParentName(SubjectName, SegmentName, ParentName) == Result::Success )
                 {
                   pSegmentPoseData->Parent = ParentName;
                 }
 
                 // Add some information about the children of this segment
                 unsigned int ChildSegmentCount;
-                if( m_rClient.GetSegmentChildCount(SubjectName, SegmentName, ChildSegmentCount) == Result::Success )
+                if( m_pClient->GetSegmentChildCount(SubjectName, SegmentName, ChildSegmentCount) == Result::Success )
                 {
                   for( unsigned int ChildSegmentIndex = 0; ChildSegmentIndex < ChildSegmentCount; ++ChildSegmentIndex )
                   {
                     std::string ChildSegmentName;
-                    if( m_rClient.GetSegmentChildName(SubjectName, SegmentName, ChildSegmentIndex, ChildSegmentName) == Result::Success )
+                    if( m_pClient->GetSegmentChildName(SubjectName, SegmentName, ChildSegmentIndex, ChildSegmentName) == Result::Success )
                     {
                       pSegmentPoseData->m_Children.push_back(ChildSegmentName);
                     }
@@ -970,41 +919,56 @@ namespace ViconDataStreamSDK
                 // Get the global segment translation
                 bool bOccluded = false;
                 double Translation[3];
-                m_rClient.GetSegmentGlobalTranslation(SubjectName, SegmentName, Translation, bOccluded);
+                m_pClient->GetSegmentGlobalTranslation(SubjectName, SegmentName, Translation, bOccluded);
                 std::copy(Translation, Translation + 3, pSegmentPoseData->T.begin());
 
                 // Get the global segment rotation in quaternion co-ordinates
                 double Rotation[4];
-                m_rClient.GetSegmentGlobalRotationQuaternion(SubjectName, SegmentName, Rotation, bOccluded);
+                m_pClient->GetSegmentGlobalRotationQuaternion(SubjectName, SegmentName, Rotation, bOccluded);
                 std::copy(Rotation, Rotation + 4, pSegmentPoseData->R.begin());
 
                 // Get local translation
                 double LocalTranslation[3];
-                m_rClient.GetSegmentLocalTranslation(SubjectName, SegmentName, LocalTranslation, bOccluded);
+                m_pClient->GetSegmentLocalTranslation(SubjectName, SegmentName, LocalTranslation, bOccluded);
                 std::copy(LocalTranslation, LocalTranslation + 3, pSegmentPoseData->T_Rel.begin());
 
                 // And local rotation
                 double LocalRotation[4];
-                m_rClient.GetSegmentLocalRotationQuaternion(SubjectName, SegmentName, LocalRotation, bOccluded);
+                m_pClient->GetSegmentLocalRotationQuaternion(SubjectName, SegmentName, LocalRotation, bOccluded);
                 std::copy(LocalRotation, LocalRotation + 4, pSegmentPoseData->R_Rel.begin());
 
                 // Get static translation
                 double StaticTranslation[3];
-                m_rClient.GetSegmentStaticTranslation(SubjectName, SegmentName, StaticTranslation);
+                m_pClient->GetSegmentStaticTranslation(SubjectName, SegmentName, StaticTranslation);
                 std::copy(StaticTranslation, StaticTranslation + 3, pSegmentPoseData->T_Stat.begin());
 
                 // And static rotation
                 double StaticRotation[4];
-                m_rClient.GetSegmentStaticRotationQuaternion(SubjectName, SegmentName, StaticRotation);
+                m_pClient->GetSegmentStaticRotationQuaternion(SubjectName, SegmentName, StaticRotation);
                 std::copy(StaticRotation, StaticRotation + 4, pSegmentPoseData->R_Stat.begin());
+
+                // and scale
+                double Scale[3];
+                if( m_pClient->GetSegmentStaticScale(SubjectName, SegmentName, Scale) == Result::Success )
+                {
+                  std::copy(Scale, Scale + 3, pSegmentPoseData->Scale.begin());
+                  pSegmentPoseData->bHasScale = true;
+                }
+                else
+                {
+                  pSegmentPoseData->bHasScale = false;
+                }
 
                 pSegmentPoseData->bOccluded = bOccluded;
 
-                pPoseData->m_Segments[ SegmentName ] = pSegmentPoseData;
+                pPoseData->m_Segments[SegmentName] = pSegmentPoseData;
               }
 
-              AddData(SubjectName, pPoseData);
+              PoseDataItems.emplace_back( pPoseData );
             }
+
+            m_Retimer.AddData( PoseDataItems );
+
           }
         }
       }
@@ -1018,29 +982,18 @@ namespace ViconDataStreamSDK
       // Keep track of retimed output frame number
       uint64_t CurrentOutputFrame = 0;
 
-      while (!m_bOutputStopped)
-      {
-        // Calculate time for this frame
-        double ThisFrameTime;
-        {
-          boost::recursive_mutex::scoped_lock Lock(m_FrameRateMutex);
-          ++m_OutputFrameNumber;
-          ThisFrameTime = m_FrameRate * static_cast<double>(m_OutputFrameNumber);
-        }
+      std::chrono::system_clock::time_point WakeTime
+        = std::chrono::system_clock::now() + std::chrono::milliseconds(static_cast< unsigned int >( ( 1.0 / m_FrameRate ) * 1000 ));;
 
+      while( !m_bOutputStopped )
+      {
         {
-          boost::recursive_mutex::scoped_lock Lock(m_DataMutex);
+          boost::mutex::scoped_lock Lock( m_OutputMutex );
 
           // Interpolate output positions if required.
-          double Now = static_cast< double >(m_Timer.elapsed().wall) / 1000000.0 - m_OutputLatency;
-
-          for (auto Pair : m_Data)
-          {
-            if (Pair.second.size() >= 2)
-            {
-              m_LatestOutputPoses[Pair.first] = Predict(Pair.second.front(), Pair.second.back(), Now);
-            }
-          }
+          double Now = std::chrono::duration< double, std::milli >(hrc::now() - m_Epoch).count();
+          double PTime = Now - m_OutputLatency;
+          m_Retimer.UpdateFrameAtTime( PTime );
 
           // Output the frame 
           m_OutputWait.notify_all();
@@ -1050,80 +1003,12 @@ namespace ViconDataStreamSDK
         ++CurrentOutputFrame;
 
         // Yield until next frame is required.
-        //UtilsThreading::Sleep(static_cast<unsigned int>((1.0 / m_FrameRate) * 1000));
-        std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<unsigned int>((1.0 / m_FrameRate) * 1000)));
+        std::this_thread::sleep_until( WakeTime );
+        WakeTime += std::chrono::milliseconds(static_cast< unsigned int >( ( 1.0 / m_FrameRate ) * 1000 ));
 
       }
 
       m_bOutputStopped = false;
-    }
-
-    std::shared_ptr< const VSubjectPose > VRetimingClient::Predict(std::shared_ptr< const VSubjectPose > p1, std::shared_ptr< const VSubjectPose > p2, double t) const
-    {
-      std::shared_ptr< VSubjectPose > pOutput( new VSubjectPose() );
-
-      if (p2->ReceiptTime < p1->ReceiptTime)
-      {
-        pOutput->Result = VSubjectPose::EInvalid;
-        return pOutput;
-      }
-
-      if (t < p1->ReceiptTime)
-      {
-        pOutput->Result = VSubjectPose::EEarly;
-        return pOutput;
-      }
-
-      if (t > p2->ReceiptTime)
-      {
-        if (t - p2->ReceiptTime > m_MaxPredictionTime)
-        {
-          pOutput->Result = VSubjectPose::ELate;
-          return pOutput;
-        }
-      }
-
-      pOutput->FrameTime = t;
-      pOutput->ReceiptTime = t;
-      pOutput->Result = VSubjectPose::ESuccess;
-      pOutput->RootSegment = p1->RootSegment;
-      pOutput->Name = p1->Name;
-
-      for (const auto SegIt : p1->m_Segments)
-      {
-        // Get corresponding segment from p2->
-        for (const auto SegIt2 : p2->m_Segments)
-        {
-          std::shared_ptr< VSegmentPose > pSegment = SegIt.second;
-          std::shared_ptr< VSegmentPose > pSegment2 = SegIt2.second;
-
-          if (pSegment2->Name == pSegment->Name)
-          {
-
-            std::shared_ptr< VSegmentPose > pOutputSegment( new VSegmentPose() );
-            pOutputSegment->Name = pSegment->Name;
-            pOutputSegment->Parent = pSegment->Parent;
-            std::copy(pSegment->T_Stat.begin(), pSegment->T_Stat.end(), pOutputSegment->T_Stat.begin());
-            std::copy(pSegment->R_Stat.begin(), pSegment->R_Stat.end(), pOutputSegment->R_Stat.begin());
-
-            pOutputSegment->m_Children.reserve(pSegment->m_Children.size());
-            std::copy(pSegment->m_Children.begin(), pSegment->m_Children.end(), std::back_inserter( pOutputSegment->m_Children ) );
-
-            pOutputSegment->bOccluded = pSegment->bOccluded || pSegment2->bOccluded;
-
-            pOutputSegment->T = ClientUtils::PredictDisplacement(pSegment->T, p1->ReceiptTime, pSegment2->T, p2->ReceiptTime, t);
-            pOutputSegment->R = ClientUtils::PredictRotation(pSegment->R, p1->ReceiptTime, pSegment2->R, p2->ReceiptTime, t);
-            pOutputSegment->T_Rel = ClientUtils::PredictDisplacement(pSegment->T_Rel, p1->ReceiptTime, pSegment2->T_Rel, p2->ReceiptTime, t);
-            pOutputSegment->R_Rel = ClientUtils::PredictRotation(pSegment->R_Rel, p1->ReceiptTime, pSegment2->R_Rel, p2->ReceiptTime, t);
-
-            pOutput->m_Segments[ pSegment->Name ] = pOutputSegment;
-
-            break;
-          }
-        }
-      }
-
-      return pOutput;
     }
   }
 }

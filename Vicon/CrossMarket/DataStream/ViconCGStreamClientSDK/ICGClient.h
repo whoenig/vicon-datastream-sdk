@@ -39,18 +39,22 @@ namespace ViconCGStreamClientSDK
 
 class ICGFrameState;
 
-class ICGClient 
+class ICGClient
 {
 public:
-
   /// Create an instance of the client
-  static ICGClient * CreateCGClient();
-  
+  static ICGClient* CreateCGClient();
+
   /// Destroy this instance of the client
   virtual void Destroy() = 0;
 
   /// Set the ipAddress to connect to and begin connection attempts
   virtual void Connect( std::string i_IPAddress, unsigned short i_Port ) = 0;
+
+  /// Supply multiple adapters to connect to.
+  /// Multiple connections are used to reduce jitter.
+  /// The client will request the same data from them all, and report the earliest received sample.
+  virtual void Connect( const std::vector< std::pair< std::string, unsigned short > > & i_rHosts ) = 0;
 
   /// Configure this CGClient to be a multicast receiver.
   /// Users should call either ReceiveMulticastData or Connect, not both.
@@ -69,7 +73,7 @@ public:
   virtual bool IsMulticastReceiving() const = 0;
 
   /// Set the types ( ViconCGStreamType::Enum ) of data to be received from the server
-  virtual void SetRequestTypes( ViconCGStreamType::Enum i_RequestedType, bool i_bEnable = true) = 0;
+  virtual bool SetRequestTypes( ViconCGStreamType::Enum i_RequestedType, bool i_bEnable = true) = 0;
 
   /// Set the maximum number of frames you want cached
   virtual void SetBufferSize( unsigned int i_MaxFrames ) = 0;
@@ -85,6 +89,21 @@ public:
 
   /// Allows filtering of items in a group, e.g. only get centroids for a given camera id, etc.
   virtual void SetFilter( const ViconCGStream::VFilter & i_rFilter ) = 0;
+
+  /// Send a ping to the server to measure network latency
+  virtual void SendPing() = 0;
+
+  /// Send an explicit frame request.
+  /// This is requesting the current frame.
+  /// Does nothing if we are currently streaming.
+  virtual void RequestFrame() = 0;
+
+  /// Send an explicit frame request for the next available frame.
+  /// Does nothing if we are currently streaming.
+  virtual void RequestNextFrame() = 0;
+
+  /// Clear the buffer of frames.
+  virtual void ClearBuffer() = 0;
 
   /// Set the server to transmit via multicast UDP
   /// Should be called AFTER calling Connect (and another instance of the ICGClient should have called ReceiveMulticastData)
@@ -109,17 +128,11 @@ public:
   virtual bool WaitFrame( ICGFrameState& o_rFrame, unsigned int i_TimeoutMs ) = 0;
   virtual bool WaitFrames( std::vector< ICGFrameState > & o_rFrames, unsigned int i_TimeoutMs ) = 0;
 
-  /// Increment video frame reference count
-  virtual void VideoFrameAddRef( const ViconCGStream::VVideoFrame * i_pVideoFrame ) = 0;
-
-  /// Decrement video frame reference count
-  virtual void VideoFrameRelease( const ViconCGStream::VVideoFrame * i_pVideoFrame ) = 0;
-
-  /// Returns our current estimate of network latency
-  virtual bool NetworkLatency(double & o_rLatency) const = 0;
+  /// Sets a log filename through which this cgstream client can log data
+  virtual bool SetLogFile( const std::string & i_rLog ) = 0;
 
 protected:
-/// Private desctructor. To delete, call the Destroy() method
+  /// Private desctructor. To delete, call the Destroy() method
   virtual ~ICGClient() {}
 };
 

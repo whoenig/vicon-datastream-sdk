@@ -33,114 +33,126 @@
 
 #include <ViconCGStream/Contents.h>
 
-#include <ViconCGStream/StreamInfo.h>
-#include <ViconCGStream/CameraInfo.h>
-#include <ViconCGStream/CameraCalibrationInfo.h>
 #include <ViconCGStream/CameraCalibrationHealth.h>
-#include <ViconCGStream/SubjectInfo.h>
-#include <ViconCGStream/SubjectTopology.h>
-#include <ViconCGStream/SubjectHealth.h>
-#include <ViconCGStream/DeviceInfo.h>
+#include <ViconCGStream/CameraCalibrationInfo.h>
+#include <ViconCGStream/CameraInfo.h>
+#include <ViconCGStream/CameraSensorInfo.h>
+#include <ViconCGStream/SubjectScale.h>
 #include <ViconCGStream/ChannelInfo.h>
+#include <ViconCGStream/DeviceInfo.h>
 #include <ViconCGStream/ForcePlateInfo.h>
 #include <ViconCGStream/ObjectQuality.h>
+#include <ViconCGStream/StreamInfo.h>
+#include <ViconCGStream/SubjectHealth.h>
+#include <ViconCGStream/SubjectInfo.h>
+#include <ViconCGStream/SubjectTopology.h>
 
-#include <ViconCGStream/FrameInfo.h>
-#include <ViconCGStream/HardwareFrameInfo.h>
-#include <ViconCGStream/Timecode.h>
-#include <ViconCGStream/LatencyInfo.h>
-#include <ViconCGStream/Centroids.h>
-#include <ViconCGStream/CentroidTracks.h>
-#include <ViconCGStream/CentroidWeights.h>
-#include <ViconCGStream/LabeledRecons.h>
-#include <ViconCGStream/UnlabeledRecons.h>
-#include <ViconCGStream/LabeledReconRayAssignments.h>
-#include <ViconCGStream/LocalSegments.h>
-#include <ViconCGStream/GlobalSegments.h>
-#include <ViconCGStream/GreyscaleBlobs.h>
-#include <ViconCGStream/EdgePairs.h>
-#include <ViconCGStream/ForceFrame.h>
-#include <ViconCGStream/MomentFrame.h>
-#include <ViconCGStream/CentreOfPressureFrame.h>
-#include <ViconCGStream/VideoFrame.h>
-#include <ViconCGStream/VoltageFrame.h>
+#include <ViconCGStream/ApplicationInfo.h>
 #include <ViconCGStream/CameraWand2d.h>
 #include <ViconCGStream/CameraWand3d.h>
-#include <ViconCGStream/VideoFrame.h>
-#include <ViconCGStream/EyeTrackerInfo.h>
+#include <ViconCGStream/CentreOfPressureFrame.h>
+#include <ViconCGStream/CentroidTracks.h>
+#include <ViconCGStream/CentroidWeights.h>
+#include <ViconCGStream/Centroids.h>
+#include <ViconCGStream/EdgePairs.h>
 #include <ViconCGStream/EyeTrackerFrame.h>
+#include <ViconCGStream/EyeTrackerInfo.h>
 #include <ViconCGStream/Filter.h>
-#include <ViconCGStream/ApplicationInfo.h>
+#include <ViconCGStream/ForceFrame.h>
+#include <ViconCGStream/FrameInfo.h>
 #include <ViconCGStream/FrameRateInfo.h>
+#include <ViconCGStream/GlobalSegments.h>
+#include <ViconCGStream/GreyscaleBlobs.h>
+#include <ViconCGStream/GreyscaleSubsampledBlobs.h>
+#include <ViconCGStream/HardwareFrameInfo.h>
+#include <ViconCGStream/LabeledReconRayAssignments.h>
+#include <ViconCGStream/LabeledRecons.h>
+#include <ViconCGStream/LatencyInfo.h>
+#include <ViconCGStream/LightweightSegments.h>
+#include <ViconCGStream/LocalSegments.h>
+#include <ViconCGStream/MomentFrame.h>
+#include <ViconCGStream/Timecode.h>
+#include <ViconCGStream/UnlabeledRecons.h>
+#include <ViconCGStream/VideoFrame.h>
+#include <ViconCGStream/VoltageFrame.h>
 
-#include <boost/thread/thread.hpp>
-#include <boost/thread/recursive_mutex.hpp>
 #include <boost/optional.hpp>
+#include <boost/thread/recursive_mutex.hpp>
+#include <boost/thread/thread.hpp>
+#include <deque>
 #include <memory>
 #include <string>
-#include <deque>
+#include <chrono>
+#include <fstream>
+
 class VCGStreamReaderWriter;
+class VCGStreamPing;
+class VCGStreamPostalService;
 
 //-------------------------------------------------------------------------------------------------
 
 class VStaticObjects
 {
 public:
-
   ViconCGStream::VStreamInfo m_StreamInfo;
-  boost::optional<ViconCGStream::VApplicationInfo> m_ApplicationInfo;
+  boost::optional< ViconCGStream::VApplicationInfo > m_ApplicationInfo;
 
-  typedef std::vector< ViconCGStream::VCameraInfo >                         TCameraInfo;
-  typedef std::vector< ViconCGStream::VCameraCalibrationInfo >              TCameraCalibrationInfo;
-  typedef std::shared_ptr< ViconCGStream::VCameraCalibrationHealth >        TCameraCalibrationHealth;
-  typedef std::vector< ViconCGStream::VSubjectInfo >                        TSubjectInfo;
-  typedef std::vector< ViconCGStream::VSubjectTopology >                    TSubjectTopology;
-  typedef std::vector< ViconCGStream::VSubjectHealth >                      TSubjectHealth;
-  typedef std::vector< ViconCGStream::VObjectQuality >                      TObjectQuality;
-  typedef std::vector< ViconCGStream::VDeviceInfo >                         TDeviceInfo;
-  typedef std::vector< ViconCGStream::VDeviceInfoExtra >                    TDeviceInfoExtra;
-  typedef std::vector< ViconCGStream::VChannelInfo >                        TChannelInfo;
-  typedef std::vector< ViconCGStream::VChannelInfoExtra >                   TChannelInfoExtra;
-  typedef std::vector< ViconCGStream::VForcePlateInfo >                     TForcePlateInfo;
-  typedef std::vector< ViconCGStream::VEyeTrackerInfo >                     TEyeTrackerInfo;
-  typedef std::map< ViconCGStreamType::UInt32, unsigned int >               TIndexMap;
+  typedef std::vector< ViconCGStream::VCameraInfo > TCameraInfo;
+  typedef std::vector< ViconCGStream::VCameraSensorInfo > TCameraSensorInfo;
+  typedef std::vector< ViconCGStream::VCameraCalibrationInfo > TCameraCalibrationInfo;
+  typedef std::shared_ptr< ViconCGStream::VCameraCalibrationHealth > TCameraCalibrationHealth;
+  typedef std::vector< ViconCGStream::VSubjectInfo > TSubjectInfo;
+  typedef std::vector< ViconCGStream::VSubjectTopology > TSubjectTopology;
+  typedef std::vector< ViconCGStream::VSubjectScale >                       TSubjectScale;
+  typedef std::vector< ViconCGStream::VSubjectHealth > TSubjectHealth;
+  typedef std::vector< ViconCGStream::VObjectQuality > TObjectQuality;
+  typedef std::vector< ViconCGStream::VDeviceInfo > TDeviceInfo;
+  typedef std::vector< ViconCGStream::VDeviceInfoExtra > TDeviceInfoExtra;
+  typedef std::vector< ViconCGStream::VChannelInfo > TChannelInfo;
+  typedef std::vector< ViconCGStream::VChannelInfoExtra > TChannelInfoExtra;
+  typedef std::vector< ViconCGStream::VForcePlateInfo > TForcePlateInfo;
+  typedef std::vector< ViconCGStream::VEyeTrackerInfo > TEyeTrackerInfo;
+  typedef std::map< ViconCGStreamType::UInt32, unsigned int > TIndexMap;
   typedef std::pair< ViconCGStreamType::UInt32, ViconCGStreamType::UInt32 > TNestedIDPair;
-  typedef std::map< TNestedIDPair, unsigned int >                           TNestedIndexMap;
+  typedef std::map< TNestedIDPair, unsigned int > TNestedIndexMap;
 
-  TCameraInfo              m_CameraInfo;
-  TCameraCalibrationInfo   m_CameraCalibrationInfo;
+  TCameraInfo m_CameraInfo;
+  TCameraSensorInfo m_CameraSensorInfo;
+  TCameraCalibrationInfo m_CameraCalibrationInfo;
   TCameraCalibrationHealth m_pCameraCalibrationHealth;
-  TSubjectInfo             m_SubjectInfo;
-  TSubjectTopology         m_SubjectTopology;
-  TSubjectHealth           m_SubjectHealth;
-  TObjectQuality           m_ObjectQuality;
-  TDeviceInfo              m_DeviceInfo;
-  TDeviceInfoExtra         m_DeviceInfoExtra;
-  TChannelInfo             m_ChannelInfo;
-  TChannelInfoExtra        m_ChannelInfoExtra;
-  TForcePlateInfo          m_ForcePlateInfo;
-  TEyeTrackerInfo          m_EyeTrackerInfo;
-  TIndexMap                m_CameraMap;
-  TIndexMap                m_CameraCalibrationMap;
-  TIndexMap                m_SubjectMap;
-  TNestedIndexMap          m_SegmentMap; 
-  TIndexMap                m_DeviceMap;
-  TNestedIndexMap          m_ChannelMap;
+  TSubjectInfo m_SubjectInfo;
+  TSubjectTopology m_SubjectTopology;
+  TSubjectScale            m_SubjectScale;
+  TSubjectHealth m_SubjectHealth;
+  TObjectQuality m_ObjectQuality;
+  TDeviceInfo m_DeviceInfo;
+  TDeviceInfoExtra m_DeviceInfoExtra;
+  TChannelInfo m_ChannelInfo;
+  TChannelInfoExtra m_ChannelInfoExtra;
+  TForcePlateInfo m_ForcePlateInfo;
+  TEyeTrackerInfo m_EyeTrackerInfo;
+  TIndexMap m_CameraMap;
+  TIndexMap m_CameraCalibrationMap;
+  TIndexMap m_SubjectMap;
+  TNestedIndexMap m_SegmentMap;
+  TIndexMap m_DeviceMap;
+  TNestedIndexMap m_ChannelMap;
 
-
-  ViconCGStream::VCameraInfo              & AddCameraInfo();
-  ViconCGStream::VCameraCalibrationInfo   & AddCameraCalibrationInfo();
-  ViconCGStream::VCameraCalibrationHealth & ResetCameraCalibrationHealth();
-  ViconCGStream::VSubjectInfo             & AddSubjectInfo();
-  ViconCGStream::VSubjectTopology         & AddSubjectTopology();
-  ViconCGStream::VSubjectHealth           & AddSubjectHealth();
-  ViconCGStream::VObjectQuality           & AddObjectQuality();
-  ViconCGStream::VDeviceInfo              & AddDeviceInfo();
-  ViconCGStream::VDeviceInfoExtra         & AddDeviceInfoExtra();
-  ViconCGStream::VChannelInfo             & AddChannelInfo();
-  ViconCGStream::VChannelInfoExtra        & AddChannelInfoExtra();
-  ViconCGStream::VForcePlateInfo          & AddForcePlateInfo();
-  ViconCGStream::VEyeTrackerInfo          & AddEyeTrackerInfo();
+  ViconCGStream::VCameraInfo& AddCameraInfo();
+  ViconCGStream::VCameraSensorInfo& AddCameraSensorInfo();
+  ViconCGStream::VCameraCalibrationInfo& AddCameraCalibrationInfo();
+  ViconCGStream::VCameraCalibrationHealth& ResetCameraCalibrationHealth();
+  ViconCGStream::VSubjectInfo& AddSubjectInfo();
+  ViconCGStream::VSubjectTopology& AddSubjectTopology();
+  ViconCGStream::VSubjectScale            & AddSubjectScale();
+  ViconCGStream::VSubjectHealth& AddSubjectHealth();
+  ViconCGStream::VObjectQuality& AddObjectQuality();
+  ViconCGStream::VDeviceInfo& AddDeviceInfo();
+  ViconCGStream::VDeviceInfoExtra& AddDeviceInfoExtra();
+  ViconCGStream::VChannelInfo& AddChannelInfo();
+  ViconCGStream::VChannelInfoExtra& AddChannelInfoExtra();
+  ViconCGStream::VForcePlateInfo& AddForcePlateInfo();
+  ViconCGStream::VEyeTrackerInfo& AddEyeTrackerInfo();
 
   void BuildMaps();
 };
@@ -150,7 +162,6 @@ public:
 class VDynamicObjects
 {
 public:
-
   ViconCGStream::VFrameInfo m_FrameInfo;
   ViconCGStream::VHardwareFrameInfo m_HardwareFrameInfo;
   ViconCGStream::VTimecode m_Timecode;
@@ -165,7 +176,9 @@ public:
   std::vector< ViconCGStream::VCentroidWeights > m_CentroidWeights;
   std::vector< ViconCGStream::VLocalSegments > m_LocalSegments;
   std::vector< ViconCGStream::VGlobalSegments > m_GlobalSegments;
+  std::vector< ViconCGStream::VLightweightSegments > m_LightweightSegments;
   std::vector< ViconCGStream::VGreyscaleBlobs > m_GreyscaleBlobs;
+  std::vector< ViconCGStream::VGreyscaleSubsampledBlobs > m_GreyscaleSubsampledBlobs;
   std::vector< ViconCGStream::VEdgePairs > m_EdgePairs;
   std::vector< ViconCGStream::VForceFrame > m_ForceFrames;
   std::vector< ViconCGStream::VMomentFrame > m_MomentFrames;
@@ -176,21 +189,25 @@ public:
   std::vector< ViconCGStream::VEyeTrackerFrame > m_EyeTrackerFrames;
   std::vector< std::shared_ptr< ViconCGStream::VVideoFrame > > m_VideoFrames;
 
-  ViconCGStream::VCentroids & AddCentroids();
-  ViconCGStream::VCentroidTracks & AddCentroidTracks();
-  ViconCGStream::VCentroidWeights & AddCentroidWeights();
-  ViconCGStream::VLocalSegments & AddLocalSegments();
-  ViconCGStream::VGlobalSegments & AddGlobalSegments();
-  ViconCGStream::VGreyscaleBlobs & AddGreyscaleBlobs();
-  ViconCGStream::VEdgePairs & AddEdgePairs();
-  ViconCGStream::VForceFrame & AddForceFrame();
-  ViconCGStream::VMomentFrame & AddMomentFrame();
-  ViconCGStream::VCentreOfPressureFrame & AddCentreOfPressureFrame();
-  ViconCGStream::VVoltageFrame & AddVoltageFrame();
-  ViconCGStream::VCameraWand2d & AddCameraWand2d();
-  ViconCGStream::VCameraWand3d & AddCameraWand3d();
-  ViconCGStream::VEyeTrackerFrame & AddEyeTrackerFrame();
-  ViconCGStream::VVideoFrame & AddVideoFrame();
+  ViconCGStream::VCentroids& AddCentroids();
+  ViconCGStream::VCentroidTracks& AddCentroidTracks();
+  ViconCGStream::VCentroidWeights& AddCentroidWeights();
+  ViconCGStream::VLocalSegments& AddLocalSegments();
+  ViconCGStream::VGlobalSegments& AddGlobalSegments();
+  ViconCGStream::VLightweightSegments& AddLightweightSegments();
+  ViconCGStream::VGreyscaleBlobs& AddGreyscaleBlobs();
+  ViconCGStream::VGreyscaleSubsampledBlobs& AddGreyscaleSubsampledBlobs();
+  ViconCGStream::VEdgePairs& AddEdgePairs();
+  ViconCGStream::VForceFrame& AddForceFrame();
+  ViconCGStream::VMomentFrame& AddMomentFrame();
+  ViconCGStream::VCentreOfPressureFrame& AddCentreOfPressureFrame();
+  ViconCGStream::VVoltageFrame& AddVoltageFrame();
+  ViconCGStream::VCameraWand2d& AddCameraWand2d();
+  ViconCGStream::VCameraWand3d& AddCameraWand3d();
+  ViconCGStream::VEyeTrackerFrame& AddEyeTrackerFrame();
+  ViconCGStream::VVideoFrame& AddVideoFrame();
+
+  void AddNetworkLatencyInfo( double i_Value );
 };
 
 //-------------------------------------------------------------------------------------------------
@@ -198,49 +215,61 @@ public:
 class VViconCGStreamClient
 {
 public:
-
   VViconCGStreamClient( std::weak_ptr< IViconCGStreamClientCallback > i_pCallback );
   ~VViconCGStreamClient();
-  
-  void Connect( const std::string & i_rHost, unsigned short i_Port );
+
+  void Connect( const std::string& i_rHost, unsigned short i_Port );
   void Disconnect();
   void ReceiveMulticastData( std::string i_MulticastIPAddress, std::string i_LocalIPAddress, unsigned short i_Port );
-  void StopReceivingMulticastData( );
+  void StopReceivingMulticastData();
 
   void SetStreaming( bool i_bStreaming );
-  void SetRequiredObjects( std::set< ViconCGStreamType::Enum > & i_rRequiredObjects );
-  void SetApexDeviceFeedback( const std::set< unsigned int > &i_rDeviceList );
+  void SetRequiredObjects( std::set< ViconCGStreamType::Enum >& i_rRequiredObjects );
+  void SetApexDeviceFeedback( const std::set< unsigned int >& i_rDeviceList );
   void SetServerToTransmitMulticast( std::string i_MulticastIPAddress, std::string i_ServerIPAddress, unsigned short i_Port );
-  void StopMulticastTransmission( );
-  void SetFilter( const ViconCGStream::VFilter & i_rFilter );
+  void StopMulticastTransmission();
+  void SetFilter( const ViconCGStream::VFilter& i_rFilter );
+  void SendPing();
+  void RequestFrame();
+  void RequestNextFrame();
 
-  enum EVideoHint { EPassThrough, EDecode };
+  // Returns whether the object type is supported by the server
+  bool ObjectIsSupported( const ViconCGStreamType::Enum & i_rObjectType );
+
+  enum EVideoHint
+  {
+    EPassThrough,
+    EDecode
+  };
   void SetVideoHint( EVideoHint i_VideoHint );
-
-  bool NetworkLatency( double & o_rLatency ) const;
+  bool SetTimingLogFile( const std::string & i_rFilename );
+  std::string HostName() const;
 
 protected:
-
   void ClientThread();
-  void Run();
 
+  bool ReadObjectEnums( VCGStreamReaderWriter& i_rReaderWriter );
+  bool WriteObjects( VCGStreamReaderWriter& i_rReaderWriter );
+  bool ReadObjects( VCGStreamReaderWriter& i_rReaderWriter );
 
-  bool ReadObjectEnums( VCGStreamReaderWriter & i_rReaderWriter );
-  bool WriteObjects( VCGStreamReaderWriter & i_rReaderWriter );
-  bool ReadObjects( VCGStreamReaderWriter & i_rReaderWriter );
+  void CopyObjects( const ViconCGStream::VContents& i_rContents, const VStaticObjects& i_rStaticObjects, VStaticObjects& o_rStaticObjects ) const;
+  void CopyObjects( const ViconCGStream::VContents& i_rContents, const VDynamicObjects& i_rDynamicObjects, VDynamicObjects& o_rDynamicObjects ) const;
 
-  void CopyObjects( const ViconCGStream::VContents & i_rContents, const VStaticObjects & i_rStaticObjects, VStaticObjects & o_rStaticObjects ) const;
-  void CopyObjects( const ViconCGStream::VContents & i_rContents, const VDynamicObjects & i_rDynamicObjects, VDynamicObjects & o_rDynamicObjects ) const;
-  
-  void DecodeVideo( ViconCGStream::VVideoFrame & io_rVideoFrame );
+  void DecodeVideo( ViconCGStream::VVideoFrame& io_rVideoFrame );
 
   void OnConnect() const;
   void OnStaticObjects( std::shared_ptr< const VStaticObjects > i_pStaticObjects ) const;
   void OnDynamicObjects( std::shared_ptr< const VDynamicObjects > i_pDynamicObjects ) const;
   void OnDisconnect() const;
-  
-  boost::asio::ip::address_v4 FirstV4AddressFromString( const std::string & i_rAddress );
-  
+
+  bool CalculateNetworkLatency( double& o_rValue );
+  void TimingLogFunction( const unsigned int i_FrameNumber, const double i_rTimestamp );
+  void CloseLog();
+
+  boost::asio::ip::address_v4 FirstV4AddressFromString( const std::string& i_rAddress );
+
+  std::shared_ptr< VCGStreamPing > m_pPingMonitor;
+
   std::weak_ptr< IViconCGStreamClientCallback > m_pCallback;
 
   boost::asio::io_service m_Service;
@@ -255,16 +284,24 @@ protected:
 
   ViconCGStream::VObjectEnums m_ServerObjects;
   ViconCGStream::VObjectEnums m_RequiredObjects;
-  ViconCGStream::VFilter      m_Filter;
+  ViconCGStream::VFilter m_Filter;
   bool m_bEnumsChanged;
-  bool m_bStreamingChanged;
   bool m_bStreaming;
   bool m_bHapticChanged;
   bool m_bFilterChanged;
+  bool m_bPingChanged;
+  bool m_bRequestChanged;
+
+  ViconCGStreamType::UInt64 m_PingID;
+  std::map< ViconCGStreamType::UInt64, std::chrono::time_point< std::chrono::high_resolution_clock > > m_PingsSent;
+  std::deque< double > m_PingRoundTrips;
 
   EVideoHint m_VideoHint;
   std::vector< unsigned char > m_ScratchVideo;
   std::set< unsigned int > m_OnDeviceList;
 
-  std::vector< double > m_GetFrameTimes;
+  std::shared_ptr< VCGStreamPostalService > m_pPostalService;
+  std::ofstream m_TimingLog;
+  boost::mutex m_LogMutex;
+  std::string m_HostName;
 };

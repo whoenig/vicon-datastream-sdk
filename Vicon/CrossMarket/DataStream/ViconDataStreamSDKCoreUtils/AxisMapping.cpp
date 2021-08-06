@@ -80,15 +80,15 @@ AxisMappingResult::Enum VAxisMapping::SetAxisMapping( const Direction::Enum i_XA
 
   // Check that they do not specify a left handed co-ordinate system
   {
-    boost::array< double, 3 > XAxis;
+    std::array< double, 3 > XAxis;
     std::fill( XAxis.begin(), XAxis.end(), 0.0 );
     XAxis[ ComponentIndex( i_XAxis ) ] = ComponentSign( i_XAxis );
 
-    boost::array< double, 3 > YAxis;
+    std::array< double, 3 > YAxis;
     std::fill( YAxis.begin(), YAxis.end(), 0.0 );
     YAxis[ ComponentIndex( i_YAxis ) ] = ComponentSign( i_YAxis );
 
-    boost::array< double, 3 > ZAxis;
+    std::array< double, 3 > ZAxis;
     std::fill( ZAxis.begin(), ZAxis.end(), 0.0 );
     ZAxis[ ComponentIndex( i_ZAxis ) ] = ComponentSign( i_ZAxis );
 
@@ -122,21 +122,21 @@ void VAxisMapping::GetAxisMapping( Direction::Enum & o_rXAxis, Direction::Enum &
 
 void VAxisMapping::CopyAndTransformT( const double i_Translation[ 3 ], double ( & io_Translation )[ 3 ] ) const
 {
-  boost::array< double, 9 > Tm;
+  std::array< double, 9 > Tm;
   std::copy( m_Transform, m_Transform + 9, Tm.begin() );
-  boost::array< double, 3 > T;
+  std::array< double, 3 > T;
   std::copy( i_Translation, i_Translation + 3, T.begin() );
-  boost::array< double, 3 > Result = Tm * T;
+  std::array< double, 3 > Result = Tm * T;
   std::copy( Result.begin(), Result.end(), &io_Translation[0] );
 }
 
 void VAxisMapping::CopyAndTransformR( const double i_Rotation[ 9 ], double ( & io_Rotation )[ 9 ] ) const
 {
-  boost::array< double, 9 > R;
+  std::array< double, 9 > R;
   std::copy( i_Rotation, i_Rotation+9, R.begin() );
-  boost::array< double, 9 > T;
+  std::array< double, 9 > T;
   std::copy( m_Transform, m_Transform+9, T.begin() );
-  boost::array< double, 9 > Result = T * R * Transpose( T );
+  std::array< double, 9 > Result = T * R * Transpose( T );
   std::copy(Result.begin(), Result.end(), &io_Rotation[0] );
 }
 
@@ -152,26 +152,26 @@ void VAxisMapping::CopyAndTransformR( const double i_Rotation[ 9 ], double ( & i
 
 void VAxisMapping::CopyAndTransformT( const double i_Translation[3], const double i_Orientation[9], double( &io_Translation )[3] ) const
 {
-  boost::array< double, 9 > Q;
+  std::array< double, 9 > Q;
   std::copy( i_Orientation, i_Orientation + 9, Q.begin() );
-  boost::array< double, 9 > Tm;
+  std::array< double, 9 > Tm;
   std::copy( m_Transform, m_Transform + 9, Tm.begin() );
-  boost::array< double, 3 > T;
+  std::array< double, 3 > T;
   std::copy( i_Translation, i_Translation + 3, T.begin() );
-  boost::array< double, 3 > Result =  Tm * Transpose( Q ) * T;
+  std::array< double, 3 > Result =  Tm * Transpose( Q ) * T;
   std::copy( Result.begin(), Result.end(), &io_Translation[0] );
 }
 
 
 void VAxisMapping::CopyAndTransformR( const double i_Rotation[9], const double i_Orientation[9], double( &io_Rotation )[9] ) const
 {
-  boost::array< double, 9 > Q;
+  std::array< double, 9 > Q;
   std::copy( i_Orientation, i_Orientation + 9, Q.begin() );
-  boost::array< double, 9 > R;
+  std::array< double, 9 > R;
   std::copy( i_Rotation, i_Rotation + 9, R.begin() );
-  boost::array< double, 9 > T;
+  std::array< double, 9 > T;
   std::copy( m_Transform, m_Transform + 9, T.begin() );
-  boost::array< double, 9 > Result = T * Transpose( Q ) * R  * Q * Transpose( T ) ;
+  std::array< double, 9 > Result = T * Transpose( Q ) * R  * Q * Transpose( T ) ;
   std::copy( Result.begin(), Result.end(), &io_Rotation[0] );
 }
 

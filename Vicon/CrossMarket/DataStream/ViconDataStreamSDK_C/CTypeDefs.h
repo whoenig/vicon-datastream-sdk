@@ -41,6 +41,7 @@ typedef struct COutput_GetVersion
   unsigned int Major;
   unsigned int Minor;
   unsigned int Point;
+  unsigned int Revision;
 } COutput_GetVersion;
 
 /** @private */
@@ -183,6 +184,7 @@ typedef struct COutput_GetFrame
   CEnum Result;
 } COutput_GetFrame;
 
+
 /** @private */
 typedef struct COutput_GetFrameNumber
 {
@@ -288,6 +290,13 @@ typedef struct COutput_GetSegmentStaticRotationEulerXYZ
   CEnum Result;
   double       Rotation[3];
 } COutput_GetSegmentStaticRotationEulerXYZ;
+
+/** @private */
+typedef struct COutput_GetSegmentStaticScale
+{
+  CEnum Result;
+  double       Scale[3];
+} COutput_GetSegmentStaticScale;
 
 /** @private */
 typedef struct COutput_GetSegmentGlobalTranslation
@@ -396,6 +405,7 @@ typedef struct COutput_GetUnlabeledMarkerGlobalTranslation
 {
   CEnum Result;
   double       Translation[3];
+  unsigned int MarkerID;
 } COutput_GetUnlabeledMarkerGlobalTranslation;
 
 /** @private */
@@ -610,6 +620,7 @@ typedef struct COutput_GetLabeledMarkerGlobalTranslation
 {
   CEnum Result;
   double       Translation[3];
+  unsigned int MarkerID;
 } COutput_GetLabeledMarkerGlobalTranslation;
 
 /** @private */
@@ -742,7 +753,11 @@ typedef enum
   LeftHandedAxes, /**< The directions passed to SetAxisMapping() would result in a left-handed coordinate system. This is not supported in the SDK.*/
   HapticAlreadySet, /**< Haptic feedback is already set.*/
   EarlyDataRequested, /**< Re-timed data requested is from before the first time sample we still have. */
-  LateDataRequested /**< Re-timed data requested is too far into the future to be predicted. */
+  LateDataRequested, /**< Re-timed data requested is too far into the future to be predicted. */
+  InvalidOperation, /**< The method called is not valid in the current mode of operation */
+  NotSupported, /**< The SDK version or operating system does not support this function. */
+  ConfigurationFailed, /**< The operating system configuration changed failed. */
+  NotPresent /**< The requested data type is not present in the stream. */
 } CResult;
 
 #pragma pack(pop)

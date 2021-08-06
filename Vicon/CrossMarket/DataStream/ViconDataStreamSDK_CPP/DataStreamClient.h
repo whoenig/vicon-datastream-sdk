@@ -52,6 +52,8 @@ namespace CPP
     unsigned short m_Width;
     unsigned short m_Height;
     unsigned int m_Format;
+    unsigned int m_OffsetX;
+    unsigned int m_OffsetY;
     std::shared_ptr< std::vector< unsigned char > > m_Data;
   };
 
@@ -94,19 +96,21 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      %% The MATLAB SDK is object oriented, and needs to be explicitly loaded
-    ///      and unloaded.
-    ///      
-    ///      Client.LoadViconDataStreamSDK();
-    ///      pHeapClient = Client();
-    ///      Output = pHeapClient.SomeFunction(Input);
-    ///      Client.UnloadViconDataStreamSDK();
+    ///      %% MATLAB uses the .NET SDK.
+    ///
+    ///      dssdkAssembly = which('ViconDataStreamSDK_DotNET.dll');
+    ///      NET.addAssembly(dssdkAssembly);
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.SomeFunction( Input );
+    ///
+    ///      %% There is no method to unload the assembly. Restart MATLAB to free up.
+    ///      %% https://uk.mathworks.com/matlabcentral/answers/71198-net-assembly-unload-conundrum
     ///      
     /// .NET example
     ///      
     ///      ///.NET is object oriented, so use the class constructor. Because objects are
     ///      // lazily garbage collected, your instance may outlive the last reference to it
-    ///      // for some time.If the instance is pre - fetching frame data for you, then it
+    ///      // for some time.If the instance is pre-fetching frame data for you, then it
     ///      // can still use CPU and network bandwidth.Consider explicitly disconnecting
     ///      // prior to destruction.
     ///      
@@ -155,7 +159,7 @@ namespace CPP
     /// MATLAB example
     ///      
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      Output = MyClient.GetVersion();
     ///      
     ///      
@@ -177,6 +181,9 @@ namespace CPP
     /// The function defaults to connecting on port 801. 
     /// You can specify an alternate port number after a colon.
     /// This is for future compatibility: current products serve data on port 801 only.
+    ///
+    /// Additional clients can be added separated with a semicolon ';'.  These are
+    /// used in combination to reduce temporal jitter.
     /// 
     ///
     /// C example
@@ -192,7 +199,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      Output = MyClient.Connect('locahost:801');
     ///      
     /// .NET example
@@ -239,7 +246,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      Output = MyClient.ConnectToMulticast('locahost', '224.0.0.0');
     ///      
     /// .NET example
@@ -289,7 +296,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect("localhost");
     ///      Output = MyClient.Disconnect()
     ///      
@@ -334,7 +341,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      Output_IsConnected Output = MyClient.IsConnected()
     ///      // Output.Connected == false
     ///      MyClient.Connect( "localhost" );
@@ -380,7 +387,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.StartTransmittingMulticast( "10.0.0.1", "224.0.0.0" );
     ///      
@@ -431,7 +438,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.StartTransmittingMulticast( "10.0.0.1", "224.0.0.0" );
     ///      // Do some stuff
@@ -473,7 +480,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Output_EnableSegmentData Output = MyClient.EnableSegmentData();
     ///      
@@ -488,6 +495,48 @@ namespace CPP
     ///           + Success
     ///           + NotConnected
     Output_EnableSegmentData         EnableSegmentData();
+
+    /// Enable a lightweight transmission protocol for kinematic segment data in the Vicon DataStream. 
+    /// This will reduce the network bandwidth required to transmit segment data to approximately a quarter of that required by the 
+    /// previous method, at the expense of a small amount of precision.
+    /// Use the existing methods such as GetSegmentGlobalTranslation() and GetSegmentGlobalRotationMatrix() as usual to obtain the segment data.
+    /// Calling this method will automatically disable all other configurable output types. These may be re-enabled after the call if required.
+    ///
+    /// Call this function on startup, after connecting to the server, and before trying to read local or global segment data.
+    ///
+    /// See Also: IsSegmentDataEnabled(), DisableSegmentData(), EnableMarkerData(), EnableUnlabeledMarkerData(), EnableDeviceData(), GetSegmentCount(), GetSegmentName(), GetSegmentGlobalTranslation(), GetSegmentGlobalRotationEulerXYZ(), GetSegmentLocalTranslation(), GetSegmentLocalRotationEulerXYZ()
+    ///
+    ///
+    /// C example
+    ///      
+    ///      CClient * pClient = Client_Create();
+    ///      Client_Connect( pClient, "localhost" );
+    ///      Client_EnableLightweightSegmentData();
+    ///      Client_Destroy( pClient );
+    ///      
+    /// C++ example
+    ///      
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.Connect( "localhost" );
+    ///      Output_EnableLightweightSegmentData Output = MyClient.EnableLightweightSegmentData();
+    ///      
+    /// MATLAB example
+    ///      
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      Output_EnableLightweightSegmentData Output = MyClient.EnableLightweightSegmentData();
+    ///      
+    /// .NET example
+    ///      
+    ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      Output_EnableLightweightSegmentData Output = MyClient.EnableLightweightSegmentData();
+    /// -----
+    /// \return An Output_EnableSegmentData class containing the result of the operation.
+    ///         - The Result will be:
+    ///           + Success
+    ///           + NotConnected
+    Output_EnableLightweightSegmentData         EnableLightweightSegmentData();
 
     /// Enable labeled reconstructed marker data in the Vicon DataStream. 
     /// Call this function on startup, after connecting to the server, and before trying to read labeled marker data.
@@ -510,7 +559,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Output_EnableMarkerData Output = MyClient.EnableMarkerData();
     ///      
@@ -547,7 +596,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Output_EnableUnlabeledMarkerData Output = MyClient.EnableUnlabeledMarkerData();
     ///      
@@ -583,7 +632,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.EnableMarkerRayData();
     ///      
@@ -623,7 +672,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.EnableDeviceData();
     ///      
@@ -660,15 +709,15 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      Output = MyClient.EnableCentroidData ();
+    ///      Output = MyClient.EnableCentroidData();
     ///      
     /// .NET example
     ///      
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      Output_EnableCentroidData Output = MyClient.EnableCentroidData ();
+    ///      Output_EnableCentroidData Output = MyClient.EnableCentroidData();
     /// -----
     /// \return An Output_EnableCentroidData class containing the result of the operation.
     ///         - The Result will be:
@@ -741,7 +790,7 @@ namespace CPP
     Output_EnableVideoData       EnableVideoData();
 
     /// Enable debug data in the Vicon DataStream.
-    /// Call this function on startup, after connecting to the server in order to receive debug data.
+    /// In order to receive debug data, call this function on startup, after connecting to the server.
     ///
     /// See Also: IsDebugDataEnabled(), DisableDebugData()
     ///
@@ -761,7 +810,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.EnableDebugData ();
     ///      
@@ -798,7 +847,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.DisableSegmentData ();
     ///      
@@ -813,6 +862,44 @@ namespace CPP
     ///           + Success
     ///           + NotConnected
     Output_DisableSegmentData         DisableSegmentData();
+
+    /// Disable the lightweight output mode for kinematic segment data in the Vicon DataStream.
+    /// Calling this mode does not automatically enable any other data types.
+    ///
+    /// See Also: IsSegmentDataEnabled(), EnableSegmentData(), EnableMarkerData(), EnableUnlabeledMarkerData(), EnableDeviceData(), GetSegmentCount(), GetSegmentName(), GetSegmentGlobalTranslation(), GetSegmentGlobalRotationEulerXYZ(), GetSegmentLocalTranslation(), GetSegmentLocalRotationEulerXYZ()
+    ///
+    ///
+    ///
+    /// C example
+    ///      
+    ///      CClient * pClient = Client_Create();
+    ///      Client_Connect( pClient, "localhost" );
+    ///      Client_DisableLightweightSegmentData();
+    ///      Client_Destroy( pClient );
+    ///      
+    /// C++ example
+    ///      
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.Connect( "localhost" );
+    ///      Output_DisableLightweightSegmentData Output = MyClient.DisableLightweightSegmentData();
+    ///      
+    /// MATLAB example
+    ///      
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      Output = MyClient.DisableLightweightSegmentData ();
+    ///      
+    /// .NET example
+    ///      
+    ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      Output_DisableLightweightSegmentData Output = MyClient.DisableLightweightSegmentData ();
+    /// -----
+    /// \return An Output_DisableLightweightSegmentData class containing the result of the operation.
+    ///         - The Result will be:
+    ///           + Success
+    ///           + NotConnected
+    Output_DisableLightweightSegmentData         DisableLightweightSegmentData();
 
     /// Disable labeled reconstructed marker data in the Vicon DataStream.
     ///
@@ -834,7 +921,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.DisableMarkerData ();
     ///      
@@ -870,7 +957,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.DisableUnlabeledMarkerData ();
     ///      
@@ -886,7 +973,7 @@ namespace CPP
     ///           + NotConnected
     Output_DisableUnlabeledMarkerData DisableUnlabeledMarkerData();
 
-    ///  Disable unlabeled reconstructed marker data in the Vicon DataStream.
+    ///  Disable ray contribution data for markers in the Vicon DataStream.
     ///
     ///  See Also: IsMarkerRayDataEnabled(), EnableMarkerRayData(), EnableSegmentData(), EnableMarkerData(), EnableDeviceData(), GetUnlabeledMarkerCount(), GetUnlabeledMarkerGlobalTranslation()
     ///
@@ -906,7 +993,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.DisableMarkerRayData ();
     ///      
@@ -942,7 +1029,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.DisableDeviceData ();
     ///      
@@ -978,7 +1065,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.DisableCentroidData ();
     ///      
@@ -1078,7 +1165,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.DisableDebugData ();
     ///      
@@ -1124,7 +1211,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.IsSegmentDataEnabled(); % Output.Enabled == false
     ///      MyClient.EnableSegmentData();
@@ -1144,6 +1231,55 @@ namespace CPP
     ///         - The Result will be:
     ///           + Whether the data is enabled
     Output_IsSegmentDataEnabled         IsSegmentDataEnabled() const;
+
+    /// Return whether the lightweight transport mode for kinematic segment data is enabled in the Vicon DataStream.
+    ///
+    /// See Also: EnableSegmentData(), DisableSegmentData(), IsMarkerDataEnabled(), IsUnlabeledMarkerDataEnabled(), IsDeviceDataEnabled()
+    ///
+    ///
+    /// C example
+    ///      
+    ///      CClient * pClient = Client_Create();
+    ///      Client_Connect( pClient, "localhost" );
+    ///      CBool Output = Client_IsLightweightSegmentDataEnabled( pClient )
+    ///      // Output == 0
+    ///      Client_EnabledSegmentData( pClient );
+    ///      CBool Output = Client_IsLightweightSegmentDataEnabled( pClient )
+    ///      // Output == 1
+    ///      Client_Destroy( pClient );
+    ///      
+    /// C++ example
+    ///      
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.Connect( "localhost" );
+    ///      Output_IsLightweightSegmentDataEnabled Output = MyClient.IsLightweightSegmentDataEnabled();
+    ///      // Output.Enabled == false
+    ///      MyClient.EnableSegmentData();
+    ///      Output_IsLightweightSegmentDataEnabled Output = MyClient.IsLightweightSegmentDataEnabled();
+    ///      // Output.Enabled == true
+    ///      
+    /// MATLAB example
+    ///      
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      Output = MyClient.IsLightweightSegmentDataEnabled(); % Output.Enabled == false
+    ///      MyClient.EnableSegmentData();
+    ///      Output = MyClient.IsLightweightSegmentDataEnabled(); % Output.Enabled == true
+    ///      
+    /// .NET example
+    ///      
+    ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      Output_IsLightweightSegmentDataEnabled Output = MyClient.IsLightweightSegmentDataEnabled();
+    ///      // Output.Enabled == false
+    ///      MyClient.EnableSegmentData();
+    ///      Output_IsLightweightSegmentDataEnabled Output = MyClient.IsLightweightSegmentDataEnabled();
+    ///      // Output.Enabled == true
+    /// -----
+    /// \return An Output_IsLightweightSegmentDataEnabled class containing the result of the operation.
+    ///         - The Result will be:
+    ///           + Whether the data is enabled
+    Output_IsLightweightSegmentDataEnabled         IsLightweightSegmentDataEnabled() const;
 
     /// Return whether labeled reconstructed marker data is enabled in the DataStream.
     ///
@@ -1173,7 +1309,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.IsMarkerDataEnabled(); % Output.Enabled == false
     ///      MyClient.EnableMarkerData();
@@ -1223,7 +1359,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.IsUnlabeledMarkerDataEnabled(); % Output.Enabled == false
     ///      MyClient.EnableUnlabeledMarkerData();
@@ -1273,7 +1409,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.IsMarkerRayDataEnabled(); % Output.Enabled == false
     ///      MyClient.EnableMarkerRayData();
@@ -1323,7 +1459,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.IsDeviceDataEnabled(); % Output.Enabled == false
     ///      MyClient.EnableDeviceData();
@@ -1370,11 +1506,11 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      Output = MyClient.IsCentroidDataEnabled (); % Output.Enabled == false
+    ///      Output = MyClient.IsCentroidDataEnabled(); % Output.Enabled == false
     ///      MyClient.EnableCentroidData();
-    ///      Output = MyClient.IsCentroidDataEnabled (); % Output.Enabled == true
+    ///      Output = MyClient.IsCentroidDataEnabled(); % Output.Enabled == true
     ///      
     /// .NET example
     ///      
@@ -1537,7 +1673,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.SetBufferSize( 5 );
     ///      
@@ -1602,11 +1738,11 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( 'localhost' );
-    ///      MyClient.SetStreamMode( StreamMode.ServerPush );
-    ///      MyClient.SetStreamMode( StreamMode.ClientPull );
-    ///      MyClient.SetStreamMode( StreamMode.ClientPullPreFetch );
+    ///      MyClient.SetStreamMode( ViconDataStreamSDK.DotNET.StreamMode.ServerPush );
+    ///      MyClient.SetStreamMode( ViconDataStreamSDK.DotNET.StreamMode.ClientPull );
+    ///      MyClient.SetStreamMode( ViconDataStreamSDK.DotNET.StreamMode.ClientPullPreFetch );
     ///      
     /// .NET example
     ///      
@@ -1691,8 +1827,8 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
-    ///      MyClient.SetAxisMapping( Direction.Forward, Direction.Left, Direction.Up );
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.SetAxisMapping( ViconDataStreamSDK.DotNET.Direction.Forward, ViconDataStreamSDK.DotNET.Direction.Left, ViconDataStreamSDK.DotNET.Direction.Up );
     ///      
     /// .NET example
     ///      
@@ -1738,11 +1874,11 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      Output = MyClient.GetAxisMapping();
-    ///      % Output.XAxis == Direction.Forward
-    ///      % Output.YAxis == Direction.Left
-    ///      % Output.ZAxis == Direction.Up
+    ///      % Output.XAxis == ViconDataStreamSDK.DotNET.Direction.Forward
+    ///      % Output.YAxis == ViconDataStreamSDK.DotNET.Direction.Left
+    ///      % Output.ZAxis == ViconDataStreamSDK.DotNET.Direction.Up
     ///      
     /// .NET example
     ///      
@@ -1783,7 +1919,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      Output = MyClient.GetFrame(); // Output.Result == NotConnected
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.GetFrame(); // Output.Result == Success
@@ -1829,7 +1965,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.GetFrameNumber(); % Output.Result == NoFrame
     ///      % Output.FrameNumber == 0
@@ -1880,7 +2016,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.GetFrame();
     ///      Output = MyClient.GetTimecode();
@@ -1932,7 +2068,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.GetFrame();
     ///      Output = MyClient.GetFrameRate ();
@@ -1974,7 +2110,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( 'localhost' );
     ///      MyClient.GetFrame();
     ///      Output = MyClient.GetLatencySampleCount();
@@ -2018,10 +2154,10 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( 'localhost' );
     ///      MyClient.GetFrame();
-    ///      Output = MyClient.GetLatencySampleName( 1 );
+    ///      Output = MyClient.GetLatencySampleName( 0 );
     ///      % Output.Name == 'Data Collected'
     ///      
     /// .NET example
@@ -2067,7 +2203,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( 'localhost' );
     ///      MyClient.GetFrame();
     ///      Output = MyClient.GetLatencySampleValue( 'Data Collected' );
@@ -2115,7 +2251,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( 'localhost' );
     ///      MyClient.GetFrame();
     ///      Output = MyClient.GetLatencyTotal();
@@ -2159,6 +2295,10 @@ namespace CPP
     ///      
     /// Not implemented
     ///      
+    ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.GetFrame();
+    ///      Output_GetHardwareFrameNumber Output = MyClient.GetHardwareFrameNumber();
     ///      
     /// .NET example
     ///      
@@ -2197,7 +2337,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( 'localhost' );
     ///      MyClient.GetFrame();
     ///      Output = MyClient.GetFrameRateCount();
@@ -2245,10 +2385,10 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( 'localhost' );
     ///      MyClient.GetFrame();
-    ///      Output = MyClient.GetFrameRateName( 1 );
+    ///      Output = MyClient.GetFrameRateName( 0 );
     ///      % Output.Name = 'name'
     ///      
     /// .NET example
@@ -2299,10 +2439,10 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( 'localhost' );
     ///      MyClient.GetFrame();
-    ///      Output = MyClient.GetFrameRateName( 1 );
+    ///      Output = MyClient.GetFrameRateName( 0 );
     ///      ValueOutput = MyClient.GetFrameRateValue( Output.Name );
     ///      % Output.Value = '200'
     ///      
@@ -2354,7 +2494,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( 'localhost' );
     ///      Output = MyClient.GetSubjectCount(); % Output.Result == NoFrame
     ///      % Output.SubjectCount == 0
@@ -2429,11 +2569,11 @@ namespace CPP
     ///      MyClient.GetFrame();
     ///      OutputGSC = MyClient.GetSubjectCount(); % OutputGSC.Result == Success
     ///      % OutputGSC.SubjectCount == 2
-    ///      OutputGSN = MyClient.GetSubjectName(1); % OutputGSN.Result == Success
+    ///      OutputGSN = MyClient.GetSubjectName(0); % OutputGSN.Result == Success
     ///      % OutputGSN.SubjectName == 'Al'
-    ///      OutputGSN = MyClient.GetSubjectName(2); % OutputGSN.Result == Success
+    ///      OutputGSN = MyClient.GetSubjectName(1); % OutputGSN.Result == Success
     ///      % OutputGSN .SubjectName == 'Bob'
-    ///      OutputGSN = MyClient.GetSubjectName(3); % OutputGSN.Result == InvalidIndex
+    ///      OutputGSN = MyClient.GetSubjectName(2); % OutputGSN.Result == InvalidIndex
     ///      % OutputGSN.SubjectName == ''
     ///      
     /// .NET example
@@ -2493,7 +2633,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableSegmentData();
     ///      MyClient.GetFrame();
@@ -2561,7 +2701,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.EnableSegmentData();
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.GetSegmentCount( "Bob" ); % Output.Result == NoFrame
@@ -2627,12 +2767,12 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableSegmentData();
     ///      MyClient.GetFrame();
-    ///      % SegmentIndex must be between 1 and GetSegmentCount()
-    ///      Output = MyClient.GetSegmentName( "Bob", 1 );
+    ///      % SegmentIndex must be between 0 and GetSegmentCount() - 1
+    ///      Output = MyClient.GetSegmentName( "Bob", 0 );
     ///      
     /// .NET example
     ///      
@@ -2655,7 +2795,7 @@ namespace CPP
     ///           + InvalidSubjectName
     Output_GetSegmentName GetSegmentName( const String       & SubjectName,
                                           const unsigned int   SegmentIndex ) const;
-    /// Return the number of child segment for a specified subject segment. This can be passed into segment functions.
+    /// Return the number of child segments for a specified subject segment. This can be passed into segment functions.
     ///
     /// See Also: GetSegmentCount()
     ///
@@ -2708,23 +2848,23 @@ namespace CPP
     /// MATLAB example
     ///      
     ///      A valid Segment Index is between 1 and GetSegmentChildCount()
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableSegmentData();
     ///      MyClient.GetFrame();
     ///      OutputGSCC = MyClient.GetSegmentChildCount( "Bob", "Pelvis" );
     ///      % OutputGSCC.Result == Success
     ///      % OutputGSCC.SegmentCount == 2
-    ///      OutputGSCN = MyClient.GetSegmentChildName( "Alice", "Pelvis", 1 );
+    ///      OutputGSCN = MyClient.GetSegmentChildName( "Alice", "Pelvis", 0 );
     ///      % OutputGSCN.Result == InvalidSubjectName
     ///      % OutputGSCN.SegmentName == ""
-    ///      OutputGSCN = MyClient.GetSegmentChildName( "Bob", "Pelvis", 1 );
+    ///      OutputGSCN = MyClient.GetSegmentChildName( "Bob", "Pelvis", 0 );
     ///      % OutputGSCN.Result == Success
     ///      % OutputGSCN.SegmentName == "LFemur"
-    ///      OutputGSCN = MyClient.GetSegmentChildName( "Bob", "Pelvis", 2 );
+    ///      OutputGSCN = MyClient.GetSegmentChildName( "Bob", "Pelvis", 1 );
     ///      % OutputGSCN.Result == Success
     ///      % OutputGSCN.SegmentName == "RFemur"
-    ///      OutputGSCN = MyClient.GetSegmentChildName( "Bob", "Pelvis", 3 );
+    ///      OutputGSCN = MyClient.GetSegmentChildName( "Bob", "Pelvis", 2 );
     ///      % OutputGSCN.Result == InvalidIndex
     ///      % OutputGSCN.SegmentName == ""
     ///      % (no third segment)
@@ -2795,12 +2935,12 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableSegmentData();
     ///      MyClient.GetFrame();
-    ///      // Segment index must be between 1 and GetSegmentChildCount()
-    ///      Output = MyClient.GetSegmentChildName( "Bob", "Pelvis", 1 );
+    ///      // Segment index must be between 0 and GetSegmentChildCount()
+    ///      Output = MyClient.GetSegmentChildName( "Bob", "Pelvis", 0 );
     ///      
     /// .NET example
     ///      
@@ -2864,7 +3004,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableSegmentData();
     ///      MyClient.GetFrame();
@@ -2932,7 +3072,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableSegmentData();
     ///      MyClient.GetFrame();
@@ -2989,7 +3129,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.GetFrame();
     ///      Output = MyClient.GetSegmentStaticRotationHelical( "Alice", "Pelvis" );
@@ -3042,7 +3182,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.GetFrame();
     ///      Output = MyClient.GetSegmentStaticRotationMatrix( "Alice", "Pelvis" );
@@ -3098,7 +3238,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.GetFrame();
     ///      Output = MyClient.GetSegmentStaticRotationQuaternion( "Alice", "Pelvis" );
@@ -3155,7 +3295,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.GetFrame();
     ///      Output = MyClient.GetSegmentStaticRotationEulerXYZ( "Alice", "Pelvis" );
@@ -3180,6 +3320,61 @@ namespace CPP
     ///           + InvalidSegmentName
     Output_GetSegmentStaticRotationEulerXYZ GetSegmentStaticRotationEulerXYZ( const String & SubjectName,
                                                                               const String & SegmentName ) const;
+
+    /// Return a 3D Scale of a subject segment if present.
+    ///
+    /// C example
+    ///      
+    ///      CClient * pClient = Client_Create();
+    ///      Client_Connect( pClient, "localhost" );
+    ///      Client_GetFrame( pClient );
+    ///      COutput_GetSegmentStaticScale _Output_GetSegmentStaticScale;
+    ///      Client_GetSegmentStaticScale(pClient, "Alice", "Pelvis", &_Output_GetSegmentStaticScale);
+    ///      Client_Destroy( pClient );
+    ///      
+    /// C++ example
+    ///      
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.Connect( "localhost" );
+    ///      Client_GetFrame( pClient );
+    ///      MyClient.EnableSegmentData();
+    ///      MyClient.GetFrame();
+    ///      Output_GetSegmentStaticScale Output =
+    ///      MyClient.GetSegmentStaticScale( "Alice", "Pelvis" );
+    ///      
+    /// MATLAB example
+    ///      
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      Client_GetFrame( pClient );
+    ///      MyClient.EnableSegmentData();
+    ///      MyClient.GetFrame();
+    ///      Output = MyClient.GetSegmentStaticScale( "Alice", "Pelvis" );
+    ///      
+    /// .NET example
+    ///      
+    ///      ViconDataStreamSDK.DotNET.Client MyClient =
+    ///      new ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      Client.GetFrame( pClient );
+    ///      MyClient.EnableSegmentData();
+    ///      MyClient.GetFrame();
+    ///      Output_GetSegmentStaticScale Output =
+    ///      MyClient.GetSegmentStaticScale( "Alice", "Pelvis" );
+
+    /// \param  SubjectName The name of the subject.
+    /// \param  SegmentName The name of the segment.
+    /// \return An Output_GetSegmentStaticScale class containing the result of the operation, the scale of the segment.
+    ///         - The Result will be:
+    ///            + Success
+    ///            + NotConnected
+    ///            + NoFrame
+    ///            + InvalidSubjectName
+    ///            + InvalidSegmentName
+    ///            + NotSupported
+    ///            + NotPresent
+    Output_GetSegmentStaticScale GetSegmentStaticScale(const String & SubjectName, const String & SegmentName) const;
+
     /// Return the translation of a subject segment in global coordinates.
     /// The translation is of the form ( x, y, z ) where x, y and z are in millimeters with respect to the global origin.
     ///
@@ -3207,7 +3402,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Client_GetFrame( pClient );
     ///      MyClient.EnableSegmentData();
@@ -3263,7 +3458,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Client_GetFrame( pClient );
     ///      MyClient.GetFrame();
@@ -3317,7 +3512,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Client_GetFrame( pClient );
     ///      MyClient.GetFrame();
@@ -3372,7 +3567,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Client_GetFrame( pClient );
     ///      MyClient.GetFrame();
@@ -3425,7 +3620,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Client_GetFrame( pClient );
     ///      MyClient.GetFrame();
@@ -3480,7 +3675,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Client_GetFrame( pClient );
     ///      MyClient.EnableSegmentData();
@@ -3537,7 +3732,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Client_GetFrame( pClient );
     ///      MyClient.GetFrame();
@@ -3592,7 +3787,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Client_GetFrame( pClient );
     ///      MyClient.GetFrame();
@@ -3647,7 +3842,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Client_GetFrame( pClient );
     ///      MyClient.GetFrame();
@@ -3703,7 +3898,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Client_GetFrame( pClient );
     ///      MyClient.GetFrame();
@@ -3732,7 +3927,9 @@ namespace CPP
     Output_GetSegmentLocalRotationEulerXYZ GetSegmentLocalRotationEulerXYZ( const String & SubjectName,
                                                                             const String & SegmentName ) const;
 
-    /// Return the quality score for a specified Object (Subject). This is only implemented by Tracker.
+    /// Return the quality score for a specified Object (Subject).
+    /// This is only implemented by applications that use an object tracking graph such as
+    /// Evoke and Tracker.
     ///
     /// See Also: GetSubjectCount(), GetSubjectName()
     ///
@@ -3762,17 +3959,17 @@ namespace CPP
     ///      // Output.Result == NoFrame
     ///      // Output.Quality == 0
     ///      MyClient.GetFrame();
-    ///      Output = MyClient.GetMarkerCount( "Camera" );
+    ///      Output = MyClient.GetObjectQuality( "Camera" );
     ///      // Output.Result == InvalidSubjectName
     ///      // Output.Quality == 0
     ///      // (no "Camera")
-    ///      Output = MyClient.GetMarkerCount( "Object" );
+    ///      Output = MyClient.GetObjectQuality( "Object" );
     ///      // Output.Result == Success
     ///      // Output.Quality >= 0.0 && Output.Quality <= 1.0
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.EnableSegmentData ();
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.GetObjectQuality( "Object" );
@@ -3856,7 +4053,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      // MyClient = Client();
+    ///      // MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.EnableMarkerData();
     ///      MyClient.Connect( "localhost" );
     ///      Output = MyClient.GetMarkerCount( "Bob" ); % Output.Result == NoFrame
@@ -3960,24 +4157,24 @@ namespace CPP
     /// MATLAB example
     ///      
     ///      A valid Marker Index is between 1 and GetMarkerCount()
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableMarkerData();
     ///      MyClient.GetFrame();
     ///      OutputGMC = MyClient.GetMarkerCount( "Bob" );
     ///      // OutputGMC.Result == Success
     ///      // OutputGMC.MarkerCount == 2
-    ///      OutputGMN = MyClient.GetMarkerName( "Alice", 1 );
+    ///      OutputGMN = MyClient.GetMarkerName( "Alice", 0 );
     ///      // OutputGMN.Result == InvalidSubjectName
     ///      // OutputGMN.MarkerName == ""
     ///      // (no "Alice")
-    ///      OutputGMN = MyClient.GetMarkerName( "Bob", 1 );
+    ///      OutputGMN = MyClient.GetMarkerName( "Bob", 0 );
     ///      // OutputGMN.Result == Success
     ///      // OutputGMN.MarkerName == "LASI"
-    ///      OutputGMN = MyClient.GetMarkerName( "Bob", 2 );
+    ///      OutputGMN = MyClient.GetMarkerName( "Bob", 1 );
     ///      // OutputGMN.Result == Success
     ///      // OutputGMN.MarkerName == "RASI"
-    ///      OutputGMN = MyClient.GetMarkerName( "Bob", 3 );
+    ///      OutputGMN = MyClient.GetMarkerName( "Bob", 2 );
     ///      // OutputGMN.Result == InvalidIndex
     ///      // OutputGMN.MarkerName == ""
     ///      // (no third marker)
@@ -4051,7 +4248,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableMarkerData();
     ///      MyClient.GetFrame();
@@ -4109,7 +4306,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableMarkerData();
     ///      MyClient.GetFrame();
@@ -4163,7 +4360,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableMarkerRayData();
     ///      MyClient.GetFrame();
@@ -4217,14 +4414,14 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      A valid Ray Index is between 1 and GetMarkerRayContributionCount()
+    ///      A valid Ray Index is between 0 and GetMarkerRayContributionCount() -1
     ///      MarkerRayContributionIndex )
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Client_GetFrame( pClient );
     ///      MyClient.EnableMarkerRayData();
     ///      MyClient.GetFrame();
-    ///      Output = MyClient.GetMarkerRayContribution ( "Alice", "LASI", 1 );
+    ///      Output = MyClient.GetMarkerRayContribution ( "Alice", "LASI", 0 );
     ///      
     /// .NET example
     ///      
@@ -4278,7 +4475,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.EnableUnlabeledMarkerData();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.GetFrame();
@@ -4287,7 +4484,7 @@ namespace CPP
     ///      
     /// .NET example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.EnableUnlabeledMarkerData();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.GetFrame();
@@ -4329,12 +4526,12 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      A valid Marker Index is between 1 and GetUnlabeledMarkerCount()
-    ///      MyClient = Client();
+    ///      A valid Marker Index is between 0 and GetUnlabeledMarkerCount() - 1
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableUnlabeledMarkerData();
     ///      MyClient.GetFrame();
-    ///      Output = MyClient.GetUnlabeledMarkerGlobalTranslation( 1 );
+    ///      Output = MyClient.GetUnlabeledMarkerGlobalTranslation( 0 );
     ///      
     /// .NET example
     ///      
@@ -4385,7 +4582,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.EnableMarkerData();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.GetFrame();
@@ -4438,12 +4635,12 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      A valid Marker Index is between 1 and GetUnlabeledMarkerCount()
-    ///      MyClient = Client();
+    ///      A valid Marker Index is between 0 and GetUnlabeledMarkerCount() - 1
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableMarkerData();
     ///      MyClient.GetFrame();
-    ///      Output = MyClient.GetLabeledMarkerGlobalTranslation( 1 );    ///
+    ///      Output = MyClient.GetLabeledMarkerGlobalTranslation( 0 );    ///
     /// .NET example
     ///      
     ///      A valid Marker Index is between 0 and GetLabeledMarkerCount()-1
@@ -4491,7 +4688,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.EnableDeviceData();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.GetFrame();
@@ -4573,23 +4770,23 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      A valid Device Index is between 1 and GetDeviceCount()
-    ///      MyClient = Client();
+    ///      A valid Device Index is between 0 and GetDeviceCount() - 1
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableDeviceData();
     ///      MyClient.GetFrame();
     ///      OutputGDC = MyClient.GetDeviceCount( DeviceCount );
     ///      % OutputGDC.Result == Success
     ///      % OutputGDC.DeviceCount == 2
-    ///      OutputGDN = MyClient.GetDeviceName( 1 );
+    ///      OutputGDN = MyClient.GetDeviceName( 0 );
     ///      % OutputGDN.Result == Success
     ///      % OutputGDN.DeviceName == "ZeroWire"
     ///      % OutputGDN.DeviceType == Unknown
-    ///      OutputGDN = MyClient.GetDeviceName( 2 );
+    ///      OutputGDN = MyClient.GetDeviceName( 1 );
     ///      % OutputGDN.Result == Success
     ///      % OutputGDN.DeviceName == "AMTI #1"
     ///      % OutputGDN.DeviceType == ForcePlate
-    ///      OutputGDN = MyClient.GetDeviceName( 3 );
+    ///      OutputGDN = MyClient.GetDeviceName( 2 );
     ///      % OutputGDN.Result == InvalidIndex
     ///      % OutputGDN.DeviceName == ""
     ///      % OutputGDN.DeviceType == Unknown
@@ -4670,7 +4867,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableDeviceData();
     ///      MyClient.GetFrame();
@@ -4741,8 +4938,8 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      A valid Device Output Index is between 1 and GetDeviceOutputCount()
-    ///      MyClient = Client();
+    ///      A valid Device Output Index is between 0 and GetDeviceOutputCount() - 1
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Client_GetFrame( pClient );
     ///      MyClient.EnableDeviceData();
@@ -4827,6 +5024,136 @@ namespace CPP
     Output_GetDeviceOutputName GetDeviceOutputName( const String  & DeviceName,
                                                     const unsigned int   DeviceOutputIndex ) const;
 
+    /// Return the name of the output and component and SI unit of a device output. This name can be passed into GetDeviceOutputValue.
+    ///
+    /// See Also: GetDeviceCount(), GetDeviceOutputCount(), GetDeviceOutputValue()
+    ///
+    ///
+    /// C example
+    ///      
+    ///      CClient * pClient = Client_Create();
+    ///      Client_Connect( pClient, "localhost" );
+    ///      Client_EnableDeviceData();
+    ///      Client_GetFrame( pClient );
+    ///      char DeviceOutputName[128];
+    ///      CEnum DeviceOutputUnit;
+    ///      CEnum Result = Client_GetDeviceOutputComponentName(pClient,
+    ///                                                         "AMTI",
+    ///                                                          0, 128,
+    ///                                                          DeviceOutputName,
+    ///                                                          &DeviceOutputUnit);
+    ///      // Result == Success
+    ///      // DeviceOutputName == "Force"
+    ///      // DeviceOutputComponentName == "Fx"
+    ///      // DeviceOutputUnit == Newton
+    ///      Client_Destroy( pClient );
+    ///      
+    /// C++ example
+    ///      
+    ///      A valid Device Output Index is between 0 and GetDeviceOutputCount()-1
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.Connect( "localhost" );
+    ///      Client_GetFrame( pClient );
+    ///      MyClient.EnableDeviceData();
+    ///      MyClient.GetFrame();
+    ///      Output_GetDeviceOutputComponentName Output =
+    ///      MyClient.GetDeviceOutputComponentName( "AMTI", 0 );
+    ///      // Output.Result == Success
+    ///      // Output.DeviceOutputName == "Force"
+    ///      // Output.DeviceOutputComponentName == "Fx"
+    ///      // Output.DeviceOutputUnit == Newton
+    ///      
+    /// MATLAB example
+    ///      
+    ///      A valid Device Output Index is between 0 and GetDeviceOutputCount() - 1
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      Client_GetFrame( pClient );
+    ///      MyClient.EnableDeviceData();
+    ///      MyClient.GetFrame();
+    ///      Output = MyClient.GetDeviceOutputComponentName( "AMTI", 0 );
+    ///      % Output.Result == Success
+    ///      % Output.DeviceOutputName == "Force"
+    ///      % Output.DeviceOutputComponentName == "Fx"
+    ///      % Output.DeviceOutputUnit == Newton
+    ///      
+    /// .NET example
+    ///      
+    ///      A valid Device Output Index is between 0 and GetDeviceOutputCount()-1
+    ///      ViconDataStreamSDK.DotNET.Client MyClient =
+    ///      new ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      Client_GetFrame( pClient );
+    ///      MyClient.EnableDeviceData();
+    ///      MyClient.GetFrame();
+    ///      Output_GetDeviceOutputComponentName Output =
+    ///      MyClient.GetDeviceOutputComponentName( "AMTI", 0 );
+    ///      // Output.Result == Success
+    ///      // Output.DeviceOutputName == "Force"
+    ///      // Output.DeviceOutputComponentName == "Fx"
+    ///      // Output.DeviceOutputUnit == Newton
+    /// -----
+    /// \param DeviceName The device name
+    /// \param DeviceOutputIndex The index of the device output
+    /// \return An Output_GetDeviceOutputName class containing the result of the operation, the name of the device output and component and the unit of the device output.
+    ///         - The Result will be:
+    ///           + Success
+    ///           + NotConnected
+    ///
+    ///         - The DeviceOutputName could be:
+    ///           + "Fx" - Force X
+    ///           + "Fy" - Force Y
+    ///           + "Fz" - Force Z
+    ///           + "Mx" - Moment X
+    ///           + "My" - Moment Y
+    ///           + "Mz" - Moment Z
+    ///           + "Cx" - Center Of Pressure X
+    ///           + "Cy" - Center Of Pressure Y
+    ///           + "Cz" - Center Of Pressure Z
+    ///           + "Pin1" - Analog Input 1
+    ///           + "Pin2" - Analog Input 2
+    ///           + Custom text if output has been renamed by the user in the application
+    //
+    ///         - The Device Output Unit will be:
+    ///           + Unit.Unknown
+    ///           + Unit.Volt
+    ///           + Unit.Newton
+    ///           + Unit.NewtonMeter
+    ///           + Unit.Meter
+    ///           + Unit.Kilogram
+    ///           + Unit.Second
+    ///           + Unit.Ampere
+    ///           + Unit.Kelvin
+    ///           + Unit.Mole
+    ///           + Unit.Candela
+    ///           + Unit.Radian
+    ///           + Unit.Steradian
+    ///           + Unit.MeterSquared
+    ///           + Unit.MeterCubed
+    ///           + Unit.MeterPerSecond
+    ///           + Unit.MeterPerSecondSquared
+    ///           + Unit.RadianPerSecond
+    ///           + Unit.RadianPerSecondSquared
+    ///           + Unit.Hertz
+    ///           + Unit.Joule
+    ///           + Unit.Watt
+    ///           + Unit.Pascal
+    ///           + Unit.Lumen
+    ///           + Unit.Lux
+    ///           + Unit.Coulomb
+    ///           + Unit.Ohm
+    ///           + Unit.Farad
+    ///           + Unit.Weber
+    ///           + Unit.Tesla
+    ///           + Unit.Henry
+    ///           + Unit.Siemens
+    ///           + Unit.Becquerel
+    ///           + Unit.Gray
+    ///           + Unit.Sievert
+    ///           + Unit.Katal
+    Output_GetDeviceOutputComponentName GetDeviceOutputComponentName( const String  & DeviceName,
+                                                    const unsigned int   DeviceOutputIndex ) const;
+
     /// Return the value of a device output. If there are multiple samples for a frame, then the first sample is returned.
     /// The force plate data provided in the individual device channels is in a coordinate system local to the force plate aligned Z upwards, Y towards the front of the force plate. 
     /// This coordinate system is located at the center of the top surface of the force plate. Any plate origin offset has been accounted for in the moment data. These are forces not reactions.
@@ -4841,7 +5168,7 @@ namespace CPP
     ///      Client_EnableDeviceData( pClient );
     ///      Client_GetFrame( pClient );
     ///      COutput_GetDeviceOutputValue _Output_GetDeviceOutputValue;
-    ///      Client_GetDeviceOutputValue( pClient, "AMTI", "Fx", &_Output_GetDeviceOutputValue );
+    ///      Client_GetDeviceOutputComponentValue( pClient, "AMTI", "Fx", &_Output_GetDeviceOutputValue );
     ///      // _OutputGetDeviceOutputValue.Result == Success
     ///      // _OutputGetDeviceOutputValue.Value == ?
     ///      // _OutputGetDeviceOutputValue.Value.Occluded = ?
@@ -4861,7 +5188,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableDeviceData();
     ///      MyClient.GetFrame();
@@ -4884,7 +5211,7 @@ namespace CPP
     ///      // Output.Occluded = ?
     /// -----
     /// \param DeviceName The device name
-    /// \param DeviceOutputName The name of the device output
+    /// \param DeviceOutputComponentName The name of the device output - This is the component name, not the output name
     /// \return An Output_GetDeviceOutputValue  class containing the result of the operation.
     ///         - The Result will be:
     ///           + Success
@@ -4893,7 +5220,77 @@ namespace CPP
     ///           + InvalidDeviceName
     ///           + InvalidDeviceOutputName
     Output_GetDeviceOutputValue GetDeviceOutputValue( const String & DeviceName,
-                                                      const String & DeviceOutputName ) const;
+                                                      const String & DeviceOutputComponentName ) const;
+
+    /// Return the value of a device output. If there are multiple samples for a frame, then the first sample is returned.
+    /// The force plate data provided in the individual device channels is in a coordinate system local to the force plate aligned Z upwards, Y towards the front of the force plate. 
+    /// This coordinate system is located at the center of the top surface of the force plate. Any plate origin offset has been accounted for in the moment data. These are forces not reactions.
+    ///
+    /// See Also: GetDeviceCount(), GetDeviceOutputCount(), GetDeviceOutputName()
+    ///
+    ///
+    /// C example
+    ///      
+    ///      CClient * pClient = Client_Create();
+    ///      Client_Connect( pClient, "localhost" );
+    ///      Client_EnableDeviceData( pClient );
+    ///      Client_GetFrame( pClient );
+    ///      COutput_GetDeviceOutputValue _Output_GetDeviceOutputValue;
+    ///      Client_GetDeviceOutputComponentValue( pClient, "AMTI", "Force", "Fx", &_Output_GetDeviceOutputValue );
+    ///      // _OutputGetDeviceOutputValue.Result == Success
+    ///      // _OutputGetDeviceOutputValue.Value == ?
+    ///      // _OutputGetDeviceOutputValue.Value.Occluded = ?
+    ///      Client_Destroy( pClient );
+    ///      
+    /// C++ example
+    ///      
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableDeviceData();
+    ///      MyClient.GetFrame();
+    ///      Output_GetDeviceOutputValue Output =
+    ///      MyClient.GetDeviceOutputValue( "AMTI", "Force", "Fx" );
+    ///      // Output.Result == Success
+    ///      // Output.Value == ?
+    ///      // Output.Occluded = ?
+    ///      
+    /// MATLAB example
+    ///      
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableDeviceData();
+    ///      MyClient.GetFrame();
+    ///      Output = MyClient.GetDeviceOutputValue( "AMTI", "Force", "Fx" );
+    ///      // Output.Result == Success
+    ///      // Output.Value == ?
+    ///      // Output.Occluded = ?
+    ///      
+    /// .NET example
+    ///      
+    ///      ViconDataStreamSDK.DotNET.Client MyClient =
+    ///      new ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableDeviceData();
+    ///      MyClient.GetFrame();
+    ///      Output_GetDeviceOutputValue Output =
+    ///      MyClient.GetDeviceOutputValue( "AMTI", "Force", "Fx" );
+    ///      // Output.Result == Success
+    ///      // Output.Value == ?
+    ///      // Output.Occluded = ?
+    /// -----
+    /// \param DeviceName The device name
+    /// \param DeviceOutputName The name of the device output
+    /// \param DeviceOutputComponentName The name of the device output component
+    /// \return An Output_GetDeviceOutputValue  class containing the result of the operation.
+    ///         - The Result will be:
+    ///           + Success
+    ///           + NotConnected
+    ///           + NoFrame
+    ///           + InvalidDeviceName
+    ///           + InvalidDeviceOutputName
+    Output_GetDeviceOutputValue GetDeviceOutputValue( const String & DeviceName,
+                                                      const String & DeviceOutputName,
+                                                      const String & DeviceOutputComponentName ) const;
 
     /// Return the number of samples available for the specified device at the current frame. If an analog device is sampling at 1000 Hz and the system is running at 100 Hz then this function will return 10.
     /// The samples can be accessed by supplying the subsample index to GetDeviceOutputValue. See below.
@@ -4922,7 +5319,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableDeviceData();
     ///      MyClient.GetFrame();
@@ -4945,7 +5342,7 @@ namespace CPP
     ///      // Output.Occluded = ?
     /// -----
     /// \param DeviceName The device name
-    /// \param DeviceOutputName The name of the device output
+    /// \param DeviceOutputName The name of the device output - This is the component name, not the output name
     /// \return An Output_GetDeviceOutputSubsamples class containing the result of the operation, the number of subsamples for this device output, and whether the device is occluded.
     ///         - The Result will be:
     ///           + Success
@@ -4956,6 +5353,71 @@ namespace CPP
     ///         - Occluded will be true if the value was absent at this frame. In this case the value will be 0.
     Output_GetDeviceOutputSubsamples GetDeviceOutputSubsamples( const String & DeviceName,
                                                                 const String & DeviceOutputName ) const;
+
+    /// Return the number of samples available for the specified device at the current frame. If an analog device is sampling at 1000 Hz and the system is running at 100 Hz then this function will return 10.
+    /// The samples can be accessed by supplying the subsample index to GetDeviceOutputValue. See below.
+    ///
+    /// See Also:GetDeviceOutputCount(), GetDeviceOutputValue()
+    ///
+    ///
+    /// C example
+    ///      
+    ///      CClient * pClient = Client_Create();
+    ///      Client_Connect( pClient, "localhost" );
+    ///      Client_EnableDeviceData( pClient );
+    ///      Client_GetFrame( pClient );
+    ///      COutput_GetDeviceOutputSubsamples DeviceOutputSubsamples;
+    ///      Client_GetDeviceOutputComponentSubsamples( pClient, "AMTI", "Force", "Fx", &DeviceOutputSubsamples );
+    ///      Client_Destroy( pClient );
+    ///      
+    /// C++ example
+    ///      
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableDeviceData();
+    ///      MyClient.GetFrame();
+    ///      Output_GetDeviceOutputSubsamples Output =
+    ///      MyClient.GetDeviceOutputSubsamples ( "AMTI", "Force", "Fx" );
+    ///      
+    /// MATLAB example
+    ///      
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableDeviceData();
+    ///      MyClient.GetFrame();
+    ///      Output = MyClient.GetDeviceOutputSubsamples ( "AMTI", "Force", "Fx" );
+    ///      // Output.Result == Success
+    ///      // Output.DeviceOutputSubsamples == ?
+    ///      // Output.Occluded = ?
+    ///      
+    /// .NET example
+    ///      
+    ///      ViconDataStreamSDK.DotNET.Client MyClient =
+    ///      new ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableDeviceData();
+    ///      MyClient.GetFrame();
+    ///      Output_GetDeviceOutputSubsamples Output =
+    ///      MyClient.GetDeviceOutputSubsamples( "AMTI", "Force", "Fx" );
+    ///      // Output.Result == Success
+    ///      // Output.DeviceOutputSubsamples == ?
+    ///      // Output.Occluded = ?
+    /// -----
+    /// \param DeviceName The device name
+    /// \param DeviceOutputName The name of the device output
+    /// \param DeviceOutputComponentName The name of the device output component
+    /// \return An Output_GetDeviceOutputSubsamples class containing the result of the operation, the number of subsamples for this device output, and whether the device is occluded.
+    ///         - The Result will be:
+    ///           + Success
+    ///           + NotConnected
+    ///           + NoFrame
+    ///           + InvalidDeviceName
+    ///           + InvalidDeviceOutputName
+    ///         - Occluded will be true if the value was absent at this frame. In this case the value will be 0.
+    Output_GetDeviceOutputSubsamples GetDeviceOutputSubsamples( const String & DeviceName,
+                                                                const String & DeviceOutputName,
+                                                                const String & DeviceOutputComponentName ) const;
+
     /// Return the value of a device output. This override allows access to the individual subsamples for the current frame of data.
     /// See GetDeviceOutputValue for information about the meaning of the force plate channels.
     ///
@@ -5011,7 +5473,7 @@ namespace CPP
     ///      // Output.Occluded = ?
     /// -----
     /// \param DeviceName The device name
-    /// \param DeviceOutputName The name of the device output
+    /// \param DeviceOutputName The name of the device output - This is the component name, not the output name.
     /// \param Subsample The subsamples to access
     /// \return An Output_GetDeviceOutputValue class containing the result of the operation, the value of the device output, and whether the device is occluded.
     ///         - The Result will be:
@@ -5023,6 +5485,79 @@ namespace CPP
     ///           + InvalidDeviceOutputName
     Output_GetDeviceOutputValue GetDeviceOutputValue( const String & DeviceName,
                                                       const String & DeviceOutputName,
+                                                      const unsigned int Subsample ) const;
+
+    /// Return the value of a device output. This override allows access to the individual subsamples for the current frame of data.
+    /// See GetDeviceOutputValue for information about the meaning of the force plate channels.
+    ///
+    /// See Also: GetDeviceOutputSubsamples(), GetDeviceOutputValue()
+    ///
+    ///
+    /// C example
+    ///      
+    ///      CClient * pClient = Client_Create();
+    ///      Client_Connect( pClient, "localhost" );
+    ///      Client_EnableDeviceData( pClient );
+    ///      Client_GetFrame( pClient );
+    ///      COutput_GetDeviceOutputValue _Output_GetDeviceOutputValue;
+    ///      Client_GetDeviceOutputComponentValueForSubsample( pClient,
+    ///                                                        "AMTI", "Force", "Fx",
+    ///                                                        6, &_Output_GetDeviceOutputValue);
+    ///      Client_Destroy( pClient );
+    ///      
+    /// C++ example
+    ///      
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableDeviceData();
+    ///      MyClient.GetFrame();
+    ///      Output_GetDeviceOutputValue Output =
+    ///      MyClient.GetDeviceOutputValue( "AMTI", "Force", "Fx", 6 );
+    ///      // Output.Result == Success
+    ///      // Output.Value == ?
+    ///      // Output.Occluded = ?
+    ///      
+    /// MATLAB example
+    ///      
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableDeviceData();
+    ///      MyClient.GetFrame();
+    ///      Output_GetDeviceOutputValue Output =
+    ///      MyClient.GetDeviceOutputValue( "AMTI", "Force", "Fx", 6 );
+    ///      // Output.Result == Success
+    ///      // Output.Value == ?
+    ///      // Output.Occluded = ?
+    ///      // Output.Value == ?
+    ///      // Output.Occluded = ?
+    ///      
+    /// .NET example
+    ///      
+    ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableDeviceData();
+    ///      MyClient.GetFrame();
+    ///      Output_GetDeviceOutputValue Output =
+    ///      MyClient.GetDeviceOutputValue( "AMTI", "Force", "Fx", 6 );
+    ///      // Output.Result == Success
+    ///      // Output.Value == ?
+    ///      // Output.Occluded = ?
+    /// -----
+    /// \param DeviceName The device name
+    /// \param DeviceOutputName The name of the device output
+    /// \param DeviceOutputComponentName The name of the device output component
+    /// \param Subsample The subsamples to access
+    /// \return An Output_GetDeviceOutputValue class containing the result of the operation, the value of the device output, and whether the device is occluded.
+    ///         - The Result will be:
+    ///           + Success
+    ///           + NotConnected
+    ///           + NoFrame
+    ///           + InvalidDeviceName
+    ///           + InvalidDeviceIndex
+    ///           + InvalidDeviceOutputName
+    Output_GetDeviceOutputValue GetDeviceOutputValue( const String & DeviceName,
+                                                      const String & DeviceOutputName,
+                                                      const String & DeviceOutputComponentName,
                                                       const unsigned int Subsample ) const;
 
     /// Return the number of force plates available in the DataStream.
@@ -5054,7 +5589,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.EnableDeviceData();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.GetFrame();
@@ -5080,7 +5615,7 @@ namespace CPP
 
     /// Return the force vector for the force plate in global coordinates.
     /// The vector is in Newtons and is with respect to the global coordinate system regardless of the orientation of the force plate. The vector represents the force exerted upon the force plate, not the reaction force.
-    /// If multiple subsamples are available this function returns the first subsample. See the alternate version of this function to access all of the analog data.
+    /// If multiple subsamples are available, this function returns the first subsample. See the alternate version of this function to access all of the analog data.
     ///
     /// See Also: GetGlobalMomentVector(), GetGlobalCentreOfPressure()
     ///
@@ -5106,12 +5641,12 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      A valid ForcePlateIndex is between 1 and GetForcePlateCount()
-    ///      MyClient = Client();
+    ///      A valid ForcePlateIndex is between 0 and GetForcePlateCount() - 1
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableDeviceData ();
     ///      MyClient.GetFrame();
-    ///      Output = MyClient.GetGlobalForceVector( 1 );
+    ///      Output = MyClient.GetGlobalForceVector( 0 );
     ///      
     /// .NET example
     ///      
@@ -5134,7 +5669,7 @@ namespace CPP
     /// Return the moment vector for the force plate in global coordinates.
     /// The vector is in Newton-meters and is with respect to the global coordinate system regardless of the orientation of the force plate.
     /// The vector represents the moment exerted upon the force plate, not the reaction moment. Any force plate origin offset is accounted for in the moments so they are acting about the exact center of the top surface of the force plate.
-    /// If multiple subsamples are available this function returns the first subsample. See the alternate version of this function to access all of the analog data.
+    /// If multiple subsamples are available, this function returns the first subsample. See the alternate version of this function to access all of the analog data.
     ///
     /// See Also: GetGlobalForceVector(), GetGlobalCentreOfPressure()
     ///
@@ -5160,12 +5695,12 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      A valid ForcePlateIndex is between 1 and GetForcePlateCount()
-    ///      MyClient = Client();
+    ///      A valid ForcePlateIndex is between 0 and GetForcePlateCount() - 1
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableDeviceData ();
     ///      MyClient.GetFrame();
-    ///      Output = MyClient.GetGlobalMomentVector( 1 );
+    ///      Output = MyClient.GetGlobalMomentVector( 0 );
     ///      
     /// .NET example
     ///      
@@ -5213,12 +5748,12 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      A valid ForcePlateIndex is between 1 and GetForcePlateCount()
-    ///      MyClient = Client();
+    ///      A valid ForcePlateIndex is between 0 and GetForcePlateCount() - 1
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableDeviceData ();
     ///      MyClient.GetFrame();
-    ///      Output = MyClient.GetGlobalCentreOfPressure( 1 );
+    ///      Output = MyClient.GetGlobalCentreOfPressure( 0 );
     ///      
     /// .NET example
     ///      
@@ -5238,7 +5773,7 @@ namespace CPP
     ///           + InvalidIndex
     Output_GetGlobalCentreOfPressure GetGlobalCentreOfPressure( const unsigned int ForcePlateIndex ) const;
 
-    /// Return the number of subsamples available for a specified plate in the current frame.
+    /// Return the number of subsamples available for a specified force plate in the current frame.
     /// Additional versions of GetGlobalForceVector, GetGlobalMomentVector, and GetGlobalCentreOfPressure take the subsample index to allow access to all the force plate data.
     ///
     /// See Also: GetGlobalForceVector(), GetGlobalMomentVector(), GetGlobalCentreOfPressure()
@@ -5270,12 +5805,12 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      A valid ForcePlateIndex is between 1 and GetForcePlateCount()
-    ///      MyClient = Client();
+    ///      A valid ForcePlateIndex is between 0 and GetForcePlateCount() - 1
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.EnableDeviceData();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.GetFrame();
-    ///      Output = MyClient.GetForcePlateSubsamples( 1 );
+    ///      Output = MyClient.GetForcePlateSubsamples( 0 );
     ///      // Output.Result == Success
     ///      // Output.ForcePlateSubsamples >= 0
     ///      
@@ -5301,8 +5836,8 @@ namespace CPP
     ///           + InvalidIndex
     Output_GetForcePlateSubsamples GetForcePlateSubsamples( const unsigned int ForcePlateIndex ) const;
 
-    /// Return the force vector for the plate in global coordinates. This version takes a subsample index that allows access to all of the force information.
-    /// The vector is in Newtons and is with respect to the global coordinate system regardless of the orientation of the plate. The vector represents the force exerted upon the plate, not the reaction force.
+    /// Return the force vector for the force plate in global coordinates. This version takes a subsample index that allows access to all of the force information.
+    /// The vector is in Newtons and is with respect to the global coordinate system, regardless of the orientation of the plate. The vector represents the force exerted upon the force plate, not the reaction force.
     ///
     /// See Also: GetGlobalMomentVector(), GetGlobalCentreOfPressure()
     ///
@@ -5342,9 +5877,9 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      A valid ForcePlateIndex is between 1 and GetForcePlateCount()
-    ///      A valid Subsample is between 1 and GetForcePlateSubsamples()
-    ///      MyClient = Client();
+    ///      A valid ForcePlateIndex is between 0 and GetForcePlateCount() - 1
+    ///      A valid Subsample is between 0 and GetForcePlateSubsamples() - 1
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableDeviceData ();
     ///      MyClient.GetFrame();
@@ -5371,7 +5906,7 @@ namespace CPP
     /// -----
     /// \param ForcePlateIndex The index of the force plate
     /// \param Subsample The subsample to access
-    /// \return An Output_GetGlobalForceVector class containing the result of the operation and the force on the plate.
+    /// \return An Output_GetGlobalForceVector class containing the result of the operation and the force on the forceplate.
     ///         - The Result will be:
     ///           + Success
     ///           + NotConnected
@@ -5379,9 +5914,9 @@ namespace CPP
     ///           + InvalidIndex
     Output_GetGlobalForceVector GetGlobalForceVector( const unsigned int ForcePlateIndex, const unsigned int Subsample ) const;
 
-    /// Return the moment vector for the plate in global coordinates. This version takes a subsample index that allows access to all of the force information.
-    /// The vector is in Newton-meters and is with respect to the global coordinate system regardless of the orientation of the plate.
-    /// The vector represents the moment exerted upon the plate, not the reaction moment. Any force plate origin offset is accounted for in the moments so they are acting about the exact center of the top surface of the plate.
+    /// Return the moment vector for the force plate in global coordinates. This version takes a subsample index that allows access to all of the force information.
+    /// The vector is in Newton-meters and is with respect to the global coordinate system, regardless of the orientation of the plate.
+    /// The vector represents the moment exerted upon the force plate, not the reaction moment. Any force plate origin offset is accounted for in the moments so they are acting about the exact center of the top surface of the force plate.
     ///
     /// See Also: GetGlobalForceVector(), GetGlobalCentreOfPressure()
     ///
@@ -5421,9 +5956,9 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      A valid ForcePlateIndex is between 1 and GetForcePlateCount()
-    ///      A valid Subsample is between 1 and GetForcePlateSubsamples()
-    ///      MyClient = Client();
+    ///      A valid ForcePlateIndex is between 0 and GetForcePlateCount() - 1
+    ///      A valid Subsample is between 0 and GetForcePlateSubsamples() - 1
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableDeviceData ();
     ///      MyClient.GetFrame();
@@ -5453,7 +5988,7 @@ namespace CPP
     ///
     /// \param ForcePlateIndex The index of the force plate
     /// \param Subsample The subsample to access
-    /// \return An Output_GetGlobalMomentVector class containing the result of the operation and the moment exerted on the plate.
+    /// \return An Output_GetGlobalMomentVector class containing the result of the operation and the moment exerted on the force plate.
     ///         - The Result will be:
     ///           + Success
     ///           + NotConnected
@@ -5461,7 +5996,7 @@ namespace CPP
     ///           + InvalidIndex
     Output_GetGlobalMomentVector GetGlobalMomentVector( const unsigned int ForcePlateIndex, const unsigned int Subsample ) const;
 
-    /// Return the center of pressure for the plate in global coordinates. This version takes a subsample index that allows access to all of the force information.
+    /// Return the center of pressure for the force plate in global coordinates. This version takes a subsample index that allows access to all of the force information.
     /// The position is in millimeters and is with respect to the global coordinate system.
     ///
     /// See Also: GetGlobalForceVector(), GetGlobalMomentVector()
@@ -5502,9 +6037,9 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      A valid ForcePlateIndex is between 1 and GetForcePlateCount()
-    ///      A valid Subsample is between 1 and GetForcePlateSubsamples()
-    ///      MyClient = Client();
+    ///      A valid ForcePlateIndex is between 0 and GetForcePlateCount() - 1
+    ///      A valid Subsample is between 0 and GetForcePlateSubsamples() - 1
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      Client_GetFrame( pClient );
     ///      MyClient.EnableDeviceData ();
@@ -5569,7 +6104,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.EnableDeviceData();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.GetFrame();
@@ -5621,13 +6156,13 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      A valid EyeTrackerIndex is between 1 and GetEyeTrackerCount()
-    ///      MyClient = Client();
+    ///      A valid EyeTrackerIndex is between 0 and GetEyeTrackerCount() - 1
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableSegmentData ();
     ///      MyClient.EnableDeviceData ();
     ///      MyClient.GetFrame();
-    ///      Output = MyClient.GetEyeTrackerGlobalPosition ( 1 );
+    ///      Output = MyClient.GetEyeTrackerGlobalPosition ( 0 );
     ///      
     /// .NET example
     ///      
@@ -5640,7 +6175,7 @@ namespace CPP
     ///      Output_GetEyeTrackerGlobalPosition Output = MyClient.GetEyeTrackerGlobalPosition ( 0 );
     /// -----
     /// \param EyeTrackerIndex The index of the eye tracker
-    /// \return An Output_GetEyeTrackerGlobalPosition class containing the result of the operation, the eye position and whether the eyetracker is occluded.
+    /// \return An Output_GetEyeTrackerGlobalPosition class containing the result of the operation, the eye position and whether the eye tracker is occluded.
     ///         - The Result will be:
     ///           + Success
     ///           + NotConnected
@@ -5678,13 +6213,13 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      A valid EyeTrackerIndex is between 1 and GetEyeTrackerCount()
-    ///      MyClient = Client();
+    ///      A valid EyeTrackerIndex is between 0 and GetEyeTrackerCount() - 1
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableSegmentData ();
     ///      MyClient.EnableDeviceData ();
     ///      MyClient.GetFrame();
-    ///      Output = MyClient.GetEyeTrackerGlobalGazeVector ( 1 );
+    ///      Output = MyClient.GetEyeTrackerGlobalGazeVector ( 0 );
     ///      
     /// .NET example
     ///      
@@ -5727,7 +6262,7 @@ namespace CPP
     ///      
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount Output = MyClient.GetCameraCount();
     ///      // Output.Result == Success
@@ -5735,7 +6270,7 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
@@ -5746,7 +6281,7 @@ namespace CPP
     ///      
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount Output = MyClient.GetCameraCount();
     ///      // Output.Result == Success
@@ -5768,7 +6303,7 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      COutput_GetCameraCount CameraCount;
     ///      Client_GetCameraCount(pClient, &CameraCount);
@@ -5783,7 +6318,7 @@ namespace CPP
     ///      A valid CameraIndex is between 0 and GetCameraCount()-1
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      // OutputGCC.Result == Success
@@ -5793,23 +6328,23 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      A valid CameraIndex is between 1 and GetCameraCount()
+    ///      A valid CameraIndex is between 0 and GetCameraCount() - 1
     ///      % [Output] = GetCameraName ( CameraIndex )
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
-    ///      OutputGCC = MyClient.GetCameraCount ( 1 );
+    ///      OutputGCC = MyClient.GetCameraCount ( 0 );
     ///      % OutputGCC.Result == Success
     ///      % OutputGCC.CameraCount == 1
-    ///      OutputGCN = MyClient.GetCameraName( 1 );
+    ///      OutputGCN = MyClient.GetCameraName( 0 );
     ///      
     /// .NET example
     ///      
     ///      A valid CameraIndex is between 0 and GetCameraCount() - 1
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      // OutputGCC.Result == Success
@@ -5835,7 +6370,7 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      COutput_GetCameraCount CameraCount;
     ///      Client_GetCameraCount(pClient, &CameraCount);
     ///      if( CameraCount.Result == Success &&  CameraCount.CameraCount > 0 )
@@ -5856,7 +6391,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -5879,7 +6414,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -5910,7 +6445,7 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      COutput_GetCameraCount CameraCount;
     ///      Client_GetCameraCount(pClient, &CameraCount);
@@ -5933,7 +6468,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -5960,7 +6495,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -5991,7 +6526,7 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      COutput_GetCameraCount CameraCount;
     ///      Client_GetCameraCount(pClient, &CameraCount);
@@ -6012,7 +6547,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6035,7 +6570,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6065,11 +6600,11 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      COutput_GetCameraCount CameraCount;
     ///      Client_GetCameraCount(pClient, &CameraCount);
@@ -6090,7 +6625,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( Output_GCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6113,7 +6648,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( Output_GCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6143,7 +6678,7 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      COutput_GetCameraCount CameraCount;
     ///      Client_GetCameraCount(pClient, &CameraCount);
@@ -6164,7 +6699,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6187,7 +6722,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6217,7 +6752,7 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      COutput_GetCameraCount CameraCount;
     ///      Client_GetCameraCount(pClient, &CameraCount);
@@ -6238,7 +6773,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6261,7 +6796,7 @@ namespace CPP
     ///      A valid CameraName may be obtained from GetCameraName()
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
@@ -6282,6 +6817,125 @@ namespace CPP
     ///           + InvalidCameraName
     Output_GetIsVideoCamera GetIsVideoCamera( const std::string & CameraName ) const;
 
+
+    /// Gets the sensor mode of the specified camera, whether it is binning, subsampling or normal.
+    /// This information is only available from Vicon applications released after DSSDK 1.11
+    ///
+    /// See Also: GetCameraName()
+    ///
+    ///
+    /// C example
+    ///      
+    /// Not implemented
+    ///      
+    /// C++ example
+    ///      
+    ///      A valid CameraName may be obtained from GetCameraName()
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableCentroidData();
+    ///      MyClient.GetFrame();
+    ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
+    ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
+    ///      {
+    ///        Output_GetCameraName OutputGCN;
+    ///        OutputGCN = MyClient.GetCameraName( 0 );
+    ///        if( OutputGCN.Result == Success )
+    ///        {
+    ///          Output_GetCameraSensorMode Output = MyClient.GetCameraSensorMode( OutputGCN.CameraName );
+    ///        }
+    ///      }
+    ///      
+    /// MATLAB example
+    ///      
+    /// Not implemented
+    ///      
+    ///      
+    /// .NET example
+    ///      
+    ///      A valid CameraName may be obtained from GetCameraName()
+    ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableCentroidData();
+    ///      MyClient.GetFrame();
+    ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
+    ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
+    ///      {
+    ///        Output_GetCameraName OutputGCN;
+    ///        OutputGCN = MyClient.GetCameraName( 0 );
+    ///        if( OutputGCN.Result == Success )
+    ///        {
+    ///          Output_GetCameraSensorMode Output = MyClient.GetCameraSensorMode( OutputGCN.CameraName );
+    ///        }
+    ///      }
+    /// -----
+    ///
+    /// \return An Output_ class containing the result of the operation and the sensor mode of the camera as a string
+    ///         - The Result will be:
+    ///           + Success
+    ///           + NotConnected
+    ///           + InvalidCameraName
+    Output_GetCameraSensorMode GetCameraSensorMode(const std::string & CameraName) const;
+
+    /// Returns the sensor windowing size for the camera.
+    /// This information is only available from Vicon applications released after DSSDK 1.11
+    ///
+    /// See Also: GetCameraName()
+    ///
+    ///
+    /// C example
+    ///      
+    ///     Not Implmented
+    ///      
+    /// C++ example
+    ///      
+    ///      A valid CameraName may be obtained from GetCameraName()
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableCentroidData();
+    ///      MyClient.GetFrame();
+    ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
+    ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
+    ///      {
+    ///        Output_GetCameraName OutputGCN;
+    ///        OutputGCN = MyClient.GetCameraName( 0 );
+    ///        if( OutputGCN.Result == Success )
+    ///        {
+    ///          Output_GetCameraWindowSize Output = MyClient.GetCameraWindowSize( OutputGCN.CameraName );
+    ///        }
+    ///      }
+    ///      
+    /// MATLAB example
+    ///      
+    /// Not implemented
+    ///      
+    ///      
+    /// .NET example
+    ///      
+    ///      A valid CameraName may be obtained from GetCameraName()
+    ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableCentroidData();
+    ///      MyClient.GetFrame();
+    ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
+    ///      if( OutputGCC.Result == Success && OutputGCC.CameraCount > 0 )
+    ///      {
+    ///        Output_GetCameraName OutputGCN;
+    ///        OutputGCN = MyClient.GetCameraName( 0 );
+    ///        if( OutputGCN.Result == Success )
+    ///        {
+    ///          Output_GetCameraWindowSize Output = MyClient.GetCameraWindowSize( OutputGCN.CameraName );
+    ///        }
+    ///      }
+    /// -----
+    ///
+    /// \return An Output_ class containing the result of the operation, and members defining the top, left, width and height of the sensor window
+    ///         - The Result will be:
+    ///           + Success
+    ///           + NotConnected
+    ///           + InvalidCameraName
+    Output_GetCameraWindowSize GetCameraWindowSize(const std::string & CameraName) const;
+
     /// Return the number of centroids reported by a named camera. The centroid data needs to be enabled to get the number of centroids.
     ///
     /// See Also: GetCameraCount(), GetCameraName(), GetCentroidPosition()
@@ -6291,7 +6945,7 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      COutput_GetCameraCount CameraCount;
     ///      Client_GetCameraCount(pClient, &CameraCount);
@@ -6311,7 +6965,7 @@ namespace CPP
     ///      
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      for( unsigned int CameraIndex = 0; CameraIndex < OutputGCC.CameraCount; ++CameraIndex )
@@ -6324,12 +6978,12 @@ namespace CPP
     ///      
     /// MATLAB example
     ///      
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
     ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      OutputGCC = MyClient.GetCameraCount();
-    ///      for CameraIndex = 1:OutputGCC.CameraCount
+    ///      for CameraIndex = 0:OutputGCC.CameraCount - 1
     ///      OutputGCN = MyClient.GetCameraName( CameraIndex );
     ///      OutputGCeC = MyClient.GetCentroidCount( OutputGCN.CameraName )
     ///      % OutputGCeC.Result == Success
@@ -6340,7 +6994,7 @@ namespace CPP
     ///      
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraCount OutputGCC = MyClient.GetCameraCount();
     ///      for( unsigned int CameraIndex = 0; CameraIndex < OutputGCC.CameraCount; ++CameraIndex )
@@ -6372,7 +7026,7 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      char CameraName[128];
     ///      CEnum Output = Client_GetCameraName(pClient, 0, 128, CameraName);
@@ -6386,7 +7040,7 @@ namespace CPP
     ///      A valid CentroidIndex is between 0 and GetCentroidCount( CameraName )-1
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraName OutputGCN = MyClient.GetCameraName( 0 );
     ///      Output_GetCentroidPosition Output = MyClient.GetCentroidPosition( OutputGCN.CameraName, 0 );
@@ -6394,14 +7048,14 @@ namespace CPP
     /// MATLAB example
     ///      
     ///      A valid CameraName is obtained from GetCameraName( CameraIndex )
-    ///      A valid CentroidIndex is between 1 and GetCentroidCount( CameraName )
+    ///      A valid CentroidIndex is between 0 and GetCentroidCount( CameraName ) - 1
     ///      % [Output] = GetCentroidPosition( CameraName, CentroidIndex )
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
-    ///      OutputGCN = MyClient.GetCameraName( 1 );
-    ///      Output = MyClient.GetCentroidPosition( OutputGCN.CameraName, 1 );
+    ///      OutputGCN = MyClient.GetCameraName( 0 );
+    ///      Output = MyClient.GetCentroidPosition( OutputGCN.CameraName, 0 );
     ///      
     /// .NET example
     ///      
@@ -6409,7 +7063,7 @@ namespace CPP
     ///      A valid CentroidIndex is between 0 and GetCentroidCount( CameraName )-1
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraName OutputGCN = MyClient.GetCameraName( 0 );
     ///      Output_GetCentroidPosition Output = MyClient.GetCentroidPosition( OutputGCN.CameraName, 0 );
@@ -6437,7 +7091,7 @@ namespace CPP
     ///      
     ///      CClient * pClient = Client_Create();
     ///      Client_Connect( pClient, "localhost" );
-    ///      Client_EnableCentroidData ( pClient );
+    ///      Client_EnableCentroidData( pClient );
     ///      Client_GetFrame( pClient );
     ///      char CameraName[128];
     ///      CEnum Output = Client_GetCameraName(pClient, 0, 128, CameraName);
@@ -6451,7 +7105,7 @@ namespace CPP
     ///      A valid CentroidIndex is between 0 and GetCentroidCount( CameraName )-1
     ///      ViconDataStreamSDK::CPP::Client MyClient;
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraName OutputGCN = MyClient.GetCameraName( 0 );
     ///      Output_GetCentroidWeight Output = MyClient.GetCentroidWeight( OutputGCN.CameraName, 0 );
@@ -6459,14 +7113,14 @@ namespace CPP
     /// MATLAB example
     ///      
     ///      A valid CameraName is obtained from GetCameraName( CameraIndex )
-    ///      A valid CentroidIndex is between 1 and GetCentroidCount( CameraName )
+    ///      A valid CentroidIndex is between 0 and GetCentroidCount( CameraName ) - 1
     ///      % [Output] = GetCentroidWeight( CameraName, CentroidIndex )
-    ///      MyClient = Client();
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      OutputGCN = MyClient.GetCameraName( 1 );
-    ///      Output = MyClient.GetCentroidWeight( OutputGCN.CameraName, 1 );
+    ///      Output = MyClient.GetCentroidWeight( OutputGCN.CameraName, 0 );
     ///      
     /// .NET example
     ///      
@@ -6474,7 +7128,7 @@ namespace CPP
     ///      A valid CentroidIndex is between 0 and GetCentroidCount( CameraName )-1
     ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
     ///      MyClient.Connect( "localhost" );
-    ///      MyClient.EnableCentroidData ();
+    ///      MyClient.EnableCentroidData();
     ///      MyClient.GetFrame();
     ///      Output_GetCameraName OutputGCN = MyClient.GetCameraName( 0 );
     ///      Output_GetCentroidWeight Output = MyClient.GetCentroidWeight( OutputGCN.CameraName, 0 );
@@ -6537,6 +7191,54 @@ namespace CPP
     ///           + NotConnected
     ///           + InvalidCameraName
     Output_GetGreyscaleBlobCount GetGreyscaleBlobCount( const std::string & CameraName ) const;
+
+    /// Obtain information about the subsampling performed by the specified camera.
+    /// This will only be supported when connected to application released after
+    /// DSSDK 1.11 release.
+    ///
+    /// See Also: GetGreyscaleBlob(), EnableGreyscaleData()
+    ///
+    ///
+    /// C example
+    ///      
+    /// Not implemented
+    ///      
+    ///      
+    /// C++ example
+    ///      
+    ///      A valid camera name may be obtained from GetCameraName( CameraIndex )
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableGreyscaleData ();
+    ///      MyClient.GetFrame();
+    ///      Output_GetCameraName CameraName = MyClient.GetCameraName( 0 );
+    ///      Output_GetGreyscaleBlobSubsampleInfo Output =
+    ///      MyClient.GetGreyscaleBlobSubsampleInfo( CameraName.CameraName );
+    ///      
+    /// MATLAB example
+    ///      
+    /// Not implemented
+    ///      
+    ///      
+    /// .NET example
+    ///      
+    ///      A valid camera name may be obtained from GetCameraName( CameraIndex )
+    ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableGreyscaleData ();
+    ///      MyClient.GetFrame();
+    ///      Output_GetCameraName CameraName = MyClient.GetCameraName( 0 );
+    ///      Output_GetGreyscaleBlobSubsampleInfo Output
+    ///          = MyClient.GetGreyscaleBlobSubsampleInfo( CameraName.CameraName );
+    /// -----
+    ///     
+    /// \return An Output_GetGreyscaleBlobSubsampleInfo class containing the result of the operation and details of the subsampled data
+    ///         - The Result will be:
+    ///           + Success
+    ///           + NotConnected
+    ///           + InvalidCameraName
+    ///           + NotSupported
+    Output_GetGreyscaleBlobSubsampleInfo GetGreyscaleBlobSubsampleInfo(const std::string & CameraName) const;
 
     /// Obtains greyscale blob data for the specified camera and blob index.
     ///
@@ -6627,7 +7329,7 @@ namespace CPP
     ///           + InvalidCameraName
     Output_GetVideoFrame GetVideoFrame( const std::string & CameraName ) const;
 
-    /// Add a filter to allow centroid, blob or video data being transmitted only for the specified cameras.
+    /// Add a filter to allow centroid, blob or video data to be transmitted for the specified cameras only.
     ///
     /// See Also: GetGreyscaleBlobCount(), GetGreyscaleBlob(), GetCentroidCount(), GetCentroidPosition(), GetCentroidWeight()
     /// 
@@ -6684,6 +7386,112 @@ namespace CPP
                                             const std::vector< unsigned int > & CameraIdsForBlobs,
                                             const std::vector< unsigned int > & CameraIdsForVideo );
 
+    /// Clear the subject filter. This will result in all subjects being sent.
+    ///
+    /// See Also: AddToSubjectFilter()
+    ///
+    /// \return An Output_ClearSubjectFilter class containing the result of the operation.
+    ///         - The Result will be:
+    ///           + Success
+    Output_ClearSubjectFilter ClearSubjectFilter();
+
+    /// Add a subject name to the subject filter. Only subjects present in the subject filter will be sent and subjects not in the filter will be presented as absent/occluded. If no filtered subjects are present, all subjects will be sent.
+    ///
+    /// See Also : ClearSubjectFilter()
+    ///
+    /// C example
+    ///
+    ///      // assuming there are two subjects in the stream, "Subject1" and "Subject2"
+    ///      CClient * pClient = Client_Create();
+    ///      Client_Connect( pClient, "localhost" );
+    ///      Client_EnableSegmentData( pClient );
+    ///      Client_GetFrame( pClient );
+    ///      Client_ClearSubjectFilter();
+    ///      Client_AddToSubjectFilter( "Subject1" );
+    ///      Client_GetFrame( pClient );
+    ///      COutput_GetSegmentGlobalTranslation _Output_Subject1;
+    ///      COutput_GetSegmentGlobalTranslation _Output_Subject2;
+    ///      Client_GetSegmentGlobalTranslation(pClient, "Subject1", "root", &_Output_Subject1);
+    ///      Client_GetSegmentGlobalTranslation(pClient, "Subject2", "root", &_Output_Subject2);
+    ///      // _Output_Subject1.Occluded == true
+    ///      // _Output_Subject2.Occluded == true
+    ///      Client_Destroy( pClient );
+    ///
+    /// C++ example
+    ///
+    ///      // assuming there are two subjects in the stream, "Subject1" and "Subject2"
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableSegmentData();
+    ///      MyClient.GetFrame();
+    ///      MyClient.ClearSubjectFilter();
+    ///      Output_GetAddToSubjectFilter Output = MyClient.AddToSubjectFilter( "Subject1" );
+    ///      // New frames now only contain the filtered subject(s) if subject is in the stream.
+    ///      MyClient.GetFrame();
+    ///      Output_GetSegmentGlobalTranslation Output_Sub1 = MyClient.GetSegmentGlobalTranslation("Subject1","root");
+    ///      Output_GetSegmentGlobalTranslation Output_Sub2 = MyClient.GetSegmentGlobalTranslation("Subject2","root");
+    ///      // Output_Sub1.Occluded == false
+    ///      // Output_Sub2.Occluded == true
+    ///
+    /// MATLAB example
+    ///
+    ///      // assuming there are two subjects in the stream, "Subject1" and "Subject2"
+    ///      MyClient = ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.GetFrame();
+    ///      MyClient.EnableSegmentData();
+    ///      MyClient.ClearSubjectFilter();
+    ///      MyClient.AddToSubjectFilter("Subject1");
+    ///      MyClient.GetFrame();
+    ///      Output_Subject1 = MyClient.GetSegmentGlobalTranslation( "Subject1", "root" );
+    ///      Output_Subject2 = MyClient.GetSegmentGlobalTranslation( "Subject2", "root" );
+    ///      // Output_Subject1.Occluded == false
+    ///      // Output_Subject2.Occluded == true
+    ///
+    /// .NET example
+    ///
+    ///      ViconDataStreamSDK.DotNET.Client MyClient =
+    ///      new ViconDataStreamSDK.DotNET.Client();
+    ///      MyClient.Connect( "localhost" );
+    ///      MyClient.EnableSegmentData();
+    ///      Client.GetFrame();
+    ///      Client.ClearSubjectFilter();
+    ///      Client.AddToSubjectFilter("Subject1")
+    ///      MyClient.GetFrame();
+    ///      Output_GetSegmentGlobalTranslation Output_Subject1 =
+    ///      MyClient.GetSegmentGlobalTranslations( "Subject1", "root" );
+    ///      Output_GetSegmentGlobalTranslation Output_Subject2 =
+    ///      MyClient.GetSegmentGlobalTranslations( "Subject2", "root" );
+    ///      // Output_Subject1.Occluded = false;
+    ///      // Output_Subject2.Occluded = true;
+    ///    
+    ///
+    /// \param  SubjectName The name of the subject.
+    /// \return An Output_AddToSubjectFilter class containing the result of the operation.
+    ///         - The Result will be:
+    ///           + Success
+    ///           + InvalidSubjectName
+    Output_AddToSubjectFilter AddToSubjectFilter( const String & SubjectName);
+
+    virtual Output_SetTimingLogFile SetTimingLogFile(const String & ClientLog, const String & StreamLog );
+
+    /// Request that the wireless adapters will be optimally configured for streaming data.
+    ///
+    /// On Windows this will disable background scan and enable streaming.
+    /// The call does not need the client to be connected.
+    ///
+    /// C++ example
+    ///
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.ConfigureWireless();
+    ///
+    /// \return An Output_ConfigureWireless class containing the result of the operation.
+    ///         - The Result will be:
+    ///           + Success if the adapters are configured or there are no adapters to configure
+    ///           + NotSupported if the OS does not support this function
+    ///           + WirelessConfigurationFailed if the request failed
+    ///         - The Error will provide additional information in the failure case
+    virtual Output_ConfigureWireless ConfigureWireless();
 
   private:
     ClientImpl * m_pClientImpl;
