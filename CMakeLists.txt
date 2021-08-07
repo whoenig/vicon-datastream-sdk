@@ -38,6 +38,8 @@ target_link_libraries(ViconDataStreamSDK_CPP
     Threads::Threads
 )
 
+target_compile_definitions(ViconDataStreamSDK_CPP PRIVATE "_BUILD_STATIC_LIB")
+
 # Declare an executable
 
 include_directories(
