@@ -11,12 +11,9 @@ include_directories(
   Vicon/CrossMarket/DataStream
   Vicon/CrossMarket
 )
-add_definitions(
-  -D_EXPORTING
-)
 
 # Declare a cpp library
-add_library(ViconDataStreamSDK_CPP
+add_library(ViconDataStreamSDK_CPP STATIC
   Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/CoreClient.cpp
   Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/CoreClientTimingLog.cpp
   Vicon/CrossMarket/DataStream/ViconDataStreamSDKCoreUtils/ClientUtils.cpp
