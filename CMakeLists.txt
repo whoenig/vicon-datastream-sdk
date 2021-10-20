@@ -32,19 +32,19 @@ add_library(ViconDataStreamSDK_CPP STATIC
 )
 
 target_link_libraries(ViconDataStreamSDK_CPP
-  PRIVATE 
+  PRIVATE
     Boost::system
     Boost::thread
     Threads::Threads
 )
 
+target_include_directories(ViconDataStreamSDK_CPP PUBLIC
+  Vicon/CrossMarket/DataStream/ViconDataStreamSDK_CPP
+)
+
 target_compile_definitions(ViconDataStreamSDK_CPP PRIVATE "_BUILD_STATIC_LIB")
 
 # Declare an executable
-
-include_directories(
-  Vicon/CrossMarket/DataStream/ViconDataStreamSDK_CPP
-)
 
 add_executable(ViconDataStreamSDK_CPPTest
   Vicon/CrossMarket/DataStream/ViconDataStreamSDK_CPPTest/ViconDataStreamSDK_CPPTest.cpp
