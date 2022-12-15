@@ -1,0 +1,11 @@
+@PACKAGE_INIT@
+
+include(CMakeFindDependencyMacro)
+
+include("${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@Targets.cmake")
+
+find_dependency(Boost 1.5 COMPONENTS system thread)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_dependency(Threads)
+
+check_required_components(@PROJECT_NAME@)
