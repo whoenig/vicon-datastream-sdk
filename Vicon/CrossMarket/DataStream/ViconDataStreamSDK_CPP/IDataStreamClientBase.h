@@ -29,16 +29,11 @@
 
 #ifdef WIN32
 
-#ifdef _BUILD_STATIC_LIB
-    #define CLASS_DECLSPEC
-#else
-
 #ifdef _EXPORTING
    #define CLASS_DECLSPEC    __declspec(dllexport)
 #else
    #define CLASS_DECLSPEC    __declspec(dllimport)
 #endif // _EXPORTING
-#endif
 
 #elif defined( __GNUC__ )
 
