@@ -18,6 +18,18 @@ ifneq ($(VICON_BUILD_x32),)
   endif
 endif
 
+# Warnings common to c++ and c
+COMMON_WARNINGS=-Wall\
+                -Wno-error=cpp\
+                -Wno-sign-compare\
+                -Wno-unknown-pragmas\
+                -Wno-parentheses\
+                -Winvalid-pch\
+                -Wno-unused-variable\
+                -Wno-unused-but-set-variable\
+                -Wno-unused-function\
+                -Wno-deprecated-declarations
+
 # gcc 8.0 onwards provided full support for c++17
 CXX_VERSION_8_0 := $(shell echo `$(CXX) -dumpversion | cut -f1-2 -d.` \>= 8.0 | bc)
 # gcc 5.0 onwards provided full support for c++14
@@ -27,7 +39,7 @@ CXX_VERSION_4_8 := $(shell echo `$(CXX) -dumpversion | cut -f1-2 -d.` \>= 4.8 | 
 # gcc 4.7 non-virtual destructor warning
 CXX_VERSION_4_7 := $(shell echo `$(CXX) -dumpversion | cut -f1-2 -d.` \>= 4.7 | bc)
 
-CXX_WARNINGS=-Wall -Wno-sign-compare -Wno-unknown-pragmas -Wno-parentheses -Winvalid-pch -Wno-unused-variable -Wno-reorder -Wno-unused-but-set-variable -Wno-unused-function -Wno-deprecated-declarations -Wno-attributes
+CXX_WARNINGS=$(COMMON_WARNINGS) -Wno-reorder -Wno-attributes
 
 ifeq ($(CXX_VERSION_4_8),1)
   CXX_WARNINGS+=-Wno-unused-local-typedefs
@@ -37,7 +49,7 @@ ifeq ($(CXX_VERSION_4_7),1)
   CXX_WARNINGS+=-Wno-delete-non-virtual-dtor
 endif
 
-CC_WARNINGS=-Wall -Wno-sign-compare -Wno-unknown-pragmas -Wno-parentheses -Winvalid-pch -Wno-unused-variable -Wno-unused-but-set-variable -Wno-unused-function -Wno-deprecated-declarations
+CC_WARNINGS=$(COMMON_WARNINGS)
 
 # Define the c++ language standard
 ifeq ($(ARCH),Darwin)
@@ -77,7 +89,7 @@ ifeq ($(ARCH),Linux)
   endif
 
   CCFLAGS=$(COMMON_FLAGS) $(CC_WARNINGS)
-  CXXFLAGS=$(COMMON_FLAGS) $(CXX_STANDARD) -fvisibility-inlines-hidden -D_GLIBCXX_HAVE_GTHR_DEFAULT -D_GLIBCXX_USE_CXX11_ABI=0 $(CXX_WARNINGS)
+  CXXFLAGS=$(COMMON_FLAGS) $(CXX_STANDARD) -fvisibility-inlines-hidden -D_GLIBCXX_HAVE_GTHR_DEFAULT $(CXX_WARNINGS)
 
 else ifeq ($(ARCH),Darwin)
   MACOSX_SDK=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.14.sdk

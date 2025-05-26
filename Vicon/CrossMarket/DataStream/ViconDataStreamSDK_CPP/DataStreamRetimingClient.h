@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -191,7 +191,7 @@ namespace ViconDataStreamSDK
       ///      // Signal to the garbage collector that it can clean up
       ///      pHeapClient.Disconnect();
       ///      pHeapClient = null;
-      /// -----      
+      ///       
       RetimingClient();
 
 
@@ -233,7 +233,7 @@ namespace ViconDataStreamSDK
       ///      
       ///      ViconDataStreamSDK.DotNET.RetimingClient MyClient = new ViconDataStreamSDK.DotNET.RetimingClient();
       ///      Output_GetVersion Output = MyClient.GetVersion();
-      /// -----      
+      ///       
       /// 
       /// \return Output_GetVersion class containing the version information.
       Output_GetVersion  GetVersion() const;
@@ -268,7 +268,7 @@ namespace ViconDataStreamSDK
       ///      Output_Connect Output = MyClient.Connect( "localhost" );
       ///      // Connect with alternative FrameRate parameter
       ///      Output_Connect Output = MyClient.Connect( "localhost", 90.0 );
-      /// -----      
+      ///       
       /// 
       /// \param  HostName The DNS-identifiable name, or IP address of the PC hosting the DataStream server. 
       ///                  For example:
@@ -286,6 +286,41 @@ namespace ViconDataStreamSDK
       ///           + ClientAlreadyConnected 
       ///           + ClientConnectionFailed
       Output_Connect Connect(const String & HostName, double FrameRate = 0.0 );
+
+      /// Set connection timeout for Connect() Connect will return ClientConnectionFailed if no connection was able to be made within i_Timetout
+      ///
+      /// See Also: Connect()
+      ///
+      /// C example
+      ///      
+      ///      CRetimingClient * pRetimingClient = RetimingClient_Create();
+      ///      RetimingClient_SetConnectionTimeout( pRetimingClient, 200 ); 
+      ///      COutput_Connect Output = RetimingClient_Connect( pRetimingClient, "localhost");
+      ///      RetimingClient_Destroy( pRetimingClient );
+      ///      
+      /// C++ example
+      ///      
+      ///      ViconDataStreamSDK::CPP::RetimingClient MyClient;
+      ///      MyClient.SetConnectionTimeout(200);
+      ///      Output_Connect Output = MyClient.Connect( "localhost" );
+      ///      
+      /// MATLAB example
+      ///      
+      ///     See .NET example
+      ///      
+      /// .NET example
+      ///      
+      ///      ViconDataStreamSDK.DotNET.RetimingClient MyClient = new ViconDataStreamSDK.DotNET.RetimingClient();
+      ///      MyClient.SetConnectionTimeout(200);
+      ///      Output_Connect Output = MyClient.Connect("localhost:801");
+      ///
+      /// 
+      /// \param  i_Timeout  Connection timeout in millisecond, default is 5000 milliseconds
+      /// \return An Output_Connect class containing the result of the connect operation.
+      ///         - The Result will be: 
+      ///           + Success
+      ///           + ArgumentOutOfRange
+      Output_SetConnectionTimeout SetConnectionTimeout( unsigned int i_Timeout );
 
       /// Disconnect from the Vicon DataStream Server.
       /// 
@@ -314,7 +349,7 @@ namespace ViconDataStreamSDK
       ///      ViconDataStreamSDK.DotNET.RetimingClient MyClient = new ViconDataStreamSDK.DotNET.RetimingClient();
       ///      MyClient.Connect( "localhost" );
       ///      Output_Disconnect Output = MyClient.Disconnect();
-      /// -----      
+      ///       
       /// 
       /// \return An Output_Disconnect class containing the result of the operation.
       ///         - The Result will be: 
@@ -361,7 +396,7 @@ namespace ViconDataStreamSDK
       ///      Output_IsConnected Output = MyClient.IsConnected()
       ///      // Output.Connected == true
       ///      // (assuming localhost is serving)
-      /// -----      
+      ///       
       /// 
       /// \return An Output_IsConnected class containing a true value for Connected if you are 
       ///         connected to the stream, otherwise false.
@@ -402,7 +437,7 @@ namespace ViconDataStreamSDK
       ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
       ///      MyClient.Connect( "localhost" );
       ///      Output_EnableLightweightSegmentData Output = MyClient.EnableLightweightSegmentData();
-      /// -----
+      ///
       /// \return An Output_EnableSegmentData class containing the result of the operation.
       ///         - The Result will be:
       ///           + Success
@@ -441,7 +476,7 @@ namespace ViconDataStreamSDK
       ///      ViconDataStreamSDK.DotNET.Client MyClient = new ViconDataStreamSDK.DotNET.Client();
       ///      MyClient.Connect( "localhost" );
       ///      Output_DisableLightweightSegmentData Output = MyClient.DisableLightweightSegmentData ();
-      /// -----
+      ///
       /// \return An Output_DisableLightweightSegmentData class containing the result of the operation.
       ///         - The Result will be:
       ///           + Success
@@ -491,7 +526,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.EnableSegmentData();
       ///      Output_IsLightweightSegmentDataEnabled Output = MyClient.IsLightweightSegmentDataEnabled();
       ///      // Output.Enabled == true
-      /// -----
+      ///
       /// \return An Output_IsLightweightSegmentDataEnabled class containing the result of the operation.
       ///         - The Result will be:
       ///           + Whether the data is enabled
@@ -532,7 +567,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.SetAxisMapping( ViconDataStreamSDK.DotNET.Direction.Forward,
       ///      ViconDataStreamSDK.DotNET.Direction.Left,
       ///      ViconDataStreamSDK.DotNET.Direction.Up );
-      /// -----      
+      ///       
       /// \param XAxis Specify the direction of your X axis relative to yourself as the observer.
       /// \param YAxis Specify the direction of your Y axis relative to yourself as the observer.
       /// \param ZAxis Specify the direction of your Z axis relative to yourself as the observer.
@@ -575,7 +610,7 @@ namespace ViconDataStreamSDK
       ///      // Output.XAxis == ViconDataStreamSDK.DotNET.Direction.Forward
       ///      // Output.YAxis == ViconDataStreamSDK.DotNET.Direction.Left
       ///      // Output.ZAxis == ViconDataStreamSDK.DotNET.Direction.Up
-      /// -----      
+      ///       
       /// \return An Output_GetAxisMapping class containing the result of the operation.
       ///         - The Result will be:
       ///           + XAxis, YAxis, ZAxis
@@ -623,7 +658,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.Connect( "localhost" );
       ///      Output = MyClient.UpdateFrame(); // Output.Result == Success
       ///      Output = MyClient.UpdateFrame(20); // Output.Result == Success
-      /// -----      
+      ///       
       ///  
       /// \param Offset An additional offset that will be applied to the time at which the predicted
       ///               position is calculated. This may be used to compensate for additional delays that 
@@ -665,7 +700,7 @@ namespace ViconDataStreamSDK
       ///      ViconDataStreamSDK.DotNET.RetimingClient MyClient = new ViconDataStreamSDK.DotNET.RetimingClient();
       ///      MyClient.Connect( "localhost", 200 );
       ///      Output = MyClient.WaitForFrame(); // Output.Result == Success
-      /// -----      
+      ///       
       ///  
       /// \return An Output_WaitForFrame class containing the result of the operation.
       ///         - The Result will be:
@@ -715,7 +750,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.UpdateFrame();
       ///      Output = MyClient.GetSubjectCount(); // Output.Result == Success
       ///      // Output.SubjectCount >= 0
-      /// -----      
+      ///       
       ///        
       ///
       /// \return An Output_GetSubjectCount class containing the result of the operation and the number of subjects.
@@ -783,7 +818,7 @@ namespace ViconDataStreamSDK
       ///      // OutputGSN .SubjectName == "Bob"
       ///      OutputGSN = MyClient.GetSubjectName(2);// OutputGSN.Result == InvalidIndex
       ///      // OutputGSN.SubjectName == ""
-      /// -----      
+      ///       
       ///
       ///
       /// \param SubjectIndex The index of the subject. A valid Subject Index is between 0 and GetSubjectCount()-1.
@@ -837,7 +872,7 @@ namespace ViconDataStreamSDK
       ///      Output = MyClient.GetSubjectRootSegmentName( "Bob" );
       ///      // Output.Result == Success
       ///      // Output.SegmentName == "Pelvis"
-      /// -----      
+      ///       
       ///        
       ///
       /// \param SubjectName The name of the subject
@@ -903,7 +938,7 @@ namespace ViconDataStreamSDK
       ///      // Output.SegmentCount == 0
       ///      Output = MyClient.GetSegmentCount( "Bob" );// Output.Result == Success
       ///      // Output.SegmentCount >= 0
-      /// -----      
+      ///       
       ///        
       ///
       /// \param SubjectName The name of the subject.
@@ -959,7 +994,7 @@ namespace ViconDataStreamSDK
       ///      Output_GetSegmentName Output;
       ///      // SegmentIndex must be between 0 and GetSegmentCount() - 1
       ///      Output = MyClient.GetSegmentName( "Bob", 0 );
-      /// -----      
+      ///       
       ///        
       ///
       /// \param SubjectName The name of the subject
@@ -1050,7 +1085,7 @@ namespace ViconDataStreamSDK
       ///      // OutputGSCN.Result == InvalidIndex
       ///      // OutputGSCN.SegmentName == ""
       ///      // (no third segment)
-      /// -----      
+      ///       
       ///
       /// \param SubjectName The name of the subject
       /// \param SegmentName The name of the segment
@@ -1103,7 +1138,7 @@ namespace ViconDataStreamSDK
       ///      Output_GetSegmentChildName Output;
       ///      // Segment index must be between 0 and GetSegmentChildCount() - 1
       ///      Output = MyClient.GetSegmentChildName( "Bob", "Pelvis", 0 );
-      /// -----      
+      ///       
       ///
       /// \param SubjectName The name of the subject
       /// \param SegmentName The name of the segment
@@ -1174,7 +1209,7 @@ namespace ViconDataStreamSDK
       ///      Output = MyClient.GetSegmentParentName( "Bob", "LFemur" );
       ///      // Output.Result == Success
       ///      // Output.SegmentName == "Pelvis"
-      /// -----      
+      ///       
       ///
       /// \param SubjectName The name of the subject
       /// \param SegmentName The name of the segment
@@ -1223,7 +1258,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.UpdateFrame();
       ///      Output_GetSegmentStaticTranslation Output =
       ///      MyClient.GetSegmentStaticTranslation( "Alice", "Pelvis" );
-      /// -----      
+      ///       
       ///
       /// \param SubjectName The name of the subject
       /// \param SegmentName The name of the segment
@@ -1240,6 +1275,7 @@ namespace ViconDataStreamSDK
       /// Return the static pose rotation of a subject segment in helical coordinates.
       /// The helical coordinates represent a vector whose length is the amount of rotation in radians, and the direction is the axis about which to rotate.
       ///
+      /// See Also: GetSegmentStaticTranslation(), GetSegmentStaticRotationMatrix(), GetSegmentStaticRotationQuaternion(), GetSegmentStaticRotationEulerXYZ(), GetSegmentLocalTranslation(), GetSegmentLocalRotationHelical(), GetSegmentLocalRotationMatrix(), GetSegmentLocalRotationQuaternion(), GetSegmentLocalRotationEulerXYZ()
       ///
       /// C example
       ///      
@@ -1270,8 +1306,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.UpdateFrame();
       ///      Output_GetSegmentStaticRotationHelical Output =
       ///      MyClient.GetSegmentStaticRotationHelical( "Alice", "Pelvis" );
-      /// -----      
-      /// See Also: GetSegmentStaticTranslation(), GetSegmentStaticRotationMatrix(), GetSegmentStaticRotationQuaternion(), GetSegmentStaticRotationEulerXYZ(), GetSegmentLocalTranslation, GetSegmentLocalRotationHelical, GetSegmentLocalRotationMatrix, GetSegmentLocalRotationQuaternion, GetSegmentLocalRotationEulerXYZ
+      ///       
       ///
       ///        
       ///
@@ -1321,7 +1356,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.UpdateFrame();
       ///      Output_GetSegmentStaticRotationMatrix Output =
       ///      MyClient.GetSegmentStaticRotationMatrix( "Alice", "Pelvis" );
-      /// -----      
+      ///       
       ///        
       ///
       /// \param SubjectName The name of the subject
@@ -1372,7 +1407,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.UpdateFrame();
       ///      Output_GetSegmentStaticRotationQuaternion Output =
       ///      MyClient.GetSegmentStaticRotationQuaternion( "Alice", "Pelvis" );
-      /// -----      
+      ///       
       ///        
       ///
       ///
@@ -1424,7 +1459,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.UpdateFrame();
       ///      Output_GetSegmentStaticRotationEulerXYZ Output;
       ///      Output = MyClient.GetSegmentStaticRotationEulerXYZ( "Alice", "Pelvis" );
-      /// -----      
+      ///       
       ///
       /// \param  SubjectName The name of the subject.
       /// \param  SegmentName The name of the segment.
@@ -1478,7 +1513,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.UpdateFrame();
       ///      Output_GetSegmentGlobalTranslation Output =
       ///      MyClient.GetSegmentGlobalTranslation( "Alice", "Pelvis" );
-      /// -----      
+      ///       
       ///
       /// \param  SubjectName The name of the subject.
       /// \param  SegmentName The name of the segment.
@@ -1527,7 +1562,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.UpdateFrame();
       ///      Output_GetSegmentGlobalRotationHelical Output =
       ///      MyClient.GetSegmentGlobalRotationHelical( "Alice", "Pelvis" );
-      /// -----      
+      ///       
       ///
       /// \param  SubjectName The name of the subject.
       /// \param  SegmentName The name of the segment.
@@ -1577,7 +1612,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.UpdateFrame();
       ///      Output_GetSegmentGlobalRotationMatrix Output =
       ///      MyClient.GetSegmentGlobalRotationMatrix( "Alice", "Pelvis" );
-      /// -----      
+      ///       
       ///
       /// \param  SubjectName The name of the subject.
       /// \param  SegmentName The name of the segment.
@@ -1628,7 +1663,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.UpdateFrame();
       ///      Output_GetSegmentGlobalRotationQuaternion Output =
       ///      MyClient.GetSegmentGlobalRotationQuaternion( "Alice", "Pelvis" );
-      /// -----      
+      ///       
       ///
       /// \param  SubjectName The name of the subject.
       /// \param  SegmentName The name of the segment.
@@ -1677,7 +1712,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.UpdateFrame();
       ///      Output_GetSegmentGlobalRotationEulerXYZ Output =
       ///      MyClient.GetSegmentGlobalRotationEulerXYZ( "Alice", "Pelvis" );
-      /// -----      
+      ///       
       ///
       /// \param  SubjectName The name of the subject.
       /// \param  SegmentName The name of the segment.
@@ -1727,7 +1762,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.UpdateFrame();
       ///      Output_GetSegmentLocalTranslation Output =
       ///      MyClient.GetSegmentLocalTranslation( "Alice", "Pelvis" );
-      /// -----      
+      ///       
       ///
       /// \param  SubjectName The name of the subject.
       /// \param  SegmentName The name of the segment.
@@ -1777,7 +1812,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.UpdateFrame();
       ///      Output_GetSegmentLocalRotationHelical Output =
       ///      MyClient.GetSegmentLocalRotationHelical( "Alice", "Pelvis" );
-      /// -----      
+      ///       
       ///
       /// \param  SubjectName The name of the subject.
       /// \param  SegmentName The name of the segment.
@@ -1826,7 +1861,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.UpdateFrame();
       ///      Output_GetSegmentLocalRotationMatrix Output =
       ///      MyClient.GetSegmentLocalRotationMatrix( "Alice", "Pelvis" );
-      /// -----      
+      ///       
       ///
       /// \param  SubjectName The name of the subject.
       /// \param  SegmentName The name of the segment.
@@ -1876,7 +1911,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.UpdateFrame();
       ///      Output_GetSegmentLocalRotationQuaternion Output =
       ///      MyClient.GetSegmentLocalRotationQuaternion( "Alice", "Pelvis" );
-      /// -----      
+      ///       
       ///
       /// \param  SubjectName The name of the subject.
       /// \param  SegmentName The name of the segment.
@@ -1926,7 +1961,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.UpdateFrame();
       ///      Output_GetSegmentLocalRotationEulerXYZ Output =
       ///      MyClient.GetSegmentLocalRotationEulerXYZ( "Alice", "Pelvis" );
-      /// -----      
+      ///       
       ///
       /// \param  SubjectName The name of the subject.
       /// \param  SegmentName The name of the segment.
@@ -1971,7 +2006,7 @@ namespace ViconDataStreamSDK
       ///      MyClient.SetMaximumPrediction( 30 );
       ///      MyClient.Connect( "localhost" );
       ///      MyClient.UpdateFrame();
-      /// -----      
+      ///       
       /// \param MaxPrediction The maximum amount of prediction required in milliseconds
       void SetMaximumPrediction(double MaxPrediction);
 
@@ -2000,7 +2035,7 @@ namespace ViconDataStreamSDK
       ///      ViconDataStreamSDK.DotNET.RetimingClient MyClient = new ViconDataStreamSDK.DotNET.RetimingClient();
       ///      MyClient.SetMaximumPrediction( 30 );
       ///      MyClient.MaximumPrediction(); // Returns 30
-      /// -----      
+      ///       
       /// \return The maximum prediction allowed in milliseconds
       double MaximumPrediction() const;
 

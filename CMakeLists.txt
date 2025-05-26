@@ -1,12 +1,12 @@
-cmake_minimum_required(VERSION 3.5)
-project(vicon-datastream-sdk VERSION 1.11.0)
+cmake_minimum_required(VERSION 3.10)
+project(vicon-datastream-sdk VERSION 1.12.0)
 
-set (CMAKE_CXX_STANDARD 11)
+set (CMAKE_CXX_STANDARD 14)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-find_package(Boost 1.5 COMPONENTS system thread REQUIRED)
+find_package(Boost 1.5 COMPONENTS system thread chrono REQUIRED)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
@@ -38,6 +38,7 @@ target_link_libraries(ViconDataStreamSDK_CPP
   PRIVATE
     Boost::system
     Boost::thread
+    Boost::chrono
     Threads::Threads
 )
 

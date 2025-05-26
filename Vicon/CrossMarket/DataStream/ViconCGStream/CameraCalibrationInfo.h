@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -48,7 +48,7 @@ public:
   ViconCGStreamType::Double m_PrincipalPoint[ 2 ];
 
   /// Radial Distortion
-  ViconCGStreamType::Double m_RadialDistortion[ 2 ];
+  ViconCGStreamType::Double m_RadialDistortion[ 3 ];
 
   /// Focal Length
   ViconCGStreamType::Double m_FocalLength;

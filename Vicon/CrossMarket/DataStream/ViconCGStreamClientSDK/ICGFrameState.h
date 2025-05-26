@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -36,6 +36,7 @@
 #include <ViconCGStream/CentroidTracks.h>
 #include <ViconCGStream/CentroidWeights.h>
 #include <ViconCGStream/DeviceInfo.h>
+#include <ViconCGStream/DynamicCameraCalibrationInfo.h>
 #include <ViconCGStream/ChannelInfo.h>
 #include <ViconCGStream/VoltageFrame.h>
 #include <ViconCGStream/ForceFrame.h>
@@ -107,6 +108,7 @@ public:
   std::vector< VVideoFramePtr >                        m_VideoFrames;
   std::vector< ViconCGStream::VCameraWand2d >          m_CameraWand2d;
   std::vector< ViconCGStream::VCameraWand3d >          m_CameraWand3d;
+  std::vector< ViconCGStream::VDynamicCameraCalibrationInfo > m_DynamicCameraCalibrationInfo;
 
   // Reconstructions
   ViconCGStream::VUnlabeledRecons                      m_UnlabeledRecons;

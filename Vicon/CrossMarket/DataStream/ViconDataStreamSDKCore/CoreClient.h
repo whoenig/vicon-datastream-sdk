@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,6 +33,7 @@
 
 #include <memory>
 #include <array>
+#include <functional>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <ViconCGStreamClientSDK/ICGClient.h>
@@ -125,6 +126,7 @@ public:
   Result::Enum SetGreyscaleDataEnabled( const bool i_bEnabled );
   Result::Enum SetDebugDataEnabled( const bool i_bEnabled );
   Result::Enum SetCameraWand2dDataEnabled( const bool i_bEnabled );
+  Result::Enum SetCameraCalibrationDataEnabled( const bool i_bEnabled );
   Result::Enum SetVideoDataEnabled( const bool i_bEnabled );
 
   Result::Enum EnableSegmentData()         { return SetSegmentDataEnabled( true ); }
@@ -137,6 +139,7 @@ public:
   Result::Enum EnableGreyscaleData()       { return SetGreyscaleDataEnabled( true ); }
   Result::Enum EnableDebugData()           { return SetDebugDataEnabled( true ); }
   Result::Enum EnableCameraWand2dData()    { return SetCameraWand2dDataEnabled( true ); }
+  Result::Enum EnableCameraCalibrationData() { return SetCameraCalibrationDataEnabled( true ); }
   Result::Enum EnableVideoData()           { return SetVideoDataEnabled( true ); }
 
   Result::Enum DisableSegmentData()         { return SetSegmentDataEnabled( false ); }
@@ -149,6 +152,7 @@ public:
   Result::Enum DisableGreyscaleData()       { return SetGreyscaleDataEnabled( false ); }
   Result::Enum DisableDebugData()           { return SetDebugDataEnabled( false ); }
   Result::Enum DisableCameraWand2dData()    { return SetCameraWand2dDataEnabled( false ); }
+  Result::Enum DisableCameraCalibrationData(){ return SetCameraCalibrationDataEnabled( false ); }
   Result::Enum DisableVideoData()           { return SetVideoDataEnabled( false ); }
 
   bool IsSegmentDataEnabled() const;
@@ -161,6 +165,7 @@ public:
   bool IsGreyscaleDataEnabled() const;
   bool IsDebugDataEnabled() const;
   bool IsCameraWand2dDataEnabled() const;
+  bool IsCameraCalibrationDataEnabled() const;
   bool IsVideoDataEnabled() const;
 
   Result::Enum SetStreamMode( const StreamMode::Enum i_Mode );
@@ -322,7 +327,9 @@ public:
   Result::Enum GetEyeTrackerGlobalGazeVector( const unsigned int i_EyeTrackerID, double (&o_rThreeVector)[3], bool& o_rbOccludedFlag ) const;
 
   Result::Enum GetCameraCount( unsigned int & o_rCount ) const;
+  Result::Enum GetDynamicCameraCount( unsigned int & o_rCount ) const;
   Result::Enum GetCameraName( const unsigned int i_CameraIndex, std::string & o_rCameraName ) const;
+  Result::Enum GetDynamicCameraName( const unsigned int i_CameraIndex, std::string & o_rCameraName ) const;
   Result::Enum GetCameraID( const std::string & i_rCameraName, unsigned int & o_rCameraID ) const;
   Result::Enum GetCameraUserID( const std::string & i_rCameraName, unsigned int & o_rCameraID ) const;
   Result::Enum GetCameraType( const std::string & i_rCameraName, std::string & o_rCameraType ) const;
@@ -333,6 +340,16 @@ public:
 
   Result::Enum GetCameraResolution( const std::string & i_rCameraName, unsigned int & o_rResolutionX, unsigned int & o_rResolutionY ) const;
   Result::Enum GetIsVideoCamera( const std::string & i_rCameraName, bool & o_rIsVideoCamera ) const;
+
+  Result::Enum GetCameraGlobalTranslation( const std::string& i_rCameraName, double (&o_rThreeVector)[3] ) const;
+  Result::Enum GetCameraGlobalRotationHelical( const std::string& i_rCameraName, double (&o_rThreeVector)[3] ) const;
+  Result::Enum GetCameraGlobalRotationMatrix( const std::string & i_rCameraName, double (& o_rRotation)[9] ) const;
+  Result::Enum GetCameraGlobalRotationQuaternion( const std::string& i_rCameraName, double (&o_rFourVector)[4] ) const;
+  Result::Enum GetCameraGlobalRotationEulerXYZ( const std::string& i_rCameraName, double (&o_rThreeVector)[3] ) const;
+
+  Result::Enum GetCameraPrincipalPoint(const std::string & i_rCameraName, double & o_rPrincipalPointX,double & o_rPrincipalPointY ) const;
+  Result::Enum GetCameraFocalLength(const std::string & i_rCameraName, double & o_rFocalLength ) const;
+  Result::Enum GetCameraLensParameters(const std::string & i_rCameraName, double(&o_rThreeVector)[3]) const;
 
   Result::Enum GetCentroidCount( const std::string & i_rCameraName, unsigned int & o_rCount ) const;
   Result::Enum GetCentroidPosition( const std::string & i_rCameraName,
@@ -373,6 +390,7 @@ public:
 
   Result::Enum ConfigureWireless( std::string& o_rError );
 
+  Result::Enum SetConnectionTimeout( const unsigned int i_Timeout );
 
 private:
   // Connect client to the Vicon Data Stream across multiple adapters.
@@ -393,6 +411,7 @@ private:
   const ViconCGStream::VCentroids       * GetCentroidSet( const unsigned int i_CameraID, Result::Enum & o_rResult ) const;
   const ViconCGStream::VCentroidWeights * GetCentroidWeightSet( const unsigned int i_CameraID, Result::Enum & o_rResult ) const;
   const ViconCGStream::VGreyscaleBlobs  * GetGreyscaleBlobs( const unsigned int i_CameraID, Result::Enum & o_rResult ) const;
+  const ViconCGStream::VCameraCalibrationInfo *GetCameraCalibrationInfo(const unsigned int i_CameraID, Result::Enum & o_rResult) const;
   void  GetVideoFrame( const unsigned int i_CameraID, Result::Enum & o_rResult, ViconCGStreamClientSDK::VVideoFramePtr & o_rVideoFramePtr ) const;
 
   Result::Enum GetMarkerID( const ViconCGStream::VSubjectInfo & i_rSubjectInfo, const std::string& i_rMarkerName, unsigned int& o_rMarkerID ) const;
@@ -466,6 +485,7 @@ private:
   bool m_bGreyscaleDataEnabled;
   bool m_bDebugDataEnabled;
   bool m_bCameraWand2dDataEnabled;
+  bool m_bCameraCalibrationDataEnabled;
   bool m_bVideoDataEnabled;
 
   // Literally, if subject scale is enabled
@@ -487,6 +507,9 @@ private:
 
   // Filename for stream client timing log; to allow it to be set before the client is instantiated.
   std::string m_ClientLogFile;
+
+  // connection timeout, default to 5000
+  unsigned int m_ConnectionTimeout;
 };
 
 /* Needs VC12 :(

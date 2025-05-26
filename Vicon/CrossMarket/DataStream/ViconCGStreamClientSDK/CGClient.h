@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -47,8 +47,8 @@ public:
 
   // ICGClient
   virtual void Destroy() override;
-  virtual void Connect( std::string i_IPAddress, unsigned short i_Port ) override;
-  virtual void Connect( const std::vector< std::pair< std::string, unsigned short > > & i_rHosts ) override;
+  virtual bool Connect( std::string i_IPAddress, unsigned short i_Port ) override;
+  virtual bool Connect( const std::vector< std::pair< std::string, unsigned short > > & i_rHosts ) override;
   virtual void ReceiveMulticastData( std::string i_MulticastIPAddress, std::string i_LocalIPAddress, unsigned short i_Port ) override;
   virtual void StopReceivingMulticastData( ) override;
 

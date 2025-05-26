@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -49,12 +49,12 @@ public:
   virtual void Destroy() = 0;
 
   /// Set the ipAddress to connect to and begin connection attempts
-  virtual void Connect( std::string i_IPAddress, unsigned short i_Port ) = 0;
+  virtual bool Connect( std::string i_IPAddress, unsigned short i_Port ) = 0;
 
   /// Supply multiple adapters to connect to.
   /// Multiple connections are used to reduce jitter.
   /// The client will request the same data from them all, and report the earliest received sample.
-  virtual void Connect( const std::vector< std::pair< std::string, unsigned short > > & i_rHosts ) = 0;
+  virtual bool Connect( const std::vector< std::pair< std::string, unsigned short > > & i_rHosts ) = 0;
 
   /// Configure this CGClient to be a multicast receiver.
   /// Users should call either ReceiveMulticastData or Connect, not both.

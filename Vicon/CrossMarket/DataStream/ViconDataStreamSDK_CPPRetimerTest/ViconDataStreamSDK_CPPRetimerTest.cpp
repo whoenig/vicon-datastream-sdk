@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -25,11 +25,11 @@
 #include "DataStreamClient.h"
 #include "DataStreamRetimingClient.h"
 
-#include <boost/lexical_cast.hpp>
 
 #include <iostream>
 #include <fstream>
 #include <chrono>
+#include <string.h>
 
 #ifdef WIN32
 #include <conio.h>   // For _kbhit()
@@ -280,7 +280,14 @@ int main( int argc, char* argv[] )
     {
       if( a < argc )
       {
-        FrameRate = boost::lexical_cast<double>( argv[++a] );
+        try
+        {
+          FrameRate = std::stod( argv[++a] );
+        }
+        catch(const std::invalid_argument & e)
+        {
+          std::cerr << e.what() << std::endl;
+        }
       }
     }
     else if( arg == "--restarts" )
@@ -289,9 +296,9 @@ int main( int argc, char* argv[] )
       {
         try
         {
-          NumRestarts = boost::lexical_cast<unsigned int>( argv[++a] ) + 1;
+          NumRestarts = std::stoul( argv[++a] ) + 1;
         }
-        catch( boost::bad_lexical_cast & e )
+        catch(const std::invalid_argument & e)
         {
           std::cerr << e.what() << std::endl;
         }
@@ -303,9 +310,9 @@ int main( int argc, char* argv[] )
       {
         try
         {
-          Duration = boost::lexical_cast<double>( argv[++a] );
+          Duration = std::stod( argv[++a] );
         }
-        catch( boost::bad_lexical_cast & e )
+        catch(const std::invalid_argument & e)
         {
           std::cerr << e.what() << std::endl;
         }

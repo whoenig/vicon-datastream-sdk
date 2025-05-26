@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,6 +24,8 @@
 //////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
+#ifndef CDLL_EXPORT
+
 #ifdef WIN32
 
 #ifdef _EXPORTING
@@ -44,6 +46,8 @@
 #define CDLL_EXPORT
 
 #endif
+
+#endif 
 
 
 
@@ -153,6 +157,8 @@ CDLL_EXPORT CEnum RetimingClient_ClearSubjectFilter( CClient* client );
 CDLL_EXPORT CEnum RetimingClient_AddToSubjectFilter( CClient* client, CString i_rSubjectName );
 
 CDLL_EXPORT CEnum RetimingClient_SetTimingLogFile( CRetimingClient* client, CString i_rClientLog, CString i_rStreamLog);
+
+CDLL_EXPORT CEnum RetimingClient_SetConnectionTimeout( CRetimingClient* client, unsigned int i_Timeout );
 
 #ifdef __cplusplus
 }

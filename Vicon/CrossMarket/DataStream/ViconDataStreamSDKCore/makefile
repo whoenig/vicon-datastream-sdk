@@ -19,26 +19,26 @@ endif
 
 ifeq ($(CONFIG), Debug)
 DEFINES=-DTCM_LINUX -DTCM_UNIX -D_DEBUG -DPROJECT_SOURCE_PATH=\".\" -DRELEASE_SOFTWARE 
-SYSTEMINCLUDEPATHS=-isystem../../../../thirdparty/Boost/boost-1.58.0-dynamic-linux-x64/installed/include 
+SYSTEMINCLUDEPATHS=-isystem../../../../thirdparty/Boost/boost-1.75.0-linux-x64/include 
 INCLUDEPATHS=-I. -I../.. -I.. -I. -IDebug 
-LIBRARYPATHS=-L../../../../lib/Debug -L../../../../thirdparty/Boost/boost-1.58.0-dynamic-linux-x64/installed/lib  -L../../../../bin/Debug
-LIBRARIES=-lboost_atomic-mt-d -lboost_chrono-mt-d -lboost_container-mt-d -lboost_context-mt-d -lboost_coroutine-mt-d -lboost_date_time-mt-d -lboost_filesystem-mt-d -lboost_graph-mt-d -lboost_iostreams-mt-d -lboost_locale-mt-d -lboost_log-mt-d -lboost_log_setup-mt-d -lboost_math_c99-mt-d -lboost_math_c99f-mt-d -lboost_math_c99l-mt-d -lboost_math_tr1-mt-d -lboost_math_tr1f-mt-d -lboost_math_tr1l-mt-d -lboost_prg_exec_monitor-mt-d -lboost_program_options-mt-d -lboost_python-mt-d -lboost_random-mt-d -lboost_regex-mt-d -lboost_serialization-mt-d -lboost_signals-mt-d -lboost_system-mt-d -lboost_thread-mt-d -lboost_timer-mt-d -lboost_unit_test_framework-mt-d -lboost_wave-mt-d -lboost_wserialization-mt-d 
+LIBRARYPATHS=-L../../../../lib/Debug -L../../../../thirdparty/Boost/boost-1.75.0-linux-x64/lib  -L../../../../bin/Debug
+LIBRARIES=-lboost_atomic-mt-d-x64 -lboost_chrono-mt-d-x64 -lboost_container-mt-d-x64 -lboost_context-mt-d-x64 -lboost_contract-mt-d-x64 -lboost_coroutine-mt-d-x64 -lboost_date_time-mt-d-x64 -lboost_exception-mt-d-x64 -lboost_fiber-mt-d-x64 -lboost_filesystem-mt-d-x64 -lboost_graph-mt-d-x64 -lboost_json-mt-d-x64 -lboost_locale-mt-d-x64 -lboost_log-mt-d-x64 -lboost_log_setup-mt-d-x64 -lboost_math_c99-mt-d-x64 -lboost_math_c99f-mt-d-x64 -lboost_math_c99l-mt-d-x64 -lboost_math_tr1-mt-d-x64 -lboost_math_tr1f-mt-d-x64 -lboost_math_tr1l-mt-d-x64 -lboost_nowide-mt-d-x64 -lboost_prg_exec_monitor-mt-d-x64 -lboost_program_options-mt-d-x64 -lboost_random-mt-d-x64 -lboost_regex-mt-d-x64 -lboost_serialization-mt-d-x64 -lboost_stacktrace_addr2line-mt-d-x64 -lboost_stacktrace_backtrace-mt-d-x64 -lboost_stacktrace_basic-mt-d-x64 -lboost_stacktrace_noop-mt-d-x64 -lboost_system-mt-d-x64 -lboost_test_exec_monitor-mt-d-x64 -lboost_thread-mt-d-x64 -lboost_timer-mt-d-x64 -lboost_type_erasure-mt-d-x64 -lboost_unit_test_framework-mt-d-x64 -lboost_wave-mt-d-x64 -lboost_wserialization-mt-d-x64 
 DEPENDENCIES=-lStreamCommon -lViconCGStream -lViconCGStreamClient -lViconCGStreamClientSDK -lViconDataStreamSDKCoreUtils 
 endif
 ifeq ($(CONFIG), InternalRelease)
 DEFINES=-DVICON_INTERNAL_RELEASE -DNDEBUG -DTCM_LINUX -DTCM_UNIX -DPROJECT_SOURCE_PATH=\".\" -DRELEASE_SOFTWARE 
-SYSTEMINCLUDEPATHS=-isystem../../../../thirdparty/Boost/boost-1.58.0-dynamic-linux-x64/installed/include 
+SYSTEMINCLUDEPATHS=-isystem../../../../thirdparty/Boost/boost-1.75.0-linux-x64/include 
 INCLUDEPATHS=-I. -I../.. -I.. -I. -IInternalRelease 
-LIBRARYPATHS=-L../../../../lib/InternalRelease -L../../../../thirdparty/Boost/boost-1.58.0-dynamic-linux-x64/installed/lib  -L../../../../bin/InternalRelease
-LIBRARIES=-lboost_atomic-mt -lboost_chrono-mt -lboost_container-mt -lboost_context-mt -lboost_coroutine-mt -lboost_date_time-mt -lboost_filesystem-mt -lboost_graph-mt -lboost_iostreams-mt -lboost_locale-mt -lboost_log-mt -lboost_log_setup-mt -lboost_math_c99-mt -lboost_math_c99f-mt -lboost_math_c99l-mt -lboost_math_tr1-mt -lboost_math_tr1f-mt -lboost_math_tr1l-mt -lboost_prg_exec_monitor-mt -lboost_program_options-mt -lboost_python-mt -lboost_random-mt -lboost_regex-mt -lboost_serialization-mt -lboost_signals-mt -lboost_system-mt -lboost_thread-mt -lboost_timer-mt -lboost_unit_test_framework-mt -lboost_wave-mt -lboost_wserialization-mt 
+LIBRARYPATHS=-L../../../../lib/InternalRelease -L../../../../thirdparty/Boost/boost-1.75.0-linux-x64/lib  -L../../../../bin/InternalRelease
+LIBRARIES=-lboost_atomic-mt-x64 -lboost_chrono-mt-x64 -lboost_container-mt-x64 -lboost_context-mt-x64 -lboost_contract-mt-x64 -lboost_coroutine-mt-x64 -lboost_date_time-mt-x64 -lboost_exception-mt-x64 -lboost_fiber-mt-x64 -lboost_filesystem-mt-x64 -lboost_graph-mt-x64 -lboost_json-mt-x64 -lboost_locale-mt-x64 -lboost_log-mt-x64 -lboost_log_setup-mt-x64 -lboost_math_c99-mt-x64 -lboost_math_c99f-mt-x64 -lboost_math_c99l-mt-x64 -lboost_math_tr1-mt-x64 -lboost_math_tr1f-mt-x64 -lboost_math_tr1l-mt-x64 -lboost_nowide-mt-x64 -lboost_prg_exec_monitor-mt-x64 -lboost_program_options-mt-x64 -lboost_random-mt-x64 -lboost_regex-mt-x64 -lboost_serialization-mt-x64 -lboost_stacktrace_addr2line-mt-x64 -lboost_stacktrace_backtrace-mt-x64 -lboost_stacktrace_basic-mt-x64 -lboost_stacktrace_noop-mt-x64 -lboost_system-mt-x64 -lboost_test_exec_monitor-mt-x64 -lboost_thread-mt-x64 -lboost_timer-mt-x64 -lboost_type_erasure-mt-x64 -lboost_unit_test_framework-mt-x64 -lboost_wave-mt-x64 -lboost_wserialization-mt-x64 
 DEPENDENCIES=-lStreamCommon -lViconCGStream -lViconCGStreamClient -lViconCGStreamClientSDK -lViconDataStreamSDKCoreUtils 
 endif
 ifeq ($(CONFIG), Release)
 DEFINES=-DNDEBUG -DTCM_OFF_SITE -DTCM_LINUX -DTCM_UNIX -DPROJECT_SOURCE_PATH=\".\" -DRELEASE_SOFTWARE 
-SYSTEMINCLUDEPATHS=-isystem../../../../thirdparty/Boost/boost-1.58.0-dynamic-linux-x64/installed/include 
+SYSTEMINCLUDEPATHS=-isystem../../../../thirdparty/Boost/boost-1.75.0-linux-x64/include 
 INCLUDEPATHS=-I. -I../.. -I.. -I. -IRelease 
-LIBRARYPATHS=-L../../../../lib/Release -L../../../../thirdparty/Boost/boost-1.58.0-dynamic-linux-x64/installed/lib  -L../../../../bin/Release
-LIBRARIES=-lboost_atomic-mt -lboost_chrono-mt -lboost_container-mt -lboost_context-mt -lboost_coroutine-mt -lboost_date_time-mt -lboost_filesystem-mt -lboost_graph-mt -lboost_iostreams-mt -lboost_locale-mt -lboost_log-mt -lboost_log_setup-mt -lboost_math_c99-mt -lboost_math_c99f-mt -lboost_math_c99l-mt -lboost_math_tr1-mt -lboost_math_tr1f-mt -lboost_math_tr1l-mt -lboost_prg_exec_monitor-mt -lboost_program_options-mt -lboost_python-mt -lboost_random-mt -lboost_regex-mt -lboost_serialization-mt -lboost_signals-mt -lboost_system-mt -lboost_thread-mt -lboost_timer-mt -lboost_unit_test_framework-mt -lboost_wave-mt -lboost_wserialization-mt 
+LIBRARYPATHS=-L../../../../lib/Release -L../../../../thirdparty/Boost/boost-1.75.0-linux-x64/lib  -L../../../../bin/Release
+LIBRARIES=-lboost_atomic-mt-x64 -lboost_chrono-mt-x64 -lboost_container-mt-x64 -lboost_context-mt-x64 -lboost_contract-mt-x64 -lboost_coroutine-mt-x64 -lboost_date_time-mt-x64 -lboost_exception-mt-x64 -lboost_fiber-mt-x64 -lboost_filesystem-mt-x64 -lboost_graph-mt-x64 -lboost_json-mt-x64 -lboost_locale-mt-x64 -lboost_log-mt-x64 -lboost_log_setup-mt-x64 -lboost_math_c99-mt-x64 -lboost_math_c99f-mt-x64 -lboost_math_c99l-mt-x64 -lboost_math_tr1-mt-x64 -lboost_math_tr1f-mt-x64 -lboost_math_tr1l-mt-x64 -lboost_nowide-mt-x64 -lboost_prg_exec_monitor-mt-x64 -lboost_program_options-mt-x64 -lboost_random-mt-x64 -lboost_regex-mt-x64 -lboost_serialization-mt-x64 -lboost_stacktrace_addr2line-mt-x64 -lboost_stacktrace_backtrace-mt-x64 -lboost_stacktrace_basic-mt-x64 -lboost_stacktrace_noop-mt-x64 -lboost_system-mt-x64 -lboost_test_exec_monitor-mt-x64 -lboost_thread-mt-x64 -lboost_timer-mt-x64 -lboost_type_erasure-mt-x64 -lboost_unit_test_framework-mt-x64 -lboost_wave-mt-x64 -lboost_wserialization-mt-x64 
 DEPENDENCIES=-lStreamCommon -lViconCGStream -lViconCGStreamClient -lViconCGStreamClientSDK -lViconDataStreamSDKCoreUtils 
 endif
 
@@ -64,7 +64,7 @@ all_Debug: $(LIBRARYDIRECTORY)/$(CONFIG)/libViconDataStreamSDKCore.a
 all_InternalRelease: $(LIBRARYDIRECTORY)/$(CONFIG)/libViconDataStreamSDKCore.a
 all_Release: $(LIBRARYDIRECTORY)/$(CONFIG)/libViconDataStreamSDKCore.a
 
-OBJECTS=$(CONFIG)/RetimingClient.o $(CONFIG)/WirelessConfiguration.o $(CONFIG)/RetimerUtils.o $(CONFIG)/SegmentPoseReader.o $(CONFIG)/RetimingCore.o $(CONFIG)/CoreClientTimingLog.o $(CONFIG)/CoreClient.o
+OBJECTS=$(CONFIG)/CoreClient.o $(CONFIG)/RetimingCore.o $(CONFIG)/SegmentPoseReader.o $(CONFIG)/CoreClientTimingLog.o $(CONFIG)/RetimingClient.o $(CONFIG)/RetimerUtils.o $(CONFIG)/WirelessConfiguration.o
 
 CXXFLAGS+=$(SYSTEMINCLUDEPATHS) $(INCLUDEPATHS) $(DEFINES)
 CCFLAGS+=$(SYSTEMINCLUDEPATHS) $(INCLUDEPATHS) $(DEFINES)
@@ -96,37 +96,13 @@ $(LIBRARYDIRECTORY)/Release/libViconDataStreamSDKCore.a: makefile $(OBJECTS)
 	$(AR) rcs $@ $(OBJECTS)
 
 # Source Files
-$(CONFIG)/RetimingClient.o: makefile $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/RetimingClient.cpp
-	@echo \[1\;34mCompiling RetimingClient.cpp\[0m
+$(CONFIG)/CoreClient.o: makefile $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/CoreClient.cpp
+	@echo \[1\;34mCompiling CoreClient.cpp\[0m
 	@mkdir -p $(@D)
 	find $(CONFIG) -name *.gch -exec cp '{}' . \;
-	$(CXX) -fPIC -MMD -MP -I$(CONFIG)/ $(CXXFLAGS)  -o $@ -c $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/RetimingClient.cpp
+	$(CXX) -fPIC -MMD -MP -I$(CONFIG)/ $(CXXFLAGS)  -o $@ -c $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/CoreClient.cpp
 
--include $(CONFIG)/RetimingClient.d
-
-$(CONFIG)/WirelessConfiguration.o: makefile $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/WirelessConfiguration.cpp
-	@echo \[1\;34mCompiling WirelessConfiguration.cpp\[0m
-	@mkdir -p $(@D)
-	find $(CONFIG) -name *.gch -exec cp '{}' . \;
-	$(CXX) -fPIC -MMD -MP -I$(CONFIG)/ $(CXXFLAGS)  -o $@ -c $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/WirelessConfiguration.cpp
-
--include $(CONFIG)/WirelessConfiguration.d
-
-$(CONFIG)/RetimerUtils.o: makefile $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/RetimerUtils.cpp
-	@echo \[1\;34mCompiling RetimerUtils.cpp\[0m
-	@mkdir -p $(@D)
-	find $(CONFIG) -name *.gch -exec cp '{}' . \;
-	$(CXX) -fPIC -MMD -MP -I$(CONFIG)/ $(CXXFLAGS)  -o $@ -c $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/RetimerUtils.cpp
-
--include $(CONFIG)/RetimerUtils.d
-
-$(CONFIG)/SegmentPoseReader.o: makefile $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/SegmentPoseReader.cpp
-	@echo \[1\;34mCompiling SegmentPoseReader.cpp\[0m
-	@mkdir -p $(@D)
-	find $(CONFIG) -name *.gch -exec cp '{}' . \;
-	$(CXX) -fPIC -MMD -MP -I$(CONFIG)/ $(CXXFLAGS)  -o $@ -c $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/SegmentPoseReader.cpp
-
--include $(CONFIG)/SegmentPoseReader.d
+-include $(CONFIG)/CoreClient.d
 
 $(CONFIG)/RetimingCore.o: makefile $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/RetimingCore.cpp
 	@echo \[1\;34mCompiling RetimingCore.cpp\[0m
@@ -136,6 +112,14 @@ $(CONFIG)/RetimingCore.o: makefile $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStre
 
 -include $(CONFIG)/RetimingCore.d
 
+$(CONFIG)/SegmentPoseReader.o: makefile $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/SegmentPoseReader.cpp
+	@echo \[1\;34mCompiling SegmentPoseReader.cpp\[0m
+	@mkdir -p $(@D)
+	find $(CONFIG) -name *.gch -exec cp '{}' . \;
+	$(CXX) -fPIC -MMD -MP -I$(CONFIG)/ $(CXXFLAGS)  -o $@ -c $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/SegmentPoseReader.cpp
+
+-include $(CONFIG)/SegmentPoseReader.d
+
 $(CONFIG)/CoreClientTimingLog.o: makefile $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/CoreClientTimingLog.cpp
 	@echo \[1\;34mCompiling CoreClientTimingLog.cpp\[0m
 	@mkdir -p $(@D)
@@ -144,20 +128,36 @@ $(CONFIG)/CoreClientTimingLog.o: makefile $(SOURCEDIRECTORY)/Vicon/CrossMarket/D
 
 -include $(CONFIG)/CoreClientTimingLog.d
 
-$(CONFIG)/CoreClient.o: makefile $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/CoreClient.cpp
-	@echo \[1\;34mCompiling CoreClient.cpp\[0m
+$(CONFIG)/RetimingClient.o: makefile $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/RetimingClient.cpp
+	@echo \[1\;34mCompiling RetimingClient.cpp\[0m
 	@mkdir -p $(@D)
 	find $(CONFIG) -name *.gch -exec cp '{}' . \;
-	$(CXX) -fPIC -MMD -MP -I$(CONFIG)/ $(CXXFLAGS)  -o $@ -c $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/CoreClient.cpp
+	$(CXX) -fPIC -MMD -MP -I$(CONFIG)/ $(CXXFLAGS)  -o $@ -c $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/RetimingClient.cpp
 
--include $(CONFIG)/CoreClient.d
+-include $(CONFIG)/RetimingClient.d
+
+$(CONFIG)/RetimerUtils.o: makefile $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/RetimerUtils.cpp
+	@echo \[1\;34mCompiling RetimerUtils.cpp\[0m
+	@mkdir -p $(@D)
+	find $(CONFIG) -name *.gch -exec cp '{}' . \;
+	$(CXX) -fPIC -MMD -MP -I$(CONFIG)/ $(CXXFLAGS)  -o $@ -c $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/RetimerUtils.cpp
+
+-include $(CONFIG)/RetimerUtils.d
+
+$(CONFIG)/WirelessConfiguration.o: makefile $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/WirelessConfiguration.cpp
+	@echo \[1\;34mCompiling WirelessConfiguration.cpp\[0m
+	@mkdir -p $(@D)
+	find $(CONFIG) -name *.gch -exec cp '{}' . \;
+	$(CXX) -fPIC -MMD -MP -I$(CONFIG)/ $(CXXFLAGS)  -o $@ -c $(SOURCEDIRECTORY)/Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/WirelessConfiguration.cpp
+
+-include $(CONFIG)/WirelessConfiguration.d
 
 # Header Files
 # Other Files
 
 clean:
 	@echo \[1\;31mCleaning $(CONFIG) build\[0m
-	find . -path '*/$(CONFIG)/*' \( -name '*.[od]' -o -name '*.gch' \) -exec rm -f {} ';' 
+	find . -path '*/$(CONFIG)/*' \( -name '*.[od]' -o -name '*.gch' \) -exec rm -f {} ';' \n
 	rm -f moc_*.cxx
 
 $(HIDE_BOOST_SCRIPT): makefile

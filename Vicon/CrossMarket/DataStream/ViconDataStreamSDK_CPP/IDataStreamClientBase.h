@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -50,6 +50,7 @@
 
 #include <string>
 #include <vector>
+#include <sstream>
 
 namespace ViconDataStreamSDK
 {
@@ -298,7 +299,8 @@ namespace Result
     InvalidOperation, ///< The method called is not valid in the current mode of operation
     NotSupported, ///< The SDK version or operating system does not support this function.
     ConfigurationFailed, ///< The operating system configuration changed failed.
-    NotPresent ///< The requested data type is not present in the stream.
+    NotPresent, ///< The requested data type is not present in the stream.
+    ArgumentOutOfRange ///< The supplied argument is not within the valid range.
   };
 }
 
@@ -325,6 +327,7 @@ namespace Result
   // Output objects that only return a result enum
   class Output_Connect                    : public Output_SimpleResult {};
   class Output_ConnectToMulticast         : public Output_SimpleResult {};
+  class Output_SetConnectionTimeout       : public Output_SimpleResult {};
   class Output_Disconnect                 : public Output_SimpleResult {};
   class Output_StartTransmittingMulticast : public Output_SimpleResult {};
   class Output_StopTransmittingMulticast  : public Output_SimpleResult {};
@@ -1008,6 +1011,17 @@ namespace Result
     /// 
     /// \return Output_GetVersion class containing the version information.
     virtual Output_GetVersion  GetVersion() const = 0;
+
+    /// Set connection timeout for Connect()
+    /// Connect will return ClientConnectionFailed if no connection was able to be made within
+    /// i_Timeout milliseconds, default is 5000 milliseconds, minimum is 10 milliseconds
+    ///
+    ///      ViconDataStreamSDK::CPP::Client MyClient;
+    ///      MyClient.SetConnectionTimeout(200);
+    ///      Output_Connect Output = MyClient.Connect( "localhost" );
+    /// 
+    /// \param  Timeout  Connection timeout in millisecond
+    virtual Output_SetConnectionTimeout SetConnectionTimeout( unsigned int i_Timeout ) = 0;
 
     /// Disconnect from the Vicon DataStream Server.
     /// 

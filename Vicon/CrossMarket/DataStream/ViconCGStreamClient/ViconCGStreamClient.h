@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -35,6 +35,7 @@
 
 #include <ViconCGStream/CameraCalibrationHealth.h>
 #include <ViconCGStream/CameraCalibrationInfo.h>
+#include <ViconCGStream/DynamicCameraCalibrationInfo.h>
 #include <ViconCGStream/CameraInfo.h>
 #include <ViconCGStream/CameraSensorInfo.h>
 #include <ViconCGStream/SubjectScale.h>
@@ -188,6 +189,7 @@ public:
   std::vector< ViconCGStream::VCameraWand3d > m_CameraWand3d;
   std::vector< ViconCGStream::VEyeTrackerFrame > m_EyeTrackerFrames;
   std::vector< std::shared_ptr< ViconCGStream::VVideoFrame > > m_VideoFrames;
+  std::vector< ViconCGStream::VDynamicCameraCalibrationInfo > m_DynamicCameraCalibrationInfo;
 
   ViconCGStream::VCentroids& AddCentroids();
   ViconCGStream::VCentroidTracks& AddCentroidTracks();
@@ -206,6 +208,7 @@ public:
   ViconCGStream::VCameraWand3d& AddCameraWand3d();
   ViconCGStream::VEyeTrackerFrame& AddEyeTrackerFrame();
   ViconCGStream::VVideoFrame& AddVideoFrame();
+  ViconCGStream::VDynamicCameraCalibrationInfo& AddDynamicCameraCalibrationInfo();
 
   void AddNetworkLatencyInfo( double i_Value );
 };
@@ -218,7 +221,7 @@ public:
   VViconCGStreamClient( std::weak_ptr< IViconCGStreamClientCallback > i_pCallback );
   ~VViconCGStreamClient();
 
-  void Connect( const std::string& i_rHost, unsigned short i_Port );
+  bool Connect( const std::string& i_rHost, unsigned short i_Port );
   void Disconnect();
   void ReceiveMulticastData( std::string i_MulticastIPAddress, std::string i_LocalIPAddress, unsigned short i_Port );
   void StopReceivingMulticastData();
@@ -272,7 +275,7 @@ protected:
 
   std::weak_ptr< IViconCGStreamClientCallback > m_pCallback;
 
-  boost::asio::io_service m_Service;
+  boost::asio::io_context m_IOContext;
   std::shared_ptr< boost::asio::ip::tcp::socket > m_pSocket;
   std::shared_ptr< boost::asio::ip::udp::socket > m_pMulticastSocket;
 
@@ -304,4 +307,5 @@ protected:
   std::ofstream m_TimingLog;
   boost::mutex m_LogMutex;
   std::string m_HostName;
+  boost::asio::ip::tcp::endpoint m_EndPoint;
 };

@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -24,31 +24,32 @@
 //////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include <boost/asio/io_service.hpp>
+#include <memory>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/post.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 
-#include <memory>
 
 class VCGStreamPostalService
 {
 public:
   void Post( const std::function< void() >& i_rFunction ) const
   {
-    m_pService->post( i_rFunction );
+    boost::asio::post( *m_pIOContext, i_rFunction );
   }
 
   bool StartService()
   {
     boost::mutex::scoped_lock Lock( m_Mutex );
-    if( !m_pService )
+    if( !m_pIOContext )
     {
-      m_pService = std::make_shared< boost::asio::io_service >();
+      m_pIOContext = std::make_shared< boost::asio::io_context >();
     }
 
-    if( !m_pWork )
+    if( !m_pWorkGuard )
     {
-      m_pWork = std::make_shared< boost::asio::io_service::work >( *m_pService );
+      m_pWorkGuard = std::make_unique< TWorkGuard >( boost::asio::make_work_guard( *m_pIOContext ) );
       m_Thread = boost::thread( std::bind( &VCGStreamPostalService::ThreadFunction, this ) );
     }
 
@@ -58,11 +59,11 @@ public:
   bool StopService()
   {
     boost::mutex::scoped_lock Lock( m_Mutex );
-    if( m_pWork )
+    if( m_pWorkGuard )
     {
-      m_pWork.reset();
+      m_pWorkGuard.reset();
       m_Thread.join();
-      m_pService->reset();
+      m_pIOContext->restart();
       return true;
     }
     return false;
@@ -70,12 +71,13 @@ public:
 
   void ThreadFunction()
   {
-    m_pService->run();
+    m_pIOContext->run();
   }
 
 private:
+  using TWorkGuard = decltype( boost::asio::make_work_guard( std::declval< boost::asio::io_context& >() ) );
   mutable boost::mutex m_Mutex;
-  std::shared_ptr< boost::asio::io_service > m_pService;
-  std::shared_ptr< boost::asio::io_service::work > m_pWork;
+  std::shared_ptr< boost::asio::io_context > m_pIOContext;
+  std::unique_ptr< TWorkGuard > m_pWorkGuard;
   boost::thread m_Thread;
 };

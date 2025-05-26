@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -248,6 +248,13 @@ namespace CPP
     return Output;
   }
 
+  ViconDataStreamSDK::CPP::Output_EnableCameraCalibrationData Client::EnableCameraCalibrationData()
+  {
+    Output_EnableCameraCalibrationData Output;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->EnableCameraCalibrationData() );
+    return Output;
+  }
+
   // Enable debug data
   CLASS_DECLSPEC
   Output_EnableDebugData Client::EnableDebugData()
@@ -341,6 +348,13 @@ namespace CPP
   {
     Output_DisableVideoData Output;
     Output.Result = Adapt( m_pClientImpl->m_pCoreClient->DisableVideoData() );
+    return Output;
+  }
+
+  Output_DisableCameraCalibrationData Client::DisableCameraCalibrationData()
+  {
+    Output_DisableCameraCalibrationData Output;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->DisableCameraCalibrationData() );
     return Output;
   }
 
@@ -440,6 +454,14 @@ namespace CPP
   {
     Output_IsVideoDataEnabled Output;
     Output.Enabled = m_pClientImpl->m_pCoreClient->IsVideoDataEnabled();
+
+    return Output;
+  }
+
+  ViconDataStreamSDK::CPP::Output_IsCameraCalibrationDataEnabled Client::IsCameraCalibrationDataEnabled() const
+  {
+    Output_IsCameraCalibrationDataEnabled Output;
+    Output.Enabled = m_pClientImpl->m_pCoreClient->IsCameraCalibrationDataEnabled();
 
     return Output;
   }
@@ -1450,11 +1472,31 @@ namespace CPP
   }
 
   CLASS_DECLSPEC
+  Output_GetCameraCount Client::GetDynamicCameraCount() const
+  {
+    Output_GetCameraCount Output;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetDynamicCameraCount( Output.CameraCount ) );
+
+    return Output;
+  }
+
+  CLASS_DECLSPEC
   Output_GetCameraName Client::GetCameraName( unsigned int i_CameraIndex ) const
   {
     Output_GetCameraName Output;
     std::string _CameraName;
     Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetCameraName( i_CameraIndex, _CameraName ) );
+    Output.CameraName.Set( _CameraName.c_str(),* m_pClientImpl->m_pStringFactory.get() );
+
+    return Output;
+  }
+
+  CLASS_DECLSPEC
+  Output_GetCameraName Client::GetDynamicCameraName( unsigned int i_CameraIndex ) const
+  {
+    Output_GetCameraName Output;
+    std::string _CameraName;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetDynamicCameraName( i_CameraIndex, _CameraName ) );
     Output.CameraName.Set( _CameraName.c_str(),* m_pClientImpl->m_pStringFactory.get() );
 
     return Output;
@@ -1543,6 +1585,79 @@ namespace CPP
     return Output;
   }
 
+  CLASS_DECLSPEC
+  Output_GetCameraGlobalTranslation Client::GetCameraGlobalTranslation(const std::string& i_rCameraName) const
+  {
+    Output_GetCameraGlobalTranslation Output;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetCameraGlobalTranslation( i_rCameraName, 
+                                                                                      Output.Translation ) );
+    return Output;
+  }
+
+  CLASS_DECLSPEC
+  Output_GetCameraGlobalRotationHelical Client::GetCameraGlobalRotationHelical(const std::string& i_rCameraName) const
+  {
+    Output_GetCameraGlobalRotationHelical Output;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetCameraGlobalRotationHelical( i_rCameraName, 
+                                                                                         Output.Rotation ) );
+    return Output;
+  }
+
+  CLASS_DECLSPEC
+  Output_GetCameraGlobalRotationMatrix Client::GetCameraGlobalRotationMatrix(const std::string & i_rCameraName) const
+  {
+    Output_GetCameraGlobalRotationMatrix Output;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetCameraGlobalRotationMatrix( i_rCameraName, 
+                                                                                         Output.Rotation ) );
+    return Output;
+  }
+
+
+  CLASS_DECLSPEC
+  Output_GetCameraGlobalRotationQuaternion Client::GetCameraGlobalRotationQuaternion(const std::string& i_rCameraName) const
+  {
+    Output_GetCameraGlobalRotationQuaternion Output;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetCameraGlobalRotationQuaternion( i_rCameraName, 
+                                                                                            Output.Rotation ) );
+    return Output;
+  }
+
+  CLASS_DECLSPEC
+  Output_GetCameraGlobalRotationEulerXYZ Client::GetCameraGlobalRotationEulerXYZ(const std::string& i_rCameraName) const
+  {
+    Output_GetCameraGlobalRotationEulerXYZ Output;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetCameraGlobalRotationEulerXYZ( i_rCameraName, 
+                                                                                          Output.Rotation ) );
+    return Output;
+  }
+
+  CLASS_DECLSPEC
+  Output_GetCameraPrincipalPoint Client::GetCameraPrincipalPoint(const std::string & i_rCameraName ) const
+  {
+    Output_GetCameraPrincipalPoint Output;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetCameraPrincipalPoint( i_rCameraName,
+                                                                                  Output.PrincipalPointX,
+                                                                                  Output.PrincipalPointY) );
+    return Output;
+  }
+
+  CLASS_DECLSPEC
+  Output_GetCameraFocalLength Client::GetCameraFocalLength(const std::string & i_rCameraName) const
+  {
+    Output_GetCameraFocalLength Output;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetCameraFocalLength( i_rCameraName,
+                                                                               Output.FocalLength) );
+    return Output;
+  }
+
+  CLASS_DECLSPEC
+  Output_GetCameraLensParameters Client::GetCameraLensParameters(const std::string & i_rCameraName) const
+  {
+    Output_GetCameraLensParameters Output;
+    Output.Result = Adapt( m_pClientImpl->m_pCoreClient->GetCameraLensParameters( i_rCameraName,
+                                                                               Output.LensParameters) );
+    return Output;
+  }
 
   CLASS_DECLSPEC
   Output_GetCentroidCount Client::GetCentroidCount( const std::string & i_rCameraName ) const
@@ -1678,6 +1793,14 @@ namespace CPP
     std::string Error;
     Output.Result = Adapt( m_pClientImpl->m_pCoreClient->ConfigureWireless( Error ) );
     Output.Error = Error;
+    return Output;
+  }
+
+  CLASS_DECLSPEC
+  Output_SetConnectionTimeout Client::SetConnectionTimeout( unsigned int i_Timeout )
+  {
+    Output_SetConnectionTimeout Output;
+    Output.Result = Adapt(m_pClientImpl->m_pCoreClient->SetConnectionTimeout( i_Timeout ));
     return Output;
   }
 

@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -402,4 +402,9 @@ CEnum RetimingClient_AddToSubjectFilter(CRetimingClient* client, CString i_rSubj
 CEnum RetimingClient_SetTimingLogFile(CRetimingClient* client, CString i_rClientLog, CString i_rStreamLog)
 {
   return (( RetimingClient* )client)->SetTimingLogFile(( String )i_rClientLog, ( String )i_rStreamLog ).Result;
+}
+
+CDLL_EXPORT CEnum RetimingClient_SetConnectionTimeout(CRetimingClient* client, unsigned int i_Timeout)
+{
+  return (( RetimingClient* )client)->SetConnectionTimeout( i_Timeout ).Result;
 }

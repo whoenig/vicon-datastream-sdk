@@ -24,21 +24,29 @@
 //////////////////////////////////////////////////////////////////////////////////
 #pragma once
 
-#include <memory>
+#include "CameraCalibrationInfo.h"
 #include <string>
 
-class VWirelessConfiguration
+namespace ViconCGStream
+{
+//-------------------------------------------------------------------------------------------------
+// Item for dynamic/moving camera
+// Contents are the same as CameraCalibrationInfo, only as a separate item so
+// that the static/non-moving cameras are not sent every frame.
+// Whether items are sent every frame is checked just before sending the data in
+// CGServerStream.
+class VDynamicCameraCalibrationInfo : public VCameraCalibrationInfo
 {
 public:
-  static std::shared_ptr< VWirelessConfiguration > Create( std::string & o_rError );
-  virtual ~VWirelessConfiguration();
 
-  bool BackgroundScan( std::string & o_rError, bool i_Enable );
-  bool StreamingMode( std::string & o_rError, bool i_Enable );
+  /// Object type enum.
+  virtual ViconCGStreamType::Enum TypeID() const
+  {
+    return ViconCGStreamEnum::DynamicCameraCalibrationInfo;
+  }
 
-private:
-  class VImpl;
-  VWirelessConfiguration( std::shared_ptr< VImpl > i_pImpl );
-  
-  std::shared_ptr< VImpl > m_pImpl;
 };
+
+//-------------------------------------------------------------------------------------------------
+};
+

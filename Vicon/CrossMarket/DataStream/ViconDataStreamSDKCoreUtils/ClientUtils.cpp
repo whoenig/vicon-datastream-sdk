@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -29,10 +29,17 @@
 
 #include <boost/asio.hpp>
 #include <boost/format.hpp>
-#include <array>
+#include <boost/math/constants/constants.hpp>
 
+#include <array>
 #include <numeric>
 #include <cmath>
+
+namespace
+{
+  const double SmallNumber = std::numeric_limits< double >::epsilon() * 10;
+  const auto HalfPi = boost::math::constants::half_pi<double>();
+}
 
 namespace ClientUtils
 {
@@ -166,12 +173,12 @@ namespace ClientUtils
 
   bool IsValidMulticastIP( const std::string & i_MulticastIPAddress )
   {
-    boost::asio::io_service Service;
+    boost::asio::io_context IOContext;
     boost::system::error_code Error;
     boost::asio::ip::address_v4 Address = boost::asio::ip::address_v4::from_string( i_MulticastIPAddress, Error );
     if( Error )
     {
-      boost::asio::ip::tcp::resolver Resolver( Service );
+      boost::asio::ip::tcp::resolver Resolver( IOContext );
       boost::asio::ip::tcp::resolver::query Query( i_MulticastIPAddress, "" );
       
       boost::asio::ip::tcp::resolver::iterator It = Resolver.resolve( Query, Error );
@@ -257,10 +264,12 @@ namespace ClientUtils
     double Q[4];
     MatrixToQuaternion( i_rM, Q );
 
+    QuaternionToHelical( Q, o_rAA );
+
     const double Real = Q[3];
 
     double Len = sqrt( std::inner_product( Q, Q+3, Q, 0.0 ) );
-    if( Len > std::numeric_limits< double >::epsilon() * 10 ) 
+    if( Len > SmallNumber ) 
     {
       const double Angle = 2.0 * atan2( Len, Real );
       const double Scale = Angle / Len;
@@ -273,32 +282,62 @@ namespace ClientUtils
 
   }
 
+  // Clamp angle to +/- 1 to be more robust to any rounding which might cause a 1.0 to
+  // end up as a 1.0000001.
+
+  double SafeArcSin(double a_Angle)
+  {
+    if (fabs(a_Angle) > 1)
+    {
+      assert(fabs(a_Angle) <= 1 + std::numeric_limits< double >::epsilon());
+      a_Angle = std::max<double>(std::min<double>(a_Angle, 1), -1);
+    }
+
+    return static_cast<double>(asin(static_cast<double>(a_Angle)));
+  }
+
   void MatrixToEulerXYZ( const double i_M[9], double (&o_rE)[3])
   {
-    //  This original algorithm is the XYZ Euler order and is
-    //  the default input order argument, so no existing code
-    //  should need changing or will give different results
+    //  Algorithm: http://eecs.qmul.ac.uk/~gslabaugh/publications/euler.pdf
 
-    //  Algorithm: GraphicsGems II - Matrix Techniques VII.1 p 320
-
-    o_rE[1] = asin(i_M[0*3+2]);
-
-    if( fabs( cos(o_rE[1]) ) > std::numeric_limits< double >::epsilon() * 10 )   
+    if(fabs( fabs(i_M[0*3+2]) - 1.0 ) > SmallNumber )
     {
       o_rE[0] = std::atan2(-i_M[1*3+2], i_M[2*3+2]);
+      o_rE[1] = SafeArcSin(i_M[0 * 3 + 2]);
       o_rE[2] = std::atan2(-i_M[0*3+1], i_M[0*3+0]);
     }
     else
     {
-      // cos(y) ~= 0 Gimbal-Lock
-      o_rE[0] = (o_rE[1] > 0) ? std::atan2(i_M[1*3+0], i_M[1*3+1]) : -std::atan2(i_M[0*3+1], i_M[1*3+1]);
-      o_rE[2] = 0;
+      // Gymbal lock.
+      if (i_M[0 * 3 + 2] > 0)
+      {
+        // X & Z are aligned.
+        o_rE[0] = -std::atan2(-i_M[1 * 3 + 0], -i_M[2 * 3 + 0]);
+        o_rE[1] = HalfPi;
+        o_rE[2] = 0;
+      }
+      else
+      {
+        // X & -Z are aligned.
+        o_rE[0] = -std::atan2(i_M[1 * 3 + 0], i_M[2 * 3 + 0]);
+        o_rE[1] = -HalfPi;
+        o_rE[2] = 0;
+      }
     }
   }
 
+
+
   void HelicalToMatrix( const float i_rAA[3], double( &o_rM )[9] )
   {
-   double angle, c, s, x, y, z;
+    double AA[3];
+    std::copy( i_rAA, i_rAA+3, AA );
+    HelicalToMatrix( AA, o_rM );
+  }
+
+  void HelicalToMatrix( const double i_rAA[3], double( &o_rM )[9] )
+  {
+    double angle, c, s, x, y, z;
 
     angle = std::sqrt( i_rAA[ 0 ]*i_rAA[ 0 ] + i_rAA[ 1 ]*i_rAA[ 1 ] + i_rAA[ 2 ]*i_rAA[ 2 ] );
     if ( angle < 10 * std::numeric_limits< double >::epsilon() * 10 ) 
@@ -327,6 +366,36 @@ namespace ClientUtils
     o_rM[ 8 ] = c + ( 1 - c )*z*z;
 
   }
+
+  void HelicalToQuaternion( const double i_AA[3], double (&o_rQ)[4])
+  {
+    const double Len = sqrt( std::inner_product( i_AA, i_AA+3, i_AA, 0.0 ) );
+    o_rQ[3] = cos(Len / 2.0);
+    
+    if ( Len > SmallNumber ) {
+      const double Scale = sin(Len / 2.0) / Len;
+      std::transform( i_AA, i_AA+3, o_rQ, [ Scale ]( double X ){ return Scale * X; } );
+    } else {
+      std::copy( i_AA, i_AA+3, o_rQ );
+    }
+  }
+
+  void QuaternionToHelical( const double i_Q[4], double (&o_rAA)[3])
+  {
+    const double Len = sqrt( std::inner_product( i_Q, i_Q+3, i_Q, 0.0 ) );
+    const double Real = i_Q[3];
+
+    if( Len > SmallNumber ) 
+    {
+      const double Scale = 2.0 * atan2( Len, Real ) / Len;
+      std::transform( i_Q, i_Q+3, o_rAA, [ Scale ]( double X ){ return Scale * X; } );
+    } 
+    else 
+    {
+      std::copy( i_Q, i_Q+3, o_rAA );
+    }
+  }
+
 
   std::array< double, 3 > operator*( const std::array< double, 9 > & i_rM, const std::array< double, 3 > & i_rX )
   {

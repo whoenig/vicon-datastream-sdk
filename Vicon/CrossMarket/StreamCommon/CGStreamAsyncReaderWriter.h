@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -55,12 +55,12 @@ public:
   /// Calls the supplied handler with true on success or false on failure.
   /// Note that unlike WriteBuffer the lifetime of the UDP socket is protected
   /// by the shared_ptr.
-  static void SendBuffer(  std::shared_ptr< boost::asio::ip::udp::socket > i_pSocket,
+  static void SendBuffer(  boost::asio::ip::udp::socket& i_rSocket,
                            const ViconCGStreamIO::VBuffer& i_rBuffer,
                            std::function< void( bool ) > i_Handler );
 
   /// As SendBuffer but foe connectionless sockets
-  static void SendBufferTo(   std::shared_ptr< boost::asio::ip::udp::socket > i_pSocket,
+  static void SendBufferTo(   boost::asio::ip::udp::socket& i_rSocket,
                               const ViconCGStreamIO::VBuffer& i_rBuffer,
                               const boost::asio::ip::udp::endpoint& i_rEndpoint,
                               std::function< void( bool ) > i_Handler );
@@ -82,8 +82,7 @@ private:
                                   const std::size_t i_BytesRead,
                                   std::function< void( bool ) > i_Handler );
 
-  static void OnBufferSent(       std::shared_ptr< boost::asio::ip::udp::socket > i_pSocket,
-                                  const boost::system::error_code i_Error,
+  static void OnBufferSent(       const boost::system::error_code i_Error,
                                   const std::size_t i_BytesRead,
                                   std::function< void( bool ) > i_Handler );
 

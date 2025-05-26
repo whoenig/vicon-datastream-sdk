@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -32,6 +32,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/thread.hpp>
 
 #include <ViconCGStreamClient/ViconCGStreamClient.h>
 #include <ViconCGStreamClient/CGStreamPostalService.h>
@@ -46,6 +47,7 @@ namespace
 {
   // Timeout for wait-for-frame operations (in milliseconds) 
   static const unsigned int s_WaitFrameTimeout = 1000;
+  static const unsigned int s_MinimumConnectionTimeout = 10;
 
   // [ Start tick, End tick ) pair.
   TPeriod GetFramePeriod( const ViconCGStreamClientSDK::ICGFrameState & i_rFrame )
@@ -144,9 +146,11 @@ VClient::VClient()
 , m_bGreyscaleDataEnabled( false )
 , m_bDebugDataEnabled( false )
 , m_bCameraWand2dDataEnabled( false )
+, m_bCameraCalibrationDataEnabled( false )
 , m_bVideoDataEnabled( false )
 , m_bSubjectScaleEnabled ( false )
 , m_BufferSize( 1 )
+, m_ConnectionTimeout( 5000 )
 {
   SetAxisMapping( Direction::Forward, Direction::Left, Direction::Up );
 
@@ -244,55 +248,65 @@ Result::Enum VClient::Connect(       std::shared_ptr< ViconCGStreamClientSDK::IC
     return Result::InvalidHostName;
   }
 
-  // here we attempt to connect to the IP address
-  i_pClient->Connect( Hosts );
+  // set some default request types
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::Contents );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::StreamInfo );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::SubjectInfo );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::FrameInfo );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::Timecode );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::LatencyInfo );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::ApplicationInfo );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::SubjectHealth );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::ObjectQuality );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::FrameRateInfo );
 
-  if (!i_pClient->IsConnected())
+
+  // turn everything else off
+  i_pClient->SetRequestTypes(ViconCGStreamEnum::CameraCalibrationInfo, false);
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::CameraInfo, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::Centroids, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::CentroidWeights, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::VideoFrame, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::LabeledRecons, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::UnlabeledRecons, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::LocalSegments, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::GlobalSegments, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::SubjectTopology, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::ForceFrame, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::MomentFrame, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::CentreOfPressureFrame, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::VoltageFrame, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::GreyscaleBlobs, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::GreyscaleSubsampledBlobs, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::EdgePairs, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::DeviceInfo, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::DeviceInfoExtra, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::ForcePlateInfo, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::ChannelInfo, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::ChannelInfoExtra, false );
+  i_pClient->SetRequestTypes( ViconCGStreamEnum::EyeTrackerInfo, false );
+
+  // here we attempt to connect to the IP address
+  if( !i_pClient->Connect( Hosts ) )
   {
     return Result::ClientConnectionFailed;
+  }
+
+  auto Start = boost::chrono::high_resolution_clock::now();
+  while (!i_pClient->IsConnected())
+  {
+    auto TimeElapsed = boost::chrono::duration_cast<boost::chrono::milliseconds>(boost::chrono::high_resolution_clock::now() - Start);
+    if (TimeElapsed.count() > m_ConnectionTimeout)
+    {
+      return Result::ClientConnectionFailed;
+    }
+
+    boost::this_thread::sleep_for(boost::chrono::milliseconds(s_MinimumConnectionTimeout));
   }
 
   // copy the pointer if all is well
   m_pClient = i_pClient;
   m_pClient->SetBufferSize(m_BufferSize);
-
-  // set some default request types
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::Contents );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::StreamInfo );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::SubjectInfo );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::FrameInfo );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::Timecode );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::LatencyInfo );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::ApplicationInfo );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::SubjectHealth );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::ObjectQuality );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::FrameRateInfo );
-
-
-  // turn everything else off
-  m_pClient->SetRequestTypes(ViconCGStreamEnum::CameraCalibrationInfo, false);
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::CameraInfo, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::Centroids, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::CentroidWeights, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::VideoFrame, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::LabeledRecons, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::UnlabeledRecons, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::LocalSegments, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::GlobalSegments, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::SubjectTopology, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::ForceFrame, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::MomentFrame, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::CentreOfPressureFrame, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::VoltageFrame, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::GreyscaleBlobs, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::GreyscaleSubsampledBlobs, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::EdgePairs, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::DeviceInfo, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::DeviceInfoExtra, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::ForcePlateInfo, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::ChannelInfo, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::ChannelInfoExtra, false );
-  m_pClient->SetRequestTypes( ViconCGStreamEnum::EyeTrackerInfo, false );
 
   if (!m_ClientLogFile.empty())
   {
@@ -995,6 +1009,22 @@ Result::Enum VClient::SetCameraWand2dDataEnabled( const bool i_bEnabled )
   m_bCameraWand2dDataEnabled = i_bEnabled;
   return Result::Success;
 }
+ Result::Enum VClient::SetCameraCalibrationDataEnabled( const bool i_bEnabled )
+ {
+  boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
+
+  if( !IsConnected() )
+  {
+    return Result::NotConnected;
+  }
+
+  m_pClient->SetRequestTypes( ViconCGStreamEnum::CameraInfo, i_bEnabled );
+  m_pClient->SetRequestTypes( ViconCGStreamEnum::CameraCalibrationInfo, i_bEnabled );
+  m_pClient->SetRequestTypes( ViconCGStreamEnum::DynamicCameraCalibrationInfo, i_bEnabled );
+  m_bCameraCalibrationDataEnabled = i_bEnabled;
+  return Result::Success;
+
+ }
 
 Result::Enum VClient::SetVideoDataEnabled( const bool i_bEnabled )
 {
@@ -1091,6 +1121,12 @@ bool VClient::IsCameraWand2dDataEnabled() const
   return m_bCameraWand2dDataEnabled;
 }
 
+
+bool VClient::IsCameraCalibrationDataEnabled() const
+{
+  boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
+  return m_bCameraCalibrationDataEnabled;
+}
 
 Result::Enum VClient::SetStreamMode( const StreamMode::Enum i_Mode )
 {
@@ -4409,6 +4445,18 @@ Result::Enum VClient::GetCameraCount( unsigned int & o_rCount ) const
   return GetResult;
 }
 
+Result::Enum VClient::GetDynamicCameraCount( unsigned int & o_rCount ) const
+{
+  boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
+  
+  Result::Enum GetResult = Result::Success;
+  if ( InitGet( GetResult, o_rCount ) )
+  {
+    o_rCount = static_cast< unsigned int >( m_LatestFrame.m_DynamicCameraCalibrationInfo.size() );
+  }
+  return GetResult;
+}
+
 Result::Enum VClient::GetCameraName( const unsigned int i_CameraIndex, std::string  & o_rCameraName ) const
 {
   boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
@@ -4428,7 +4476,40 @@ Result::Enum VClient::GetCameraName( const unsigned int i_CameraIndex, std::stri
   o_rCameraName = AdaptCameraName( rCamera.m_Name, rCamera.m_DisplayType, rCamera.m_CameraID );
 
   return GetResult;
+}
 
+Result::Enum VClient::GetDynamicCameraName( const unsigned int i_CameraIndex, std::string  & o_rCameraName ) const
+{
+  boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
+  
+  Result::Enum GetResult = Result::Success;
+  if ( !InitGet( GetResult, o_rCameraName ) )
+  {
+    return GetResult; 
+  }
+
+  if( i_CameraIndex >= m_LatestFrame.m_DynamicCameraCalibrationInfo.size() )
+  {
+    return Result::InvalidIndex;
+  }
+
+  const auto CameraID = m_LatestFrame.m_DynamicCameraCalibrationInfo[ i_CameraIndex ].m_CameraID;
+  
+
+  const auto rCameraIt =
+    std::find_if(m_LatestFrame.m_Cameras.begin(), m_LatestFrame.m_Cameras.end(),
+      [&CameraID](const ViconCGStream::VCameraInfo & rCameraInfo)
+      { return rCameraInfo.m_CameraID == CameraID; } );
+
+  if (rCameraIt == m_LatestFrame.m_Cameras.end())
+  {
+    // todo: better enum for not finding the matching camera id
+    return Result::InvalidIndex;
+  }
+
+  o_rCameraName = AdaptCameraName( rCameraIt->m_Name, rCameraIt->m_DisplayType, rCameraIt->m_CameraID );
+
+  return GetResult;
 }
 
 const ViconCGStream::VCameraInfo * VClient::GetCamera( const std::string & i_rCameraName, Result::Enum & o_rResult ) const
@@ -4471,6 +4552,40 @@ const ViconCGStream::VCameraSensorInfo * VClient::GetCameraSensorInfo(unsigned i
   return nullptr;
 }
 
+
+ const ViconCGStream::VCameraCalibrationInfo * VClient::GetCameraCalibrationInfo(const unsigned int i_CameraID, Result::Enum & o_rResult) const
+{
+  boost::recursive_mutex::scoped_lock Lock(m_FrameMutex);
+
+  // look up in static camera
+  const auto rCameraIt =
+    std::find_if(m_LatestFrame.m_CameraCalibrations.begin(), m_LatestFrame.m_CameraCalibrations.end(),
+      [&i_CameraID ](const ViconCGStream::VCameraCalibrationInfo & rCameraCalibrationInfo )
+  { return rCameraCalibrationInfo.m_CameraID == i_CameraID; }
+  );
+
+  if (rCameraIt != m_LatestFrame.m_CameraCalibrations.end())
+  {
+    o_rResult = Result::Success;
+    return &(*rCameraIt);
+  }
+
+  // look up in dynamic camera
+  const auto rDynamicCameraIt =
+    std::find_if(m_LatestFrame.m_DynamicCameraCalibrationInfo.begin(), m_LatestFrame.m_DynamicCameraCalibrationInfo.end(),
+      [&i_CameraID ](const ViconCGStream::VDynamicCameraCalibrationInfo & rCameraCalibrationInfo )
+  { return rCameraCalibrationInfo.m_CameraID == i_CameraID; }
+  );
+
+  if (rDynamicCameraIt != m_LatestFrame.m_DynamicCameraCalibrationInfo.end())
+  {
+    o_rResult = Result::Success;
+    return &(*rDynamicCameraIt);
+  }
+
+  o_rResult = Result::NotPresent;
+  return nullptr;
+}
 
 Result::Enum VClient::GetCameraID( const std::string & i_rCameraName, unsigned int & o_rCameraID ) const
 {
@@ -4623,6 +4738,189 @@ Result::Enum VClient::GetIsVideoCamera( const std::string & i_rCameraName, bool 
   return GetResult;
 }
 
+
+Result::Enum VClient::GetCameraGlobalTranslation(const std::string& i_rCameraName, double(&o_rThreeVector)[3]) const
+{
+  boost::recursive_mutex::scoped_lock Lock(m_FrameMutex);
+
+  Result::Enum GetResult = Result::Success;
+
+  if (InitGet(GetResult, o_rThreeVector))
+  {
+    unsigned int CameraID = 0;
+    Result::Enum _Result = GetCameraID( i_rCameraName, CameraID );
+    if( Result::Success != _Result )
+    {
+      return _Result;
+    }
+
+    const ViconCGStream::VCameraCalibrationInfo* pCameraCalibrationInfo = GetCameraCalibrationInfo( CameraID, GetResult );
+    if (!pCameraCalibrationInfo)
+    {
+      return GetResult;
+    }
+    CopyAndTransformT( pCameraCalibrationInfo->m_PoseTranslation, o_rThreeVector );
+    return Result::Success;
+  }
+
+  return GetResult;
+}
+
+Result::Enum VClient::GetCameraGlobalRotationHelical(const std::string& i_rCameraName, double(&o_rThreeVector)[3]) const
+{
+  boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
+  
+  // InitGet is called by GetCameraGlobalRotationMatrix.
+  Clear( o_rThreeVector );
+
+  // Get the answer as a rotation matrix
+  double RotationArray[ 9 ];
+  const Result::Enum _Result = GetCameraGlobalRotationMatrix( i_rCameraName, RotationArray );
+
+  if( Result::Success == _Result )
+  {
+    MatrixToHelical( RotationArray, o_rThreeVector );
+  }
+  return _Result;
+}
+
+Result::Enum VClient::GetCameraGlobalRotationMatrix(const std::string & i_rCameraName, double(&o_rRotation)[9]) const
+{
+  boost::recursive_mutex::scoped_lock Lock(m_FrameMutex);
+
+  Result::Enum GetResult = Result::Success;
+
+  if (InitGet(GetResult, o_rRotation))
+  {
+    unsigned int CameraID = 0;
+    Result::Enum _Result = GetCameraID( i_rCameraName, CameraID );
+    if( Result::Success != _Result )
+    {
+      return _Result;
+    }
+
+    const ViconCGStream::VCameraCalibrationInfo* pCameraCalibrationInfo = GetCameraCalibrationInfo( CameraID, GetResult );
+    if (!pCameraCalibrationInfo)
+    {
+      return GetResult;
+    }
+    CopyAndTransformR( pCameraCalibrationInfo->m_PoseRotation, o_rRotation );
+    return Result::Success;
+  }
+  return GetResult;
+}
+
+Result::Enum VClient::GetCameraGlobalRotationQuaternion(const std::string& i_rCameraName, double(&o_rFourVector)[4]) const
+{
+  boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
+  
+  // InitGet is called by GetCameraGlobalRotationMatrix.
+  Clear( o_rFourVector );
+
+  // Get the answer as a rotation matrix
+  double RotationArray[ 9 ];
+  const Result::Enum _Result = GetCameraGlobalRotationMatrix( i_rCameraName, RotationArray );
+
+  if( Result::Success == _Result )
+  {
+    MatrixToQuaternion( RotationArray, o_rFourVector );
+  }
+  return _Result;
+
+}
+
+Result::Enum VClient::GetCameraGlobalRotationEulerXYZ(const std::string& i_rCameraName, double(&o_rThreeVector)[3]) const
+{
+  boost::recursive_mutex::scoped_lock Lock( m_FrameMutex );
+  
+  // InitGet is called by GetCameraGlobalRotationMatrix.
+  Clear( o_rThreeVector );
+
+  // Get the answer as a rotation matrix
+  double RotationArray[ 9 ];
+  const Result::Enum _Result = GetCameraGlobalRotationMatrix( i_rCameraName, RotationArray );
+
+  if( Result::Success == _Result )
+  {
+    MatrixToEulerXYZ( RotationArray, o_rThreeVector );
+  }
+  return _Result;
+}
+
+ViconDataStreamSDK::Core::Result::Enum VClient::GetCameraPrincipalPoint(const std::string & i_rCameraName, double & o_rPrincipalPointX, double & o_rPrincipalPointY) const
+{
+  Result::Enum GetResult = Result::Success;
+
+  if ( InitGet(GetResult, o_rPrincipalPointX, o_rPrincipalPointY) )
+  {
+    unsigned int CameraID = 0;
+    Result::Enum _Result = GetCameraID( i_rCameraName, CameraID );
+    if( Result::Success != _Result )
+    {
+      return _Result;
+    }
+
+    const ViconCGStream::VCameraCalibrationInfo* pCameraCalibrationInfo = GetCameraCalibrationInfo(CameraID, GetResult);
+    if (!pCameraCalibrationInfo)
+    {
+      return GetResult;
+    }
+    o_rPrincipalPointX = pCameraCalibrationInfo->m_PrincipalPoint[0];
+    o_rPrincipalPointY = pCameraCalibrationInfo->m_PrincipalPoint[1];
+    return Result::Success;
+  }
+  return GetResult;
+}
+
+ViconDataStreamSDK::Core::Result::Enum VClient::GetCameraFocalLength(const std::string & i_rCameraName, double & o_rFocalLength) const
+{
+  Result::Enum GetResult = Result::Success;
+
+  if ( InitGet( GetResult, o_rFocalLength ) )
+  {
+    unsigned int CameraID = 0;
+    Result::Enum _Result = GetCameraID( i_rCameraName, CameraID );
+    if( Result::Success != _Result )
+    {
+      return _Result;
+    }
+
+    const ViconCGStream::VCameraCalibrationInfo* pCameraCalibrationInfo = GetCameraCalibrationInfo(CameraID, GetResult);
+    if (!pCameraCalibrationInfo)
+    {
+      return GetResult;
+    }
+    o_rFocalLength = pCameraCalibrationInfo->m_FocalLength;
+    return Result::Success;
+  }
+  return GetResult;
+}
+
+ViconDataStreamSDK::Core::Result::Enum VClient::GetCameraLensParameters(const std::string & i_rCameraName, double(&o_rThreeVector)[3]) const
+{
+  Result::Enum GetResult = Result::Success;
+
+  if (InitGet(GetResult, o_rThreeVector))
+  {
+    unsigned int CameraID = 0;
+    Result::Enum _Result = GetCameraID( i_rCameraName, CameraID );
+    if( Result::Success != _Result )
+    {
+      return _Result;
+    }
+
+    const ViconCGStream::VCameraCalibrationInfo* pCameraCalibrationInfo = GetCameraCalibrationInfo(CameraID, GetResult);
+    if (!pCameraCalibrationInfo)
+    {
+      return GetResult;
+    }
+    o_rThreeVector[0] = pCameraCalibrationInfo->m_RadialDistortion[0];
+    o_rThreeVector[1] = pCameraCalibrationInfo->m_RadialDistortion[1];
+    o_rThreeVector[2] = pCameraCalibrationInfo->m_RadialDistortion[2];
+    return Result::Success;
+  }
+  return GetResult;
+}
 
 Result::Enum VClient::GetCentroidCount( const std::string & i_rCameraName, unsigned int & o_rCount ) const
 {
@@ -4968,6 +5266,18 @@ Result::Enum VClient::ConfigureWireless( std::string& o_rError )
     return Result::ConfigurationFailed;
   }
 
+  return Result::Success;
+}
+
+Result::Enum VClient::SetConnectionTimeout( const unsigned int i_Timeout )
+{
+  if( i_Timeout < s_MinimumConnectionTimeout )
+  {
+    m_ConnectionTimeout = s_MinimumConnectionTimeout;
+    return Result::ArgumentOutOfRange;
+  }
+
+  m_ConnectionTimeout = i_Timeout;
   return Result::Success;
 }
 

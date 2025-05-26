@@ -25,56 +25,56 @@ ViconDataStreamSDK_CPPTest: StreamCommon ViconCGStream ViconCGStreamClient Vicon
 ViconDataStreamSDK_CTest: StreamCommon ViconCGStream ViconCGStreamClient ViconCGStreamClientSDK ViconDataStreamSDK_C ViconDataStreamSDK_CPP ViconDataStreamSDKCore ViconDataStreamSDKCoreUtils
 
 StreamCommon:
-	@echo \[1\;31mBuilding StreamCommon\[0m
+	@echo "\033[1;31mBuilding StreamCommon\033[0m"
 	@$(MAKE) CONFIG=$(CONFIG) -C Vicon/CrossMarket/StreamCommon
 
 ViconCGStream:
-	@echo \[1\;31mBuilding ViconCGStream\[0m
+	@echo "\033[1;31mBuilding ViconCGStream\033[0m"
 	@$(MAKE) CONFIG=$(CONFIG) -C Vicon/CrossMarket/DataStream/ViconCGStream
 
 ViconCGStreamClient:
-	@echo \[1\;31mBuilding ViconCGStreamClient\[0m
+	@echo "\033[1;31mBuilding ViconCGStreamClient\033[0m"
 	@$(MAKE) CONFIG=$(CONFIG) -C Vicon/CrossMarket/DataStream/ViconCGStreamClient
 
 ViconCGStreamClientSDK:
-	@echo \[1\;31mBuilding ViconCGStreamClientSDK\[0m
+	@echo "\033[1;31mBuilding ViconCGStreamClientSDK\033[0m"
 	@$(MAKE) CONFIG=$(CONFIG) -C Vicon/CrossMarket/DataStream/ViconCGStreamClientSDK
 
 ViconDataStreamSDKCore:
-	@echo \[1\;31mBuilding ViconDataStreamSDKCore\[0m
+	@echo "\033[1;31mBuilding ViconDataStreamSDKCore\033[0m"
 	@$(MAKE) CONFIG=$(CONFIG) -C Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore
 
 ViconDataStreamSDKCoreUtils:
-	@echo \[1\;31mBuilding ViconDataStreamSDKCoreUtils\[0m
+	@echo "\033[1;31mBuilding ViconDataStreamSDKCoreUtils\033[0m"
 	@$(MAKE) CONFIG=$(CONFIG) -C Vicon/CrossMarket/DataStream/ViconDataStreamSDKCoreUtils
 
 ViconDataStreamSDK_C:
-	@echo \[1\;31mBuilding ViconDataStreamSDK_C\[0m
+	@echo "\033[1;31mBuilding ViconDataStreamSDK_C\033[0m"
 	@$(MAKE) CONFIG=$(CONFIG) -C Vicon/CrossMarket/DataStream/ViconDataStreamSDK_C
 
 ViconDataStreamSDK_CPP:
-	@echo \[1\;31mBuilding ViconDataStreamSDK_CPP\[0m
+	@echo "\033[1;31mBuilding ViconDataStreamSDK_CPP\033[0m"
 	@$(MAKE) CONFIG=$(CONFIG) -C Vicon/CrossMarket/DataStream/ViconDataStreamSDK_CPP
 
 ViconDataStreamSDK_CPPRetimerTest:
-	@echo \[1\;31mBuilding ViconDataStreamSDK_CPPRetimerTest\[0m
+	@echo "\033[1;31mBuilding ViconDataStreamSDK_CPPRetimerTest\033[0m"
 	@$(MAKE) CONFIG=$(CONFIG) -C Vicon/CrossMarket/DataStream/ViconDataStreamSDK_CPPRetimerTest
 
 ViconDataStreamSDK_CPPTest:
-	@echo \[1\;31mBuilding ViconDataStreamSDK_CPPTest\[0m
+	@echo "\033[1;31mBuilding ViconDataStreamSDK_CPPTest\033[0m"
 	@$(MAKE) CONFIG=$(CONFIG) -C Vicon/CrossMarket/DataStream/ViconDataStreamSDK_CPPTest
 
 ViconDataStreamSDK_CTest:
-	@echo \[1\;31mBuilding ViconDataStreamSDK_CTest\[0m
+	@echo "\033[1;31mBuilding ViconDataStreamSDK_CTest\033[0m"
 	@$(MAKE) CONFIG=$(CONFIG) -C Vicon/CrossMarket/DataStream/ViconDataStreamSDK_CTest
 
 clean:
-	@echo \[1\;31mCleaning $(CONFIG) build\[0m
-	find . -path '*/$(CONFIG)/*' \( -name '*.[od]' -o -name '*.gch' \) -exec rm -f {} ';' 
-	find . -name 'moc_*.cxx' -exec rm -f {} ';' 
-	rm -f lib/$(CONFIG)/*.a 
-	rm -f lib/$(CONFIG)/*.so 
-	rm -f bin/$(CONFIG)/*.exe 
+	@echo "\033[1;31mCleaning $(CONFIG) build\033[0m"
+	find . -path '*/$(CONFIG)/*' \( -name '*.[od]' -o -name '*.gch' \) -exec rm -f {} ';'
+	find . -name 'moc_*.cxx' -exec rm -f {} ';'
+	rm -f lib/$(CONFIG)/*.a
+	rm -f lib/$(CONFIG)/*.so
+	rm -f bin/$(CONFIG)/*.exe
 	rm -f bin/$(CONFIG)/StreamCommon
 	rm -f bin/$(CONFIG)/ViconCGStream
 	rm -f bin/$(CONFIG)/ViconCGStreamClient
@@ -88,8 +88,8 @@ clean:
 	rm -f bin/$(CONFIG)/ViconDataStreamSDK_CTest
 
 distclean:
-	@echo \[1\;31mCleaning all builds\[0m
-	find . \( -name '*.[od]' -o -name '*.gch' \) -exec rm -f {} ';' 
-	find . -name 'moc_*.cxx' -exec rm -f {} ';' 
-	rm -rf lib 
-	rm -rf bin 
+	@echo "\033[1;31mCleaning all builds\033[0m"
+	find . \( -name '*.[od]' -o -name '*.gch' \) -exec rm -f {} ';'
+	find . -name 'moc_*.cxx' -exec rm -f {} ';'
+	rm -rf lib
+	rm -rf bin

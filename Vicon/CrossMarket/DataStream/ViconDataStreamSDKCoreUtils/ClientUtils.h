@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -93,8 +93,14 @@ namespace ClientUtils
   void MatrixToHelical( const double i_rM[9], double (&o_rAA)[3]);
 
   void MatrixToEulerXYZ( const double i_M[9], double (&o_rE)[3]);
-  
+
   void HelicalToMatrix( const float i_rAA[3], double( &o_rM )[9] );
+
+  void HelicalToMatrix( const double i_rAA[3], double( &o_rM )[9] );
+
+  void HelicalToQuaternion( const double i_H[3], double (&o_rQ)[4]);
+
+  void QuaternionToHelical( const double i_Q[4], double (&o_rH)[3]);
 
 
   // Insanely simplistic operators for basic vector operations on 

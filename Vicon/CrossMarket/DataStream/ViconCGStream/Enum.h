@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -213,5 +213,8 @@ const ViconCGStreamType::Enum CentroidWeights = 41;
 
 /// See ViconCGStream::VPing
 const ViconCGStreamType::Enum Ping = 42;
+
+/// See ViconCGStream::VDynamicCameraCalibrationInfo
+const ViconCGStreamType::Enum DynamicCameraCalibrationInfo = 43;
 //-------------------------------------------------------------------------------------------------
 };

@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -169,6 +169,12 @@ ViconCGStream::VVideoFrame& VDynamicObjects::AddVideoFrame()
   return *m_VideoFrames.back();
 }
 
+ViconCGStream::VDynamicCameraCalibrationInfo& VDynamicObjects::AddDynamicCameraCalibrationInfo()
+{
+  m_DynamicCameraCalibrationInfo.resize( m_DynamicCameraCalibrationInfo.size() + 1 );
+  return m_DynamicCameraCalibrationInfo.back();
+}
+
 void VDynamicObjects::AddNetworkLatencyInfo( double i_Value )
 {
   ViconCGStreamDetail::VLatencyInfo_Sample NetworkLatencySample;
@@ -328,9 +334,10 @@ VViconCGStreamClient::VViconCGStreamClient( std::weak_ptr< IViconCGStreamClientC
 , m_bHapticChanged( false )
 , m_bFilterChanged( false )
 , m_bPingChanged( false )
+, m_PingID( 0 ) 
 , m_VideoHint( EPassThrough )
 {
-  m_pSocket.reset( new boost::asio::ip::tcp::socket( m_Service ) );
+  m_pSocket.reset( new boost::asio::ip::tcp::socket( m_IOContext ) );
 }
 
 VViconCGStreamClient::~VViconCGStreamClient()
@@ -339,18 +346,19 @@ VViconCGStreamClient::~VViconCGStreamClient()
   CloseLog();
 }
 
-void VViconCGStreamClient::Connect( const std::string& i_rHost, unsigned short i_Port )
+bool VViconCGStreamClient::Connect( const std::string& i_rHost, unsigned short i_Port )
 {
   if( m_pMulticastSocket )
   {
-    return;
+    // Ok, just nothing to do.
+    return true;
   }
 
   const std::string::size_type AtPos = i_rHost.find_first_of('@');
   const std::string Host = i_rHost.substr(0, AtPos);
   const std::string Adapter = AtPos == std::string::npos ? "" : i_rHost.substr( AtPos + 1 );
 
-  boost::asio::ip::tcp::resolver Resolver( m_Service );
+  boost::asio::ip::tcp::resolver Resolver( m_IOContext );
   boost::asio::ip::tcp::resolver::query Query( Host, "" );
 
   boost::system::error_code Error;
@@ -360,10 +368,9 @@ void VViconCGStreamClient::Connect( const std::string& i_rHost, unsigned short i
   if( Error )
   {
     OnDisconnect();
-    return;
+    return false;
   }
 
-  bool bConnected = false;
   for( ; It != End; ++It )
   {
     Error = boost::system::error_code();
@@ -409,38 +416,29 @@ void VViconCGStreamClient::Connect( const std::string& i_rHost, unsigned short i
       Error = LocalError;
 #endif
     }
-    if( !Error )
-    {
-      m_pSocket->connect( EndPoint, Error );
-    }
 
-    if( Error )
-    {
-      m_pSocket->close();
-      std::stringstream Strm;
-      Strm << Error;
-      std::string ErrorText = Strm.str();
-      // std::cerr << Error << std::endl;
-    }
     if( !Error )
     {
-      bConnected = true;
       m_HostName = i_rHost;
+      m_EndPoint = EndPoint;
       break;
     }
+
   }
 
-  if( bConnected )
+  if (Error)
   {
-    OnConnect();
-  }
-  else
-  {
-    OnDisconnect();
-    return;
+    m_pSocket->close();
+    std::stringstream Strm;
+    Strm << Error;
+    std::string ErrorText = Strm.str();
+    // std::cerr << Error << std::endl;
+    return false;
   }
 
   m_pClientThread.reset( new boost::thread( std::bind( &VViconCGStreamClient::ClientThread, this ) ) );
+
+  return true;
 }
 
 void VViconCGStreamClient::Disconnect()
@@ -485,7 +483,7 @@ void VViconCGStreamClient::ReceiveMulticastData( std::string i_MulticastIPAddres
   }
 
   std::shared_ptr< boost::asio::ip::udp::socket > pMulticastSocket(
-    new boost::asio::ip::udp::socket( m_Service, LocalEndpoint.protocol() ) );
+    new boost::asio::ip::udp::socket( m_IOContext, LocalEndpoint.protocol() ) );
   if( Error )
   {
     OnDisconnect();
@@ -753,6 +751,23 @@ static void Intersect( ViconCGStream::VObjectEnums& i_rServer, ViconCGStream::VO
 
 void VViconCGStreamClient::ClientThread()
 {
+
+  boost::system::error_code Error;
+
+  m_pSocket->connect( m_EndPoint, Error );
+
+  if( Error )
+  {
+    m_pSocket->close();
+    // OnDisconnect();
+    return;
+  }
+  else
+  {
+    //bConnected = true;
+    OnConnect();
+  }
+
   m_pStaticObjects.reset();
   m_pDynamicObjects.reset();
 
@@ -1008,6 +1023,9 @@ void VViconCGStreamClient::CopyObjects( const ViconCGStream::VContents& i_rConte
       break;
     case ViconCGStreamEnum::CameraWand3d:
       o_rDynamicObjects.m_CameraWand3d = i_rDynamicObjects.m_CameraWand3d;
+      break;
+    case ViconCGStreamEnum::DynamicCameraCalibrationInfo:
+      o_rDynamicObjects.m_DynamicCameraCalibrationInfo = i_rDynamicObjects.m_DynamicCameraCalibrationInfo;
       break;
     case ViconCGStreamEnum::VideoFrame:
       o_rDynamicObjects.m_VideoFrames = i_rDynamicObjects.m_VideoFrames;
@@ -1484,6 +1502,15 @@ bool VViconCGStreamClient::ReadObjects( VCGStreamReaderWriter& i_rReaderWriter )
       }
       break;
     }
+    case ViconCGStreamEnum::DynamicCameraCalibrationInfo:
+      if( !pDynamicObjects )
+        pDynamicObjects.reset( new VDynamicObjects() );
+      if( !Object.Read( pDynamicObjects->AddDynamicCameraCalibrationInfo() ) )
+      {
+        return false;
+      }
+
+      break;
     }
   }
 
@@ -1609,7 +1636,7 @@ boost::asio::ip::address_v4 VViconCGStreamClient::FirstV4AddressFromString( cons
     return Address;
   }
 
-  boost::asio::ip::tcp::resolver Resolver( m_Service );
+  boost::asio::ip::tcp::resolver Resolver( m_IOContext );
   boost::asio::ip::tcp::resolver::query Query( i_rAddress, "" );
 
   boost::asio::ip::tcp::resolver::iterator It = Resolver.resolve( Query, Error );

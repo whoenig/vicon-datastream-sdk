@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -54,21 +54,21 @@ void VCGStreamAsyncReaderWriter::WriteBuffer( boost::asio::ip::tcp::socket& i_rS
                             std::bind( &VCGStreamAsyncReaderWriter::OnBufferWritten, ph::_1, ph::_2, i_Handler ) );
 }
 
-void VCGStreamAsyncReaderWriter::SendBuffer( std::shared_ptr< boost::asio::ip::udp::socket > i_pSocket,
+void VCGStreamAsyncReaderWriter::SendBuffer( boost::asio::ip::udp::socket& i_rSocket,
                                              const ViconCGStreamIO::VBuffer& i_rBuffer,
                                              std::function< void( bool ) > i_Handler )
 {
-  i_pSocket->async_send( boost::asio::buffer( i_rBuffer.Raw(), i_rBuffer.Length() ),
-                         std::bind( &VCGStreamAsyncReaderWriter::OnBufferSent, i_pSocket, ph::_1, ph::_2, i_Handler ) );
+  i_rSocket.async_send( boost::asio::buffer( i_rBuffer.Raw(), i_rBuffer.Length() ),
+                         std::bind( &VCGStreamAsyncReaderWriter::OnBufferSent, ph::_1, ph::_2, i_Handler ) );
 }
 
-void VCGStreamAsyncReaderWriter::SendBufferTo( std::shared_ptr< boost::asio::ip::udp::socket > i_pSocket,
-                                             const ViconCGStreamIO::VBuffer& i_rBuffer,
-                                             const boost::asio::ip::udp::endpoint& i_rEndpoint,
-                                             std::function< void( bool ) > i_Handler )
+void VCGStreamAsyncReaderWriter::SendBufferTo( boost::asio::ip::udp::socket& i_rSocket,
+                                               const ViconCGStreamIO::VBuffer& i_rBuffer,
+                                               const boost::asio::ip::udp::endpoint& i_rEndpoint,
+                                               std::function< void( bool ) > i_Handler )
 {
-  i_pSocket->async_send_to( boost::asio::buffer( i_rBuffer.Raw(), i_rBuffer.Length() ), i_rEndpoint,
-                         std::bind( &VCGStreamAsyncReaderWriter::OnBufferSent, i_pSocket, ph::_1, ph::_2, i_Handler ) );
+  i_rSocket.async_send_to( boost::asio::buffer( i_rBuffer.Raw(), i_rBuffer.Length() ), i_rEndpoint,
+                           std::bind( &VCGStreamAsyncReaderWriter::OnBufferSent, ph::_1, ph::_2, i_Handler ) );
 }
 
 void VCGStreamAsyncReaderWriter::OnBufferHeaderRead(  const boost::system::error_code i_Error,
@@ -115,8 +115,7 @@ void VCGStreamAsyncReaderWriter::OnBufferWritten(     const boost::system::error
   i_Handler( !i_Error );
 }
 
-void VCGStreamAsyncReaderWriter::OnBufferSent(        std::shared_ptr< boost::asio::ip::udp::socket > /*i_pSocket*/,
-                                                      const boost::system::error_code i_Error,
+void VCGStreamAsyncReaderWriter::OnBufferSent(        const boost::system::error_code i_Error,
                                                       const std::size_t /*i_BytesRead*/,
                                                       std::function< void( bool ) > i_Handler )
 {

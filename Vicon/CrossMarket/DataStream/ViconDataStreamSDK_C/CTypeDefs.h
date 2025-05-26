@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -33,7 +33,7 @@ typedef int CEnum;
 
 static const int CSuccess = 2;
 
-#pragma pack(push, 1)
+#pragma pack( push, 1 )
 
 /** @private */
 typedef struct COutput_GetVersion
@@ -184,7 +184,6 @@ typedef struct COutput_GetFrame
   CEnum Result;
 } COutput_GetFrame;
 
-
 /** @private */
 typedef struct COutput_GetFrameNumber
 {
@@ -195,16 +194,16 @@ typedef struct COutput_GetFrameNumber
 /** @private */
 typedef struct COutput_GetTimecode
 {
-  CEnum          Result;
-  unsigned int           Hours;
-  unsigned int           Minutes;
-  unsigned int           Seconds;
-  unsigned int           Frames;
-  unsigned int           SubFrame;
-  CBool                  FieldFlag;
-  CEnum          Standard;
-  unsigned int           SubFramesPerFrame;
-  unsigned int           UserBits;
+  CEnum Result;
+  unsigned int Hours;
+  unsigned int Minutes;
+  unsigned int Seconds;
+  unsigned int Frames;
+  unsigned int SubFrame;
+  CBool FieldFlag;
+  CEnum Standard;
+  unsigned int SubFramesPerFrame;
+  unsigned int UserBits;
 } COutput_GetTimecode;
 
 /** @private */
@@ -225,14 +224,14 @@ typedef struct COutput_GetLatencySampleCount
 typedef struct COutput_GetLatencySampleValue
 {
   CEnum Result;
-  double       Value;
+  double Value;
 } COutput_GetLatencySampleValue;
 
 /** @private */
 typedef struct COutput_GetLatencyTotal
 {
   CEnum Result;
-  double       Total;
+  double Total;
 } COutput_GetLatencyTotal;
 
 /** @private */
@@ -260,122 +259,122 @@ typedef struct COutput_GetSegmentCount
 typedef struct COutput_GetSegmentStaticTranslation
 {
   CEnum Result;
-  double       Translation[3];
+  double Translation[ 3 ];
 } COutput_GetSegmentStaticTranslation;
 
 /** @private */
 typedef struct COutput_GetSegmentStaticRotationHelical
 {
   CEnum Result;
-  double       Rotation[3];
+  double Rotation[ 3 ];
 } COutput_GetSegmentStaticRotationHelical;
 
 /** @private */
 typedef struct COutput_GetSegmentStaticRotationMatrix
 {
   CEnum Result;
-  double       Rotation[9];
+  double Rotation[ 9 ];
 } COutput_GetSegmentStaticRotationMatrix;
 
 /** @private */
 typedef struct COutput_GetSegmentStaticRotationQuaternion
 {
   CEnum Result;
-  double       Rotation[4];
+  double Rotation[ 4 ];
 } COutput_GetSegmentStaticRotationQuaternion;
 
 /** @private */
 typedef struct COutput_GetSegmentStaticRotationEulerXYZ
 {
   CEnum Result;
-  double       Rotation[3];
+  double Rotation[ 3 ];
 } COutput_GetSegmentStaticRotationEulerXYZ;
 
 /** @private */
 typedef struct COutput_GetSegmentStaticScale
 {
   CEnum Result;
-  double       Scale[3];
+  double Scale[ 3 ];
 } COutput_GetSegmentStaticScale;
 
 /** @private */
 typedef struct COutput_GetSegmentGlobalTranslation
 {
   CEnum Result;
-  double       Translation[3];
-  CBool         Occluded;
+  double Translation[ 3 ];
+  CBool Occluded;
 } COutput_GetSegmentGlobalTranslation;
 
 /** @private */
 typedef struct COutput_GetSegmentGlobalRotationHelical
 {
   CEnum Result;
-  double       Rotation[3];
-  CBool         Occluded;
+  double Rotation[ 3 ];
+  CBool Occluded;
 } COutput_GetSegmentGlobalRotationHelical;
 
 /** @private */
 typedef struct COutput_GetSegmentGlobalRotationMatrix
 {
   CEnum Result;
-  double       Rotation[9];
-  CBool         Occluded;
+  double Rotation[ 9 ];
+  CBool Occluded;
 } COutput_GetSegmentGlobalRotationMatrix;
 
 /** @private */
 typedef struct COutput_GetSegmentGlobalRotationQuaternion
 {
   CEnum Result;
-  double       Rotation[4];
-  CBool         Occluded;
+  double Rotation[ 4 ];
+  CBool Occluded;
 } COutput_GetSegmentGlobalRotationQuaternion;
 
 /** @private */
 typedef struct COutput_GetSegmentGlobalRotationEulerXYZ
 {
   CEnum Result;
-  double       Rotation[3];
-  CBool         Occluded;
+  double Rotation[ 3 ];
+  CBool Occluded;
 } COutput_GetSegmentGlobalRotationEulerXYZ;
 
 /** @private */
 typedef struct COutput_GetSegmentLocalTranslation
 {
   CEnum Result;
-  double       Translation[3];
-  CBool         Occluded;
+  double Translation[ 3 ];
+  CBool Occluded;
 } COutput_GetSegmentLocalTranslation;
 
 /** @private */
 typedef struct COutput_GetSegmentLocalRotationHelical
 {
   CEnum Result;
-  double       Rotation[3];
-  CBool         Occluded;
+  double Rotation[ 3 ];
+  CBool Occluded;
 } COutput_GetSegmentLocalRotationHelical;
 
 /** @private */
 typedef struct COutput_GetSegmentLocalRotationMatrix
 {
   CEnum Result;
-  double       Rotation[9];
-  CBool         Occluded;
+  double Rotation[ 9 ];
+  CBool Occluded;
 } COutput_GetSegmentLocalRotationMatrix;
 
 /** @private */
 typedef struct COutput_GetSegmentLocalRotationQuaternion
 {
   CEnum Result;
-  double       Rotation[4];
-  CBool         Occluded;
+  double Rotation[ 4 ];
+  CBool Occluded;
 } COutput_GetSegmentLocalRotationQuaternion;
 
 /** @private */
 typedef struct COutput_GetSegmentLocalRotationEulerXYZ
 {
   CEnum Result;
-  double       Rotation[3];
-  CBool         Occluded;
+  double Rotation[ 3 ];
+  CBool Occluded;
 } COutput_GetSegmentLocalRotationEulerXYZ;
 
 /** @private */
@@ -389,8 +388,8 @@ typedef struct COutput_GetMarkerCount
 typedef struct COutput_GetMarkerGlobalTranslation
 {
   CEnum Result;
-  double       Translation[3];
-  CBool         Occluded;
+  double Translation[ 3 ];
+  CBool Occluded;
 } COutput_GetMarkerGlobalTranslation;
 
 /** @private */
@@ -404,7 +403,7 @@ typedef struct COutput_GetUnlabeledMarkerCount
 typedef struct COutput_GetUnlabeledMarkerGlobalTranslation
 {
   CEnum Result;
-  double       Translation[3];
+  double Translation[ 3 ];
   unsigned int MarkerID;
 } COutput_GetUnlabeledMarkerGlobalTranslation;
 
@@ -426,8 +425,8 @@ typedef struct COutput_GetDeviceOutputCount
 typedef struct COutput_GetDeviceOutputValue
 {
   CEnum Result;
-  double       Value;
-  CBool         Occluded;
+  double Value;
+  CBool Occluded;
 } COutput_GetDeviceOutputValue;
 
 /** @private */
@@ -435,7 +434,7 @@ typedef struct COutput_GetDeviceOutputSubsamples
 {
   CEnum Result;
   unsigned int DeviceOutputSubsamples;
-  CBool         Occluded;
+  CBool Occluded;
 } COutput_GetDeviceOutputSubsamples;
 
 /** @private */
@@ -449,21 +448,21 @@ typedef struct COutput_GetForcePlateCount
 typedef struct COutput_GetGlobalForceVector
 {
   CEnum Result;
-  double       ForceVector[3];
+  double ForceVector[ 3 ];
 } COutput_GetGlobalForceVector;
 
 /** @private */
 typedef struct COutput_GetGlobalMomentVector
 {
   CEnum Result;
-  double       MomentVector[3];
+  double MomentVector[ 3 ];
 } COutput_GetGlobalMomentVector;
 
 /** @private */
 typedef struct COutput_GetGlobalCentreOfPressure
 {
   CEnum Result;
-  double       CentreOfPressure[3];
+  double CentreOfPressure[ 3 ];
 } COutput_GetGlobalCentreOfPressure;
 
 /** @private */
@@ -484,16 +483,16 @@ typedef struct COutput_GetEyeTrackerCount
 typedef struct COutput_GetEyeTrackerGlobalPosition
 {
   CEnum Result;
-  double       Position[3];
-  CBool         Occluded;
+  double Position[ 3 ];
+  CBool Occluded;
 } COutput_GetEyeTrackerGlobalPosition;
 
 /** @private */
 typedef struct COutput_GetEyeTrackerGlobalGazeVector
 {
   CEnum Result;
-  double       GazeVector[3];
-  CBool         Occluded;
+  double GazeVector[ 3 ];
+  CBool Occluded;
 } COutput_GetEyeTrackerGlobalGazeVector;
 
 /** @private */
@@ -507,7 +506,7 @@ typedef struct COutput_GetCentroidCount
 typedef struct COutput_GetFrameRateValue
 {
   CEnum Result;
-  double       Value;
+  double Value;
 } COutput_GetFrameRateValue;
 
 /** @private */
@@ -556,7 +555,7 @@ typedef struct COutput_GetCameraCount
 typedef struct COutput_GetCentroidPosition
 {
   CEnum Result;
-  double CentroidPosition[2];
+  double CentroidPosition[ 2 ];
   double Radius;
 } COutput_GetCentroidPosition;
 
@@ -583,14 +582,71 @@ typedef struct COutput_GetCameraResolution
 } COutput_GetCameraResolution;
 
 /** @private */
+typedef struct COutput_GetCameraGlobalTranslation
+{
+  CEnum Result;
+  double Translation[ 3 ];
+} COutput_GetCameraGlobalTranslation;
+
+/** @private */
+typedef struct COutput_GetCameraGlobalRotationHelical
+{
+  CEnum Result;
+  double Rotation[ 3 ];
+} COutput_GetCameraGlobalRotationHelical;
+
+/** @private */
+typedef struct COutput_GetCameraGlobalRotationMatrix
+{
+  CEnum Result;
+  double Rotation[ 9 ];
+} COutput_GetCameraGlobalRotationMatrix;
+
+/** @private */
+typedef struct COutput_GetCameraRotationQuaternion
+{
+  CEnum Result;
+  double Rotation[ 4 ];
+} COutput_GetCameraGlobalRotationQuaternion;
+
+/** @private */
+typedef struct COutput_GetCameraGlobalRotationEulerXYZ
+{
+  CEnum Result;
+  double Rotation[ 3 ];
+} COutput_GetCameraGlobalRotationEulerXYZ;
+
+/** @private */
+typedef struct COutput_GetCameraFocalLength
+{
+  CEnum Result;
+  double FocalLength;
+} COutput_GetCameraFocalLength;
+
+/** @private */
+typedef struct COutput_GetCameraPrincipalPoint
+{
+  CEnum Result;
+  double PrincipalPointX;
+  double PrincipalPointY;
+} COutput_GetCameraPrincipalPoint;
+
+/** @private */
+typedef struct COutput_GetCameraLensParameters
+{
+  CEnum Result;
+  double LensParameters[ 3 ];
+} COutput_GetCameraLensParameters;
+
+/** @private */
 typedef struct COutput_GetGreyscaleBlob
 {
   CEnum Result;
-  unsigned int * BlobLinePositionsX;
+  unsigned int* BlobLinePositionsX;
   unsigned int BlobLinePositionsXSize;
-  unsigned int * BlobLinePositionsY;
+  unsigned int* BlobLinePositionsY;
   unsigned int BlobLinePositionsYSize;
-  unsigned char * BlobLinePixelValues;
+  unsigned char* BlobLinePixelValues;
 } COutput_GetGreyscaleBlob;
 
 /** @private */
@@ -619,7 +675,7 @@ typedef struct COutput_GetServerOrientation
 typedef struct COutput_GetLabeledMarkerGlobalTranslation
 {
   CEnum Result;
-  double       Translation[3];
+  double Translation[ 3 ];
   unsigned int MarkerID;
 } COutput_GetLabeledMarkerGlobalTranslation;
 
@@ -730,34 +786,34 @@ typedef enum
  */
 typedef enum
 {
-  UnknownResult, /**< The result is unknown. Treat it as a failure. */
-  NotImplemented, /**< The function called has not been implemented in this version of the SDK.*/
-  Success, /**< The function call succeeded.*/
-  InvalidHostName, /**< The "HostName" parameter passed to Connect() is invalid.*/
-  InvalidMulticastIP, /**< The "MulticastIP" parameter was not in the range "224.0.0.0" - "239.255.255.255"*/
-  ClientAlreadyConnected, /**< Connect() was called whilst already connected to a DataStream.*/
-  ClientConnectionFailed, /**< Connect() could not establish a connection to the DataStream server.*/
+  UnknownResult,                      /**< The result is unknown. Treat it as a failure. */
+  NotImplemented,                     /**< The function called has not been implemented in this version of the SDK.*/
+  Success,                            /**< The function call succeeded.*/
+  InvalidHostName,                    /**< The "HostName" parameter passed to Connect() is invalid.*/
+  InvalidMulticastIP,                 /**< The "MulticastIP" parameter was not in the range "224.0.0.0" - "239.255.255.255"*/
+  ClientAlreadyConnected,             /**< Connect() was called whilst already connected to a DataStream.*/
+  ClientConnectionFailed,             /**< Connect() could not establish a connection to the DataStream server.*/
   ServerAlreadyTransmittingMulticast, /**< StartTransmittingMulticast() was called when the current DataStream server was already transmitting multicast on behalf of this client.*/
-  ServerNotTransmittingMulticast, /**< StopTransmittingMulticast() was called when the current DataStream server was not transmitting multicast on behalf of this client.*/
-  NotConnected, /**< You have called a function which requires a connection to the DataStream server, but do not have a connection.*/
-  NoFrame, /**< You have called a function which requires a frame to be fetched from the DataStream server, but do not have a frame.*/
-  InvalidIndex, /**< An index you have passed to a function is out of range.*/
-  InvalidCameraName, /**< The Camera Name you passed to a function is invalid in this frame.*/
-  InvalidSubjectName, /**< The Subject Name you passed to a function is invalid in this frame.*/
-  InvalidSegmentName, /**< The Segment Name you passed to a function is invalid in this frame.*/
-  InvalidMarkerName, /**< The Marker Name you passed to a function is invalid in this frame.*/
-  InvalidDeviceName, /**< The Device Name you passed to a function is invalid in this frame.*/
-  InvalidDeviceOutputName, /**< The Device Output Name you passed to a function is invalid in this frame.*/
-  InvalidLatencySampleName, /**< The Latency Sample Name you passed to a function is invalid in this frame.*/
-  CoLinearAxes, /**< The directions passed to SetAxisMapping() contain input which would cause two or more axes to lie along the same line, e.g. "Up" and "Down" are on the same line.*/
-  LeftHandedAxes, /**< The directions passed to SetAxisMapping() would result in a left-handed coordinate system. This is not supported in the SDK.*/
-  HapticAlreadySet, /**< Haptic feedback is already set.*/
-  EarlyDataRequested, /**< Re-timed data requested is from before the first time sample we still have. */
-  LateDataRequested, /**< Re-timed data requested is too far into the future to be predicted. */
-  InvalidOperation, /**< The method called is not valid in the current mode of operation */
-  NotSupported, /**< The SDK version or operating system does not support this function. */
-  ConfigurationFailed, /**< The operating system configuration changed failed. */
-  NotPresent /**< The requested data type is not present in the stream. */
+  ServerNotTransmittingMulticast,     /**< StopTransmittingMulticast() was called when the current DataStream server was not transmitting multicast on behalf of this client.*/
+  NotConnected,                       /**< You have called a function which requires a connection to the DataStream server, but do not have a connection.*/
+  NoFrame,                            /**< You have called a function which requires a frame to be fetched from the DataStream server, but do not have a frame.*/
+  InvalidIndex,                       /**< An index you have passed to a function is out of range.*/
+  InvalidCameraName,                  /**< The Camera Name you passed to a function is invalid in this frame.*/
+  InvalidSubjectName,                 /**< The Subject Name you passed to a function is invalid in this frame.*/
+  InvalidSegmentName,                 /**< The Segment Name you passed to a function is invalid in this frame.*/
+  InvalidMarkerName,                  /**< The Marker Name you passed to a function is invalid in this frame.*/
+  InvalidDeviceName,                  /**< The Device Name you passed to a function is invalid in this frame.*/
+  InvalidDeviceOutputName,            /**< The Device Output Name you passed to a function is invalid in this frame.*/
+  InvalidLatencySampleName,           /**< The Latency Sample Name you passed to a function is invalid in this frame.*/
+  CoLinearAxes,                       /**< The directions passed to SetAxisMapping() contain input which would cause two or more axes to lie along the same line, e.g. "Up" and "Down" are on the same line.*/
+  LeftHandedAxes,                     /**< The directions passed to SetAxisMapping() would result in a left-handed coordinate system. This is not supported in the SDK.*/
+  HapticAlreadySet,                   /**< Haptic feedback is already set.*/
+  EarlyDataRequested,                 /**< Re-timed data requested is from before the first time sample we still have. */
+  LateDataRequested,                  /**< Re-timed data requested is too far into the future to be predicted. */
+  InvalidOperation,                   /**< The method called is not valid in the current mode of operation */
+  NotSupported,                       /**< The SDK version or operating system does not support this function. */
+  ConfigurationFailed,                /**< The operating system configuration changed failed. */
+  NotPresent                          /**< The requested data type is not present in the stream. */
 } CResult;
 
-#pragma pack(pop)
+#pragma pack( pop )

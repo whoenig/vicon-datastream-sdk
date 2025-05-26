@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -93,6 +93,14 @@ namespace ViconDataStreamSDK
         Output.Result = Adapt(m_pClientImpl->m_pCoreRetimingClient->StartOutput(FrameRate));
       }
 
+      return Output;
+    }
+
+    CLASS_DECLSPEC
+    Output_SetConnectionTimeout RetimingClient::SetConnectionTimeout(unsigned int i_Timeout)
+    {
+      Output_SetConnectionTimeout Output;
+      Output.Result = Adapt(m_pClientImpl->m_pCoreClient->SetConnectionTimeout( i_Timeout ));
       return Output;
     }
 

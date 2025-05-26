@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -194,6 +194,7 @@ void VCGClient::ReadFramePair( const TFramePair& i_rPair, ICGFrameState& o_rFram
     o_rFrameState.m_CameraWand2d = rpDynamicState->m_CameraWand2d;
     o_rFrameState.m_CameraWand3d = rpDynamicState->m_CameraWand3d;
     o_rFrameState.m_EyeTracks = rpDynamicState->m_EyeTrackerFrames;
+    o_rFrameState.m_DynamicCameraCalibrationInfo = rpDynamicState->m_DynamicCameraCalibrationInfo;
   }
 
   o_rFrameState.m_VideoFrames.clear();
@@ -263,12 +264,12 @@ bool VCGClient::WaitFrame( ICGFrameState& o_rFrame, unsigned int i_TimeoutMs )
   return PollFrame( o_rFrame );
 }
 
-void VCGClient::Connect( std::string i_IPAddress, unsigned short i_Port )
+bool VCGClient::Connect( std::string i_IPAddress, unsigned short i_Port )
 {
-  Connect({{i_IPAddress, i_Port}});
+  return Connect({{i_IPAddress, i_Port}});
 }
 
-void VCGClient::Connect( const std::vector< std::pair< std::string, unsigned short > >& i_rHosts )
+bool VCGClient::Connect( const std::vector< std::pair< std::string, unsigned short > >& i_rHosts )
 {
   boost::recursive_mutex::scoped_lock Lock( m_ClientMutex );
 
@@ -277,14 +278,19 @@ void VCGClient::Connect( const std::vector< std::pair< std::string, unsigned sho
     std::shared_ptr< VCGClientCallback > pCallback(new VCGClientCallback(*this, m_pCallbacks.size()) );
     std::shared_ptr< VViconCGStreamClient > pClient( new VViconCGStreamClient( pCallback ) );
 
-    pClient->Connect( rHost.first, rHost.second );
-
     pClient->SetRequiredObjects(m_RequestedObjects.m_Enums);
+
+    if (!pClient->Connect(rHost.first, rHost.second))
+    {
+      continue;
+    }
 
     m_pCallbacks.push_back( pCallback );
     m_pClients.push_back( pClient );
     m_LastFrameIDs.push_back(-1);
   }
+
+  return !m_pClients.empty();
 }
 
 void VCGClient::ReceiveMulticastData( std::string i_MulticastIPAddress, std::string i_LocalIPAddress, unsigned short i_Port )
@@ -540,9 +546,15 @@ void VCGClient::OnDynamicObjects( std::shared_ptr< const VDynamicObjects > i_pDy
       // The last frame received by connections other than this one.
       // Note that the FrameID can get reset by a system reboot.
       ViconCGStreamType::UInt32 MaxFrame = 0;
+      static const ViconCGStreamType::UInt32 NoFrame(-1);
       for (unsigned int Index = 0; Index < m_LastFrameIDs.size(); ++Index)
       {
         if (Index == i_ClientID)
+        {
+          continue;
+        }
+        const ViconCGStreamType::UInt32 Frame = m_LastFrameIDs[Index];
+        if (Frame == NoFrame)
         {
           continue;
         }
@@ -551,7 +563,7 @@ void VCGClient::OnDynamicObjects( std::shared_ptr< const VDynamicObjects > i_pDy
       return MaxFrame;
     }();
 
-    if (ThisFrame <= LastFrame)
+    if (ThisFrame <= LastFrame )
     {
       return;
     }

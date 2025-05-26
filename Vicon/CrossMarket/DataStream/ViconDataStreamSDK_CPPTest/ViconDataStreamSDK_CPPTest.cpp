@@ -2,7 +2,7 @@
 //////////////////////////////////////////////////////////////////////////////////
 // MIT License
 //
-// Copyright (c) 2017 Vicon Motion Systems Ltd
+// Copyright (c) 2020 Vicon Motion Systems Ltd
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -490,6 +490,7 @@ int main( int argc, char* argv[] )
     {
       // Direct connection
 
+      DirectClient.SetConnectionTimeout(1000);
       const Output_Connect ConnectResult = DirectClient.Connect(HostName);
       const bool ok = (ConnectResult.Result == Result::Success );
 
@@ -526,6 +527,7 @@ int main( int argc, char* argv[] )
     std::cout << std::endl;
     // Enable some different data types
     DirectClient.EnableSegmentData();
+    DirectClient.EnableSegmentData();
 
     if ( !bSegmentsOnly )
     {
@@ -537,6 +539,7 @@ int main( int argc, char* argv[] )
     }
     if( bReadCentroids )
     {
+      DirectClient.EnableCameraCalibrationData();
       DirectClient.EnableCentroidData();
     }
     if( bReadRayData )
@@ -1179,6 +1182,56 @@ int main( int argc, char* argv[] )
           Output_GetCameraResolution _Output_GetCameraResolution = MyClient.GetCameraResolution(CameraName);
           OutputStream << "    Resolution: " << _Output_GetCameraResolution.ResolutionX << " x " << _Output_GetCameraResolution.ResolutionY << std::endl;
           OutputStream << "    Is Video Camera: " << ( MyClient.GetIsVideoCamera(CameraName).IsVideoCamera ? "true":"false" ) << std::endl;
+
+          double FocalLength = MyClient.GetCameraFocalLength(CameraName).FocalLength;
+          OutputStream << "    FocalLength: " << FocalLength << std::endl;
+          Output_GetCameraPrincipalPoint _Output_PrincipalPoint = MyClient.GetCameraPrincipalPoint(CameraName);
+          OutputStream << "    PrincipalPointX: " << _Output_PrincipalPoint.PrincipalPointX << std::endl;
+          OutputStream << "    PrincipalPointY: " << _Output_PrincipalPoint.PrincipalPointY << std::endl;
+          Output_GetCameraLensParameters _Output_LensParameter = MyClient.GetCameraLensParameters(CameraName);
+          OutputStream << "    Parameter 1: " << _Output_LensParameter.LensParameters[0] << std::endl;
+          OutputStream << "    Parameter 2: " << _Output_LensParameter.LensParameters[1] << std::endl;
+          OutputStream << "    Parameter 3: " << _Output_LensParameter.LensParameters[2] << std::endl;
+
+          Output_GetCameraGlobalTranslation _OutputGlobalTranslation = MyClient.GetCameraGlobalTranslation(CameraName);
+          OutputStream << "    Global Translation: (" << _OutputGlobalTranslation.Translation[0] << ", "
+                                              << _OutputGlobalTranslation.Translation[1] << ", "
+                                              << _OutputGlobalTranslation.Translation[2] << ")"<<std::endl;
+
+          // Get the global segment rotation in helical co-ordinates
+          Output_GetCameraGlobalRotationHelical _Output_GetCameraGlobalRotationHelical =
+            MyClient.GetCameraGlobalRotationHelical( CameraName );
+          OutputStream << "   Global Rotation Helical: (" << _Output_GetCameraGlobalRotationHelical.Rotation[ 0 ]     << ", "
+                                                          << _Output_GetCameraGlobalRotationHelical.Rotation[ 1 ]     << ", "
+                                                          << _Output_GetCameraGlobalRotationHelical.Rotation[ 2 ]     <<std::endl;
+
+          // Get the global segment rotation as a matrix
+          Output_GetCameraGlobalRotationMatrix _Output_GetCameraGlobalRotationMatrix =
+            MyClient.GetCameraGlobalRotationMatrix( CameraName );
+          OutputStream << "   Global Rotation Matrix: (" << _Output_GetCameraGlobalRotationMatrix.Rotation[ 0 ]     << ", "
+                                                         << _Output_GetCameraGlobalRotationMatrix.Rotation[ 1 ]     << ", "
+                                                         << _Output_GetCameraGlobalRotationMatrix.Rotation[ 2 ]     << ", "
+                                                         << _Output_GetCameraGlobalRotationMatrix.Rotation[ 3 ]     << ", "
+                                                         << _Output_GetCameraGlobalRotationMatrix.Rotation[ 4 ]     << ", "
+                                                         << _Output_GetCameraGlobalRotationMatrix.Rotation[ 5 ]     << ", "
+                                                         << _Output_GetCameraGlobalRotationMatrix.Rotation[ 6 ]     << ", "
+                                                         << _Output_GetCameraGlobalRotationMatrix.Rotation[ 7 ]     << ", "
+                                                         << _Output_GetCameraGlobalRotationMatrix.Rotation[ 8 ]     << std::endl;
+
+          // Get the global segment rotation in quaternion co-ordinates
+          Output_GetCameraGlobalRotationQuaternion _Output_GetCameraGlobalRotationQuaternion =
+            MyClient.GetCameraGlobalRotationQuaternion( CameraName );
+          OutputStream << "   Global Rotation Quaternion: (" << _Output_GetCameraGlobalRotationQuaternion.Rotation[ 0 ]     << ", "
+                                                             << _Output_GetCameraGlobalRotationQuaternion.Rotation[ 1 ]     << ", "
+                                                             << _Output_GetCameraGlobalRotationQuaternion.Rotation[ 2 ]     << ", "
+                                                             << _Output_GetCameraGlobalRotationQuaternion.Rotation[ 3 ]     << std::endl;
+
+          // Get the global segment rotation in EulerXYZ co-ordinates
+          Output_GetCameraGlobalRotationEulerXYZ _Output_GetCameraGlobalRotationEulerXYZ =
+            MyClient.GetCameraGlobalRotationEulerXYZ( CameraName );
+          OutputStream << "        Global Rotation EulerXYZ: (" << _Output_GetCameraGlobalRotationEulerXYZ.Rotation[ 0 ]     << ", "
+                                                             << _Output_GetCameraGlobalRotationEulerXYZ.Rotation[ 1 ]     << ", "
+                                                             << _Output_GetCameraGlobalRotationEulerXYZ.Rotation[ 2 ]     << std::endl;
 
           unsigned int CentroidCount = MyClient.GetCentroidCount( CameraName ).CentroidCount;
           OutputStream << "    Centroids(" << CentroidCount << "):" << std::endl;
