@@ -359,11 +359,9 @@ bool VViconCGStreamClient::Connect( const std::string& i_rHost, unsigned short i
   const std::string Adapter = AtPos == std::string::npos ? "" : i_rHost.substr( AtPos + 1 );
 
   boost::asio::ip::tcp::resolver Resolver( m_IOContext );
-  boost::asio::ip::tcp::resolver::query Query( Host, "" );
 
   boost::system::error_code Error;
-  boost::asio::ip::tcp::resolver::iterator It = Resolver.resolve( Query, Error );
-  boost::asio::ip::tcp::resolver::iterator End;
+  boost::asio::ip::tcp::resolver::results_type endpoints = Resolver.resolve( Host, "", Error );
 
   if( Error )
   {
@@ -371,10 +369,10 @@ bool VViconCGStreamClient::Connect( const std::string& i_rHost, unsigned short i
     return false;
   }
 
-  for( ; It != End; ++It )
+  for(auto& endpoint : endpoints)
   {
     Error = boost::system::error_code();
-    boost::asio::ip::tcp::endpoint EndPoint( *It );
+    boost::asio::ip::tcp::endpoint EndPoint( endpoint );
 
     // Currently we only handle IPv4
     // This has to be explicitly handled, otherwise the socket can bind to a v6 endpoint and then fail
@@ -398,8 +396,7 @@ bool VViconCGStreamClient::Connect( const std::string& i_rHost, unsigned short i
     }
     if( !Error && !Adapter.empty() )
     {
-      boost::asio::ip::address_v4 AdapterAddress;
-      AdapterAddress.from_string( Adapter, Error );
+      boost::asio::ip::address_v4 AdapterAddress = boost::asio::ip::make_address_v4(Adapter, Error);
       if( !Error )
       {
         const boost::asio::ip::tcp::endpoint AdapterEndPoint( AdapterAddress, 0 );
@@ -476,7 +473,7 @@ void VViconCGStreamClient::ReceiveMulticastData( std::string i_MulticastIPAddres
     Disconnect();
   }
 
-  if( !MulticastAddress.is_multicast() && ( MulticastAddress.to_ulong() != 0xFFFFFFFF ) )
+  if( !MulticastAddress.is_multicast() && ( MulticastAddress.to_uint() != 0xFFFFFFFF ) )
   {
     OnDisconnect();
     return;
@@ -650,8 +647,8 @@ void VViconCGStreamClient::SetServerToTransmitMulticast( std::string i_Multicast
     boost::asio::ip::address_v4 MulticastAddress = FirstV4AddressFromString( i_MulticastIPAddress );
     boost::asio::ip::address_v4 ServerAddress = FirstV4AddressFromString( i_ServerIPAddress );
 
-    RequestMulticast.m_MulticastIpAddress = static_cast< ViconCGStreamType::UInt32 >( MulticastAddress.to_ulong() );
-    RequestMulticast.m_SourceIpAddress = static_cast< ViconCGStreamType::UInt32 >( ServerAddress.to_ulong() );
+    RequestMulticast.m_MulticastIpAddress = static_cast< ViconCGStreamType::UInt32 >( MulticastAddress.to_uint() );
+    RequestMulticast.m_SourceIpAddress = static_cast< ViconCGStreamType::UInt32 >( ServerAddress.to_uint() );
     RequestMulticast.m_Port = i_Port;
 
     Objects.Write( RequestMulticast );
@@ -1630,24 +1627,22 @@ void VViconCGStreamClient::TimingLogFunction( const unsigned int i_FrameNumber, 
 boost::asio::ip::address_v4 VViconCGStreamClient::FirstV4AddressFromString( const std::string& i_rAddress )
 {
   boost::system::error_code Error;
-  boost::asio::ip::address_v4 Address = boost::asio::ip::address_v4::from_string( i_rAddress, Error );
+  boost::asio::ip::address_v4 Address = boost::asio::ip::make_address_v4( i_rAddress, Error );
   if( !Error )
   {
     return Address;
   }
 
   boost::asio::ip::tcp::resolver Resolver( m_IOContext );
-  boost::asio::ip::tcp::resolver::query Query( i_rAddress, "" );
 
-  boost::asio::ip::tcp::resolver::iterator It = Resolver.resolve( Query, Error );
-  boost::asio::ip::tcp::resolver::iterator End;
+  boost::asio::ip::tcp::resolver::results_type endpoints = Resolver.resolve( i_rAddress, "", Error );
 
   if( !Error )
   {
-    for( ; It != End; ++It )
+    for(auto& endpoint : endpoints)
     {
       Error = boost::system::error_code();
-      boost::asio::ip::tcp::endpoint EndPoint( *It );
+      boost::asio::ip::tcp::endpoint EndPoint( endpoint );
 
       // Currently we only handle IPv4
       if( EndPoint.address().is_v4() )
