@@ -180,15 +180,14 @@ namespace ClientUtils
     {
       boost::asio::ip::tcp::resolver Resolver( IOContext );
       
-      boost::asio::ip::tcp::resolver::results_type It = Resolver.resolve( i_MulticastIPAddress, "", Error );
-      boost::asio::ip::tcp::resolver::results_type End;
+      boost::asio::ip::tcp::resolver::results_type endpoints = Resolver.resolve( i_MulticastIPAddress, "", Error );
       
       if( ! Error )
       {
-        for( ; It != End; ++It )
+        for (auto& endpoint : endpoints)
         {
           Error = boost::system::error_code();
-          boost::asio::ip::tcp::endpoint EndPoint( *It );
+          boost::asio::ip::tcp::endpoint EndPoint( endpoint );
 
           // Currently we only handle IPv4
           if( EndPoint.address().is_v4() )
