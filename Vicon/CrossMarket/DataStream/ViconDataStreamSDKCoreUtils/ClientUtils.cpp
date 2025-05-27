@@ -175,13 +175,12 @@ namespace ClientUtils
   {
     boost::asio::io_context IOContext;
     boost::system::error_code Error;
-    boost::asio::ip::address_v4 Address = boost::asio::ip::address_v4::from_string( i_MulticastIPAddress, Error );
+    boost::asio::ip::address_v4 Address = boost::asio::ip::make_address_v4( i_MulticastIPAddress, Error );
     if( Error )
     {
       boost::asio::ip::tcp::resolver Resolver( IOContext );
-      boost::asio::ip::tcp::resolver::query Query( i_MulticastIPAddress, "" );
       
-      boost::asio::ip::tcp::resolver::iterator It = Resolver.resolve( Query, Error );
+      boost::asio::ip::tcp::resolver::iterator It = Resolver.resolve( i_MulticastIPAddress, "", Error );
       boost::asio::ip::tcp::resolver::iterator End;
       
       if( ! Error )
