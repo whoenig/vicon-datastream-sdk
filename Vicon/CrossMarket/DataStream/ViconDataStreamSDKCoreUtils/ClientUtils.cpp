@@ -180,8 +180,8 @@ namespace ClientUtils
     {
       boost::asio::ip::tcp::resolver Resolver( IOContext );
       
-      boost::asio::ip::tcp::resolver::iterator It = Resolver.resolve( i_MulticastIPAddress, "", Error );
-      boost::asio::ip::tcp::resolver::iterator End;
+      boost::asio::ip::tcp::resolver::results_type It = Resolver.resolve( i_MulticastIPAddress, "", Error );
+      boost::asio::ip::tcp::resolver::results_type End;
       
       if( ! Error )
       {
@@ -204,7 +204,7 @@ namespace ClientUtils
       }
     }
 
-    return( Address.is_multicast() || ( Address.to_ulong() == 0xFFFFFFFF ) );
+    return( Address.is_multicast() || ( Address.to_uint() == 0xFFFFFFFF ) );
   }
 
 
