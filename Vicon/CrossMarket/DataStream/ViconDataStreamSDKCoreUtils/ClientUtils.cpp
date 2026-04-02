@@ -179,28 +179,18 @@ namespace ClientUtils
     if( Error )
     {
       boost::asio::ip::tcp::resolver Resolver( IOContext );
-      
-      boost::asio::ip::tcp::resolver::results_type endpoints = Resolver.resolve( i_MulticastIPAddress, "", Error );
-      
-      if( ! Error )
-      {
-        for (auto& endpoint : endpoints)
-        {
-          Error = boost::system::error_code();
-          boost::asio::ip::tcp::endpoint EndPoint( endpoint );
-
-          // Currently we only handle IPv4
-          if( EndPoint.address().is_v4() )
-          {
-            Address = EndPoint.address().to_v4();
-            break;
+      auto resolver_entries = Resolver.resolve(i_MulticastIPAddress, "");
+      for (auto& entry: resolver_entries) {
+          if (entry.endpoint().address().is_v4()) {
+              Address = entry.endpoint().address().to_v4();
+              break;
           }
-        }
       }
-      else
-      {
-        Address = boost::asio::ip::address_v4();
-      }
+
+    }
+    else
+    {
+      Address = boost::asio::ip::address_v4();
     }
 
     return( Address.is_multicast() || ( Address.to_uint() == 0xFFFFFFFF ) );

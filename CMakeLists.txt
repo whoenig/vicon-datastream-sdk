@@ -6,7 +6,8 @@ set (CMAKE_CXX_STANDARD 14)
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-find_package(Boost 1.5 COMPONENTS thread chrono REQUIRED)
+find_package(Boost 1.75 COMPONENTS system thread chrono REQUIRED)
+
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
 
@@ -16,7 +17,7 @@ include_directories(
 )
 
 # Declare a cpp library
-add_library(ViconDataStreamSDK_CPP STATIC
+add_library(ViconDataStreamSDK_CPP 
   Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/CoreClient.cpp
   Vicon/CrossMarket/DataStream/ViconDataStreamSDKCore/CoreClientTimingLog.cpp
   Vicon/CrossMarket/DataStream/ViconDataStreamSDKCoreUtils/ClientUtils.cpp
@@ -59,7 +60,6 @@ add_executable(ViconDataStreamSDK_CPPTest
 target_link_libraries(ViconDataStreamSDK_CPPTest
   ViconDataStreamSDK_CPP
 )
-
 
 # install headers
 install(

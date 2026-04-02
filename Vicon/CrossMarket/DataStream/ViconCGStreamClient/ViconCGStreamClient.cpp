@@ -359,20 +359,10 @@ bool VViconCGStreamClient::Connect( const std::string& i_rHost, unsigned short i
   const std::string Adapter = AtPos == std::string::npos ? "" : i_rHost.substr( AtPos + 1 );
 
   boost::asio::ip::tcp::resolver Resolver( m_IOContext );
-
+  auto rentries = Resolver.resolve( Host, "" );
   boost::system::error_code Error;
-  boost::asio::ip::tcp::resolver::results_type endpoints = Resolver.resolve( Host, "", Error );
-
-  if( Error )
-  {
-    OnDisconnect();
-    return false;
-  }
-
-  for(auto& endpoint : endpoints)
-  {
-    Error = boost::system::error_code();
-    boost::asio::ip::tcp::endpoint EndPoint( endpoint );
+  for (auto& e : rentries) {
+    auto EndPoint = e.endpoint();
 
     // Currently we only handle IPv4
     // This has to be explicitly handled, otherwise the socket can bind to a v6 endpoint and then fail
@@ -396,7 +386,7 @@ bool VViconCGStreamClient::Connect( const std::string& i_rHost, unsigned short i
     }
     if( !Error && !Adapter.empty() )
     {
-      boost::asio::ip::address_v4 AdapterAddress = boost::asio::ip::make_address_v4(Adapter, Error);
+      boost::asio::ip::address_v4 AdapterAddress = boost::asio::ip::make_address_v4( Adapter, Error );
       if( !Error )
       {
         const boost::asio::ip::tcp::endpoint AdapterEndPoint( AdapterAddress, 0 );
@@ -755,8 +745,13 @@ void VViconCGStreamClient::ClientThread()
 
   if( Error )
   {
-    m_pSocket->close();
-    // OnDisconnect();
+      try {
+          m_pSocket->close();
+      }
+      catch (boost::wrapexcept<boost::system::system_error>&) {
+          // we ignore errors on closing in error case intentionally
+      }
+        // OnDisconnect();
     return;
   }
   else

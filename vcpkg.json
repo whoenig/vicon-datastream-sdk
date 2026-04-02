@@ -1,0 +1,15 @@
+{
+  "name": "vicon2lsl",
+  "version-string": "master",
+  "dependencies": [
+    "boost-system",
+    "boost-chrono",
+    "boost-thread",
+    "boost-asio",
+    "boost-format",
+    "boost-math",
+    "boost-filesystem"
+
+  ],
+  "builtin-baseline": "8f095fa0342454181dc10f1b9c176c19b356ee67"
+}
